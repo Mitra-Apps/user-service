@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "./domain/user/pb";
+
+message User {
+    int64 id = 1;
+    string username = 2;
+    string email = 3;
+    string phone_number = 4;
+    string password = 5;
+}
+
+message UserList {
+    repeated User List = 1;
+}
+
+message GetUserListRequest {}
+
+service UserService {
+    rpc getUsers(GetUserListRequest) returns (UserList) {}
+}
