@@ -1,4 +1,4 @@
-module github.com/Mitra-Apps/user-service
+module github.com/Mitra-Apps/be-user-service
 
 go 1.21.3
 

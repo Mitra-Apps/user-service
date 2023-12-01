@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/Mitra-Apps/user-service/domain/user/entity"
-	"github.com/Mitra-Apps/user-service/domain/user/repository"
+	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
 )
 
 type Service struct {

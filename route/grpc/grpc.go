@@ -3,8 +3,8 @@ package grpc
 import (
 	"context"
 
-	"github.com/Mitra-Apps/user-service/domain/user/pb"
-	"github.com/Mitra-Apps/user-service/service"
+	"github.com/Mitra-Apps/be-user-service/domain/user/pb"
+	"github.com/Mitra-Apps/be-user-service/service"
 )
 
 type GrpcRoute struct {

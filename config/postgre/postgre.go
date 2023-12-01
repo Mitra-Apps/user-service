@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/Mitra-Apps/user-service/domain/user/entity"
-	"github.com/Mitra-Apps/user-service/lib"
+	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/Mitra-Apps/be-user-service/lib"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

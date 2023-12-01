@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/Mitra-Apps/user-service/domain/user/entity"
+	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
