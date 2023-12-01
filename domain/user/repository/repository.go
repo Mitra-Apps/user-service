@@ -2,7 +2,8 @@ package repository
 
 import (
 	"context"
-	"user-service/domain/user/entity"
+
+	"github.com/Mitra-Apps/user-service/domain/user/entity"
 )
 
 type UserInterface interface {

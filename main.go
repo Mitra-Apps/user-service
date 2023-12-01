@@ -3,12 +3,13 @@ package main
 import (
 	"log"
 	"net"
-	"user-service/config/postgre"
-	"user-service/domain/user/pb"
-	userPostgreRepo "user-service/domain/user/repository/postgre"
-	"user-service/lib"
-	grpcRoute "user-service/route/grpc"
-	"user-service/service"
+
+	"github.com/Mitra-Apps/user-service/config/postgre"
+	"github.com/Mitra-Apps/user-service/domain/user/pb"
+	userPostgreRepo "github.com/Mitra-Apps/user-service/domain/user/repository/postgre"
+	"github.com/Mitra-Apps/user-service/lib"
+	grpcRoute "github.com/Mitra-Apps/user-service/route/grpc"
+	"github.com/Mitra-Apps/user-service/service"
 
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"

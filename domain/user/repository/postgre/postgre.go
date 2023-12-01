@@ -2,7 +2,8 @@ package postgre
 
 import (
 	"context"
-	"user-service/domain/user/entity"
+
+	"github.com/Mitra-Apps/user-service/domain/user/entity"
 
 	"gorm.io/gorm"
 )

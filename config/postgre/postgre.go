@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"log"
 	"time"
-	"user-service/domain/user/entity"
-	"user-service/lib"
+
+	"github.com/Mitra-Apps/user-service/domain/user/entity"
+	"github.com/Mitra-Apps/user-service/lib"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

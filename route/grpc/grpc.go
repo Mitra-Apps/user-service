@@ -2,8 +2,9 @@ package grpc
 
 import (
 	"context"
-	"user-service/domain/user/pb"
-	"user-service/service"
+
+	"github.com/Mitra-Apps/user-service/domain/user/pb"
+	"github.com/Mitra-Apps/user-service/service"
 )
 
 type GrpcRoute struct {
