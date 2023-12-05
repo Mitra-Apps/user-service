@@ -20,6 +20,5 @@ go mod vendor
 run the apps using command : go run main.go
 
 ## Generate pb file from proto file
-This is example to create protobuf of user entity and service :
-protoc --go_out=. domain/user/proto/*.proto
-protoc --go-grpc_out=require_unimplemented_servers=false:. ./domain/user/proto/*.proto
+Run this command :
+buf generate

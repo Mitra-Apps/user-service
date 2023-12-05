@@ -3,7 +3,7 @@ package grpc
 import (
 	"context"
 
-	pb "github.com/Mitra-Apps/be-user-service/gen/domain/user/proto/v1"
+	pb "github.com/Mitra-Apps/be-user-service/domain/user/proto"
 	"github.com/Mitra-Apps/be-user-service/service"
 )
 

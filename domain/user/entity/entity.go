@@ -3,7 +3,7 @@ package entity
 import (
 	"time"
 
-	pb "github.com/Mitra-Apps/be-user-service/gen/domain/user/proto/v1"
+	pb "github.com/Mitra-Apps/be-user-service/domain/user/proto"
 )
 
 type User struct {

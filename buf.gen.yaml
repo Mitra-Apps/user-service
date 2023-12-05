@@ -5,14 +5,14 @@ managed:
 
 plugins:
   - plugin: buf.build/protocolbuffers/go
-    out: gen
+    out: domain/user
     opt: paths=source_relative
   - plugin: buf.build/connectrpc/go
-    out: gen
+    out: domain/user
     opt: paths=source_relative
   - plugin: buf.build/grpc-ecosystem/gateway:v2.18.1
-    out: gen
+    out: domain/user
     opt: paths=source_relative
   - plugin: buf.build/grpc/go
-    out: gen
+    out: domain/user
     opt: paths=source_relative

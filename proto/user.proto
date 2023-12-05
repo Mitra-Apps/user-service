@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package domain.user.proto.v1;
+package proto;
 
-option go_package = "github.com/Mitra-Apps/be-user-service/gen/domain/user/proto/v1;protov1";
+option go_package = "github.com/Mitra-Apps/be-user-service/domain/user/proto;proto";
 
 import "google/api/annotations.proto";
 
