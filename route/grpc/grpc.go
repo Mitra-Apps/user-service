@@ -3,33 +3,33 @@ package grpc
 import (
 	"context"
 
-	"github.com/Mitra-Apps/be-user-service/domain/user/pb"
+	pb "github.com/Mitra-Apps/be-user-service/gen/domain/user/proto/v1"
 	"github.com/Mitra-Apps/be-user-service/service"
 )
 
 type GrpcRoute struct {
 	service service.ServiceInterface
+	pb.UnimplementedUserServiceServer
 }
 
-func New(service service.ServiceInterface) *GrpcRoute {
-	return &GrpcRoute{service}
+func New(service service.ServiceInterface) pb.UserServiceServer {
+	return &GrpcRoute{
+		service: service,
+	}
 }
 
-func (g *GrpcRoute) GetUsers(ctx context.Context, req *pb.GetUserListRequest) (*pb.UserList, error) {
+func (g *GrpcRoute) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb.GetUsersResponse, error) {
 	users, err := g.service.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
-	list := pb.UserList{}
-	list.List = make([]*pb.User, 0)
-	for _, u := range users {
-		list.List = append(list.List, &pb.User{
-			Id:          u.Id,
-			Username:    u.Username,
-			Email:       u.Email,
-			PhoneNumber: u.PhoneNumber,
-			IsActive:    u.IsActive,
-		})
+
+	protoUsers := []*pb.User{}
+	for _, user := range users {
+		protoUsers = append(protoUsers, user.ToProto())
 	}
-	return &list, nil
+
+	return &pb.GetUsersResponse{
+		Users: protoUsers,
+	}, nil
 }
