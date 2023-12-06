@@ -5,7 +5,7 @@ import (
 	"net"
 
 	"github.com/Mitra-Apps/be-user-service/config/postgre"
-	pb "github.com/Mitra-Apps/be-user-service/domain/user/proto"
+	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	userPostgreRepo "github.com/Mitra-Apps/be-user-service/domain/user/repository/postgre"
 	grpcRoute "github.com/Mitra-Apps/be-user-service/handler/grpc"
 	"github.com/Mitra-Apps/be-user-service/lib"
