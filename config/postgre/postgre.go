@@ -23,6 +23,8 @@ func Connection() *gorm.DB {
 		log.Fatalln(err)
 	}
 
+	db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
+
 	err = db.AutoMigrate(&entity.User{})
 	if err != nil {
 		log.Fatalln(err)
