@@ -3,6 +3,9 @@
 ## Install docker
 If use wsl : https://docs.docker.com/engine/install/ubuntu/
 
+## Configure visual studio code to use WSL
+https://code.visualstudio.com/docs/remote/wsl
+
 ## How to run
 run the apps using command : 
 go mod tidy
