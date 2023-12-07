@@ -3,21 +3,22 @@ package postgre
 import (
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
-	"github.com/Mitra-Apps/be-user-service/lib"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func Connection() *gorm.DB {
-	username := lib.GetEnv("DB_USERNAME")
-	password := lib.GetEnv("DB_PASSWORD")
-	host := lib.GetEnv("DB_HOST")
-	dbName := lib.GetEnv("DB_NAME")
-	db, err := gorm.Open(postgres.Open("postgres://"+username+":"+password+"@"+host+"/"+dbName+"?sslmode=disable"),
+	username := os.Getenv("DB_USERNAME")
+	password := os.Getenv("DB_PASSWORD")
+	host := os.Getenv("DB_HOST")
+	dbName := os.Getenv("DB_NAME")
+	conn := "postgres://" + username + ":" + password + "@" + host + "/" + dbName + "?sslmode=disable"
+	db, err := gorm.Open(postgres.Open(conn),
 		&gorm.Config{TranslateError: true})
 	if err != nil {
 		log.Fatalln(err)
