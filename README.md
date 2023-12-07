@@ -9,8 +9,13 @@ go mod tidy
 go mod vendor
 sudo docker compose up --build
 
-## Reset database structures
-run : sudo docker-compose down --volumes
-
 ## Generate pb file from proto file
+### Install buf
+https://buf.build/docs/installation
+If failed, run : brew install buf
+
+### generate protobuf
 Run : buf generate
+
+## Reset database structures (Dont run this! Only if needed)
+run : sudo docker compose down --volumes
