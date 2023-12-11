@@ -30,9 +30,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	if err := godotenv.Load(); err != nil {
-		logrus.Panicf("failed to load .env file: %v", err)
-	}
+	godotenv.Load()
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("GRPC_PORT")))
 	if err != nil {
