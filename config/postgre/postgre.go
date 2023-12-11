@@ -2,11 +2,11 @@ package postgre
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/sirupsen/logrus"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -17,31 +17,30 @@ func Connection() *gorm.DB {
 	password := os.Getenv("DB_PASSWORD")
 	host := os.Getenv("DB_HOST")
 	dbName := os.Getenv("DB_NAME")
-	conn := "postgres://" + username + ":" + password + "@" + host + "/" + dbName + "?sslmode=disable"
-	db, err := gorm.Open(postgres.Open(conn),
-		&gorm.Config{TranslateError: true})
+	dsn := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", host, username, dbName, password)
+	fmt.Printf("dsn: %s\n", dsn)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		SkipDefaultTransaction: true,
+	})
 	if err != nil {
-		log.Fatalln(err)
+		logrus.Panicf("failed to connect database: %v", err)
 	}
 
 	db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
 
 	err = db.AutoMigrate(&entity.User{})
 	if err != nil {
-		log.Fatalln(err)
+		logrus.Panicf("failed to migrate database: %v", err)
 	}
-
-	fmt.Println("Tables has been migrated")
 
 	sqlDb, err := db.DB()
 	if err != nil {
-		log.Fatalln(err)
+		logrus.Panicf("failed to get database: %v", err)
 	}
+
 	sqlDb.SetMaxIdleConns(10)
 	sqlDb.SetMaxOpenConns(100)
 	sqlDb.SetConnMaxLifetime(time.Hour * 6)
-
-	fmt.Println("Database successfully connected!")
 
 	return db
 }
