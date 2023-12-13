@@ -1,6 +1,6 @@
 version: "3.0"
 services:
-  app:
+  user-service:
     build: .
     ports:
       - 9000:9000
@@ -16,7 +16,7 @@ services:
       database:
         condition: service_healthy
     networks:
-      - user-net
+      - grpc_network
   database:
     image: postgres:14-alpine
     restart: always
@@ -36,10 +36,10 @@ services:
       timeout: 5s
       retries: 3
     networks:
-      - user-net
+      - grpc_network
 volumes:
   db:
     driver: local
 networks:
-  user-net:
-    driver: bridge
+  grpc_network:
+    external: true
