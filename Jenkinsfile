@@ -16,19 +16,6 @@ pipeline {
             }
         }
 
-        stage('Build') {
-            steps {
-                // Use a Golang image to build and test your Go application
-                container('golang:' + GO_VERSION) {
-                    sh 'go mod download'
-                    sh 'go mod tidy'
-                    sh 'go mod vendor'
-                    sh 'go build'
-                    echo "INFO: Code has been built"
-                }
-            }
-        }
-
         stage('Run Docker Compose') {
             steps {
                 // Run Docker Compose to start your application and any required services
