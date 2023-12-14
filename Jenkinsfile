@@ -20,7 +20,6 @@ pipeline {
             steps {
                 // Run Docker Compose to start your application and any required services
                 script {
-                    sh "docker rm -f be-user-service-user-service-1 || true"
                     def dockerComposeCmd = "docker compose up -d"
                     sh dockerComposeCmd
                     echo "INFO: Deployed"
@@ -32,12 +31,12 @@ pipeline {
     post {
         success {
             // This block is executed if the pipeline is successful
-            echo 'Pipeline succeeded! Send notifications or perform additional tasks here.'
+            echo 'Pipeline succeeded!'
         }
 
         failure {
             // This block is executed if the pipeline fails
-            echo 'Pipeline failed! Send notifications or perform additional tasks here.'
+            echo 'Pipeline failed!'
         }
     }
 }
