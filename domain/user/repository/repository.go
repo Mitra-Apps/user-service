@@ -8,4 +8,5 @@ import (
 
 type UserInterface interface {
 	GetAll(ctx context.Context) ([]*entity.User, error)
+	GetByEmail(ctx context.Context, email string) (*entity.User, error)
 }
