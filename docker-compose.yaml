@@ -1,7 +1,7 @@
 version: "3.0"
 services:
   user-service:
-    image: ${ECR_REGISTRY}/${IMAGE_NAME}:${dockerTag}
+    image: ${ECR_REGISTRY}/${IMAGE_NAME}:${COMMIT_HASH}
     ports:
       - 9000:9000
       - 9001:9001
