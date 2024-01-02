@@ -17,4 +17,5 @@ func New(userRepository repository.UserInterface) *Service {
 
 type ServiceInterface interface {
 	GetAll(ctx context.Context) ([]*entity.User, error)
+	Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error)
 }

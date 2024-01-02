@@ -16,7 +16,7 @@ sudo docker compose up --build
 ### Install buf
 https://buf.build/docs/installation
 If failed, run : brew install buf
-
+go 
 ### generate protobuf
 Run : buf generate
 

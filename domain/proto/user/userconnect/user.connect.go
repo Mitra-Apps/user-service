@@ -8,7 +8,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	user "github.com/Mitra-Apps/be-user-service/domain/proto/user"
+	user "github.com/Mitra-Apps/be-api-gateway/domain/proto/user"
 	http "net/http"
 	strings "strings"
 )
@@ -18,7 +18,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// UserServiceName is the fully-qualified name of the UserService service.
@@ -35,11 +35,21 @@ const (
 const (
 	// UserServiceGetUsersProcedure is the fully-qualified name of the UserService's GetUsers RPC.
 	UserServiceGetUsersProcedure = "/proto.UserService/GetUsers"
+	// UserServiceLoginProcedure is the fully-qualified name of the UserService's Login RPC.
+	UserServiceLoginProcedure = "/proto.UserService/Login"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	userServiceServiceDescriptor        = user.File_proto_user_user_proto.Services().ByName("UserService")
+	userServiceGetUsersMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("GetUsers")
+	userServiceLoginMethodDescriptor    = userServiceServiceDescriptor.Methods().ByName("Login")
 )
 
 // UserServiceClient is a client for the proto.UserService service.
 type UserServiceClient interface {
 	GetUsers(context.Context, *connect.Request[user.GetUsersRequest]) (*connect.Response[user.GetUsersResponse], error)
+	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error)
 }
 
 // NewUserServiceClient constructs a client for the proto.UserService service. By default, it uses
@@ -55,7 +65,14 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 		getUsers: connect.NewClient[user.GetUsersRequest, user.GetUsersResponse](
 			httpClient,
 			baseURL+UserServiceGetUsersProcedure,
-			opts...,
+			connect.WithSchema(userServiceGetUsersMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		login: connect.NewClient[user.UserLoginRequest, user.UserLoginResponse](
+			httpClient,
+			baseURL+UserServiceLoginProcedure,
+			connect.WithSchema(userServiceLoginMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
@@ -63,6 +80,7 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 // userServiceClient implements UserServiceClient.
 type userServiceClient struct {
 	getUsers *connect.Client[user.GetUsersRequest, user.GetUsersResponse]
+	login    *connect.Client[user.UserLoginRequest, user.UserLoginResponse]
 }
 
 // GetUsers calls proto.UserService.GetUsers.
@@ -70,9 +88,15 @@ func (c *userServiceClient) GetUsers(ctx context.Context, req *connect.Request[u
 	return c.getUsers.CallUnary(ctx, req)
 }
 
+// Login calls proto.UserService.Login.
+func (c *userServiceClient) Login(ctx context.Context, req *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error) {
+	return c.login.CallUnary(ctx, req)
+}
+
 // UserServiceHandler is an implementation of the proto.UserService service.
 type UserServiceHandler interface {
 	GetUsers(context.Context, *connect.Request[user.GetUsersRequest]) (*connect.Response[user.GetUsersResponse], error)
+	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error)
 }
 
 // NewUserServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -84,12 +108,21 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 	userServiceGetUsersHandler := connect.NewUnaryHandler(
 		UserServiceGetUsersProcedure,
 		svc.GetUsers,
-		opts...,
+		connect.WithSchema(userServiceGetUsersMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceLoginHandler := connect.NewUnaryHandler(
+		UserServiceLoginProcedure,
+		svc.Login,
+		connect.WithSchema(userServiceLoginMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/proto.UserService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case UserServiceGetUsersProcedure:
 			userServiceGetUsersHandler.ServeHTTP(w, r)
+		case UserServiceLoginProcedure:
+			userServiceLoginHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -101,4 +134,8 @@ type UnimplementedUserServiceHandler struct{}
 
 func (UnimplementedUserServiceHandler) GetUsers(context.Context, *connect.Request[user.GetUsersRequest]) (*connect.Response[user.GetUsersResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.GetUsers is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.Login is not implemented"))
 }

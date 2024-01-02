@@ -37,3 +37,8 @@ func (u *User) ToProto() *pb.User {
 		AvatarImageId: avatarImageId,
 	}
 }
+
+type LoginRequest struct {
+	Username string
+	Password string
+}

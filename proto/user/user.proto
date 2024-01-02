@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package proto;
 
-option go_package = "github.com/Mitra-Apps/be-user-service/domain/proto/user;user";
+option go_package = "github.com/Mitra-Apps/be-api-gateway/domain/proto/user;user";
 
 import "google/api/annotations.proto";
 
@@ -17,6 +17,15 @@ message User {
     bool is_active = 8;
 }
 
+message UserLoginRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message UserLoginResponse{
+    User user = 1;
+}
+
 message GetUsersRequest {}
 
 message GetUsersResponse {
@@ -27,6 +36,11 @@ service UserService {
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {
         option (google.api.http) = {
             get: "/users"
+        };
+    }
+    rpc Login(UserLoginRequest) returns (UserLoginResponse) {
+        option (google.api.http) = {
+            post: "/users/login"
         };
     }
 }

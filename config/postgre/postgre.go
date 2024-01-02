@@ -17,7 +17,8 @@ func Connection() *gorm.DB {
 	password := os.Getenv("DB_PASSWORD")
 	host := os.Getenv("DB_HOST")
 	dbName := os.Getenv("DB_NAME")
-	dsn := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", host, username, dbName, password)
+	port := os.Getenv("DB_PORT")
+	dsn := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", host, port, username, dbName, password)
 	fmt.Printf("dsn: %s\n", dsn)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		SkipDefaultTransaction: true,
