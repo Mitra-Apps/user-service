@@ -10,6 +10,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func Connection() *gorm.DB {
@@ -22,6 +23,7 @@ func Connection() *gorm.DB {
 	fmt.Printf("dsn: %s\n", dsn)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		SkipDefaultTransaction: true,
+		Logger:                 logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
 		logrus.Panicf("failed to connect database: %v", err)
