@@ -38,8 +38,9 @@ func main() {
 	}
 
 	db := postgre.Connection()
-	usrRepo := userPostgreRepo.NewPostgre(db)
-	svc := service.New(usrRepo)
+	usrRepo := userPostgreRepo.NewUserRepoImpl(db)
+	roleRepo := userPostgreRepo.NewRoleRepoImpl(db)
+	svc := service.New(usrRepo, roleRepo)
 	grpcServer := GrpcNewServer(ctx, []grpc.ServerOption{})
 	route := grpcRoute.New(svc)
 	pb.RegisterUserServiceServer(grpcServer, route)

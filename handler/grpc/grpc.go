@@ -49,3 +49,30 @@ func (g *GrpcRoute) Login(ctx context.Context, req *pb.UserLoginRequest) (*pb.Us
 		User: protoUser,
 	}, nil
 }
+
+func (g *GrpcRoute) Register(ctx context.Context, req *pb.UserRegisterRequest) (*pb.SuccessMessage, error) {
+	if err := req.ValidateAll(); err != nil {
+		return nil, err
+	}
+	if err := g.service.Register(ctx, req); err != nil {
+		return nil, err
+	}
+	res := &pb.SuccessMessage{
+		Message: "Akun berhasil di daftarkan",
+	}
+
+	return res, nil
+}
+
+func (g *GrpcRoute) CreateRole(ctx context.Context, req *pb.Role) (*pb.SuccessMessage, error) {
+	role := &entity.Role{}
+	if err := role.FromProto(req); err != nil {
+		return nil, err
+	}
+	if err := g.service.CreateRole(ctx, role); err != nil {
+		return nil, err
+	}
+	return &pb.SuccessMessage{
+		Message: "Role successfully created",
+	}, nil
+}

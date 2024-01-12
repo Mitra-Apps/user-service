@@ -2,9 +2,12 @@ syntax = "proto3";
 
 package proto;
 
-option go_package = "github.com/Mitra-Apps/be-api-gateway/domain/proto/user;user";
+option go_package = "github.com/Mitra-Apps/be-user-service/domain/proto/user;user";
 
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
+import "validate/validate.proto";
 
 message User {
     string id = 1;
@@ -15,6 +18,16 @@ message User {
     string avatar_image_id = 6;
     string access_token = 7;
     bool is_active = 8;
+    string name = 9;
+    string address = 10;
+}
+
+message Role {
+    string id = 1;
+    string role_name = 2;
+    string description = 3;
+    bool is_active = 4;
+    string permission = 5;
 }
 
 message UserLoginRequest {
@@ -24,6 +37,19 @@ message UserLoginRequest {
 
 message UserLoginResponse{
     User user = 1;
+}
+
+message UserRegisterRequest {
+    string email = 1 [(validate.rules).string.email = true];
+    string password = 2 [(validate.rules).string = {min_len: 6}];
+    string name = 3 [(validate.rules).string = {min_len: 1, max_len: 255}]; 
+    string phone_number = 4 [(validate.rules).string = {min_len: 1, max_len: 255}];
+    string address = 5 [(validate.rules).string = {min_len: 1, max_len: 255}];
+    repeated string role_id = 6;
+}
+
+message SuccessMessage {
+    string message = 1;
 }
 
 message GetUsersRequest {}
@@ -41,6 +67,16 @@ service UserService {
     rpc Login(UserLoginRequest) returns (UserLoginResponse) {
         option (google.api.http) = {
             post: "/users/login"
+        };
+    }
+    rpc Register(UserRegisterRequest) returns (SuccessMessage) {
+        option (google.api.http) = {
+            post: "/users/register"
+        };
+    }
+    rpc CreateRole(Role) returns (SuccessMessage) {
+        option (google.api.http) = {
+            post: "/users/createrole"
         };
     }
 }

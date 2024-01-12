@@ -5,6 +5,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 )
 
@@ -27,6 +28,23 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*enti
 		return nil, err
 	}
 	return user, nil
+}
+
+func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) error {
+	user := &entity.User{
+		Username:    req.Email,
+		Password:    req.Password,
+		Email:       req.Email,
+		PhoneNumber: req.PhoneNumber,
+		Name:        req.Name,
+		Address:     req.Address,
+	}
+
+	return s.userRepository.Create(ctx, user, req.RoleId)
+}
+
+func (s *Service) CreateRole(ctx context.Context, role *entity.Role) error {
+	return s.roleRepo.Create(ctx, role)
 }
 
 func checkPassword(password, hashedPassword string) error {

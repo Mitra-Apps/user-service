@@ -11,7 +11,7 @@ type User struct {
 	Id            uuid.UUID     `gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
 	Username      string        `gorm:"type:varchar(255);not null;unique"`
 	Password      string        `gorm:"type:varchar(255);not null"`
-	Email         string        `gorm:"type:varchar(255);not null"`
+	Email         string        `gorm:"type:varchar(255);not null;unique"`
 	PhoneNumber   string        `gorm:"type:varchar(50);not null"`
 	AvatarImageId uuid.NullUUID `gorm:"type:varchar(255);null"`
 	AccessToken   *string       `gorm:"type:varchar(255);null"`
@@ -20,6 +20,9 @@ type User struct {
 	CreatedBy     uuid.UUID     `gorm:"type:uuid;not null"`
 	UpdatedAt     *time.Time    `gorm:"type:timestamptz;null"`
 	UpdatedBy     uuid.NullUUID `gorm:"type:uuid;null"`
+	Name          string        `gorm:"type:varchar(255);not null"`
+	Roles         []Role        `gorm:"many2many:user_roles;"`
+	Address       string        `gorm:"type:varchar(255);null"`
 }
 
 func (u *User) ToProto() *pb.User {
@@ -35,6 +38,8 @@ func (u *User) ToProto() *pb.User {
 		Password:      u.Password,
 		IsActive:      u.IsActive,
 		AvatarImageId: avatarImageId,
+		Name:          u.Name,
+		Address:       u.Address,
 	}
 }
 
