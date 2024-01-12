@@ -15,6 +15,7 @@ func New(userRepository repository.UserInterface) *Service {
 	return &Service{userRepository: userRepository}
 }
 
+//go:generate mockgen -source=service.go -destination=mock/service.go -package=mock
 type ServiceInterface interface {
 	GetAll(ctx context.Context) ([]*entity.User, error)
 	Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error)
