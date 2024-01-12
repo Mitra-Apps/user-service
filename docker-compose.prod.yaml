@@ -8,7 +8,7 @@ services:
     environment:
       - GRPC_PORT=9100
       - HTTP_PORT=9101
-      - DB_HOST=staging-postgre
+      - DB_HOST=prod-postgre
       - DB_USERNAME=postgres
       - DB_PASSWORD=123456
       - DB_NAME=user-service
