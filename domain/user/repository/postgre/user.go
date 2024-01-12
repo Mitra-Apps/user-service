@@ -23,7 +23,7 @@ func NewUserRepoImpl(db *gorm.DB) repository.User {
 func (p *Postgre) GetAll(ctx context.Context) ([]*entity.User, error) {
 	var accounts []*entity.User
 	res := p.db.Order("created_at DESC").Find(&accounts)
-	if res.Error == gorm.ErrEmptySlice || res.RowsAffected == 0 {
+	if res.Error == gorm.ErrRecordNotFound {
 		return nil, nil
 	}
 	if res.Error != nil {
@@ -34,8 +34,8 @@ func (p *Postgre) GetAll(ctx context.Context) ([]*entity.User, error) {
 
 func (p *Postgre) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
 	var user *entity.User
-	res := p.db.Find(&user).Where("email = ?", email)
-	if res.Error == gorm.ErrEmptySlice || res.RowsAffected == 0 {
+	res := p.db.Where("email = ?", email).First(&user)
+	if res.Error == gorm.ErrRecordNotFound {
 		return nil, nil
 	}
 	if res.Error != nil {
