@@ -3,9 +3,7 @@ module github.com/Mitra-Apps/be-user-service
 go 1.21.3
 
 require (
-	connectrpc.com/connect v1.14.0
-	github.com/envoyproxy/protoc-gen-validate v1.0.2
-	github.com/golang/protobuf v1.5.3
+	connectrpc.com/connect v1.12.0
 	github.com/google/uuid v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.1

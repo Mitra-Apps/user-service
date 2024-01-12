@@ -6,7 +6,7 @@ info:
     title: UserService API
     version: 0.0.1
 paths:
-    /api/v1/users:
+    /users:
         get:
             tags:
                 - UserService
@@ -24,73 +24,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
-    /api/v1/users/createrole:
-        post:
-            tags:
-                - UserService
-            operationId: UserService_CreateRole
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/Role'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/SuccessResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Status'
-    /api/v1/users/getrole:
-        get:
-            tags:
-                - UserService
-            operationId: UserService_GetRole
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/SuccessResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Status'
-    /api/v1/users/register:
-        post:
-            tags:
-                - UserService
-            operationId: UserService_Register
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/UserRegisterRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/SuccessResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Status'
-    /api/v1/users/users/login:
+    /users/login:
         post:
             tags:
                 - UserService
@@ -134,19 +68,6 @@ components:
                     description: The type of the serialized message.
             additionalProperties: true
             description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
-        Role:
-            type: object
-            properties:
-                id:
-                    type: string
-                roleName:
-                    type: string
-                description:
-                    type: string
-                isActive:
-                    type: boolean
-                permission:
-                    type: object
         Status:
             type: object
             properties:
@@ -163,11 +84,6 @@ components:
                         $ref: '#/components/schemas/GoogleProtobufAny'
                     description: A list of messages that carry the error details.  There is a common set of message types for APIs to use.
             description: 'The `Status` type defines a logical error model that is suitable for different programming environments, including REST APIs and RPC APIs. It is used by [gRPC](https://github.com/grpc). Each `Status` message contains three pieces of data: error code, error message, and error details. You can find out more about this error model and how to work with it in the [API Design Guide](https://cloud.google.com/apis/design/errors).'
-        SuccessResponse:
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/GoogleProtobufAny'
         User:
             type: object
             properties:
@@ -187,31 +103,10 @@ components:
                     type: string
                 isActive:
                     type: boolean
-                name:
-                    type: string
-                address:
-                    type: string
         UserLoginResponse:
             type: object
             properties:
                 user:
                     $ref: '#/components/schemas/User'
-        UserRegisterRequest:
-            type: object
-            properties:
-                email:
-                    type: string
-                password:
-                    type: string
-                name:
-                    type: string
-                phoneNumber:
-                    type: string
-                address:
-                    type: string
-                roleId:
-                    type: array
-                    items:
-                        type: string
 tags:
     - name: UserService

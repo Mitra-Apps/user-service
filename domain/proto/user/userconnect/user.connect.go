@@ -9,7 +9,6 @@ import (
 	context "context"
 	errors "errors"
 	user "github.com/Mitra-Apps/be-user-service/domain/proto/user"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	http "net/http"
 	strings "strings"
 )
