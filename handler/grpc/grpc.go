@@ -50,21 +50,17 @@ func (g *GrpcRoute) Login(ctx context.Context, req *pb.UserLoginRequest) (*pb.Us
 	}, nil
 }
 
-func (g *GrpcRoute) Register(ctx context.Context, req *pb.UserRegisterRequest) (*pb.SuccessMessage, error) {
+func (g *GrpcRoute) Register(ctx context.Context, req *pb.UserRegisterRequest) (*pb.SuccessResponse, error) {
 	if err := req.ValidateAll(); err != nil {
 		return nil, err
 	}
 	if err := g.service.Register(ctx, req); err != nil {
 		return nil, err
 	}
-	res := &pb.SuccessMessage{
-		Message: "Akun berhasil di daftarkan",
-	}
-
-	return res, nil
+	return &pb.SuccessResponse{}, nil
 }
 
-func (g *GrpcRoute) CreateRole(ctx context.Context, req *pb.Role) (*pb.SuccessMessage, error) {
+func (g *GrpcRoute) CreateRole(ctx context.Context, req *pb.Role) (*pb.SuccessResponse, error) {
 	role := &entity.Role{}
 	if err := role.FromProto(req); err != nil {
 		return nil, err
@@ -72,7 +68,5 @@ func (g *GrpcRoute) CreateRole(ctx context.Context, req *pb.Role) (*pb.SuccessMe
 	if err := g.service.CreateRole(ctx, role); err != nil {
 		return nil, err
 	}
-	return &pb.SuccessMessage{
-		Message: "Role successfully created",
-	}, nil
+	return &pb.SuccessResponse{}, nil
 }

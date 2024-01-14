@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -10,6 +11,7 @@ import (
 
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
@@ -50,8 +52,26 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) err
 		Name:        req.Name,
 		Address:     req.Address,
 	}
+	if err := s.userRepository.Create(ctx, user, req.RoleId); err != nil {
+		fmt.Println(err.Error())
+		st := status.New(codes.InvalidArgument, "Invalid input")
+		ds, err := st.WithDetails(
+			&epb.BadRequest{
+				FieldViolations: []*epb.BadRequest_FieldViolation{
+					{
+						Field:       "Email or Phone Number",
+						Description: "Email or Phone number already exist",
+					},
+				},
+			},
+		)
+		if err != nil {
+			return st.Err()
+		}
+		return ds.Err()
+	}
 
-	return s.userRepository.Create(ctx, user, req.RoleId)
+	return nil
 }
 
 func (s *Service) CreateRole(ctx context.Context, role *entity.Role) error {

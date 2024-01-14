@@ -8,6 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 import "validate/validate.proto";
+import "google/protobuf/any.proto";
 
 message User {
     string id = 1;
@@ -48,8 +49,8 @@ message UserRegisterRequest {
     repeated string role_id = 6;
 }
 
-message SuccessMessage {
-    string message = 1;
+message SuccessResponse {
+    google.protobuf.Any data = 1;
 }
 
 message GetUsersRequest {}
@@ -61,7 +62,7 @@ message GetUsersResponse {
 service UserService {
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {
         option (google.api.http) = {
-            get: "/users"
+            get: "/api/v1/users"
         };
     }
     rpc Login(UserLoginRequest) returns (UserLoginResponse) {
@@ -69,14 +70,14 @@ service UserService {
             post: "/users/login"
         };
     }
-    rpc Register(UserRegisterRequest) returns (SuccessMessage) {
+    rpc Register(UserRegisterRequest) returns (SuccessResponse) {
         option (google.api.http) = {
-            post: "/users/register"
+            post: "/api/v1/users/register"
         };
     }
-    rpc CreateRole(Role) returns (SuccessMessage) {
+    rpc CreateRole(Role) returns (SuccessResponse) {
         option (google.api.http) = {
-            post: "/users/createrole"
+            post: "/api/v1/users/createrole"
         };
     }
 }

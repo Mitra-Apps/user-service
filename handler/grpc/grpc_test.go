@@ -104,7 +104,7 @@ func TestGrpcRoute_Register(t *testing.T) {
 		name    string
 		g       *GrpcRoute
 		args    args
-		want    *pb.SuccessMessage
+		want    *pb.SuccessResponse
 		wantErr bool
 	}{
 		{
@@ -161,9 +161,7 @@ func TestGrpcRoute_Register(t *testing.T) {
 					RoleId:      []string{"1", "2"},
 				},
 			},
-			want: &pb.SuccessMessage{
-				Message: "Akun berhasil di daftarkan",
-			},
+			want:    &pb.SuccessResponse{},
 			wantErr: false,
 		},
 	}

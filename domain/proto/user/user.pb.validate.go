@@ -704,44 +704,71 @@ var _ interface {
 	ErrorName() string
 } = UserRegisterRequestValidationError{}
 
-// Validate checks the field values on SuccessMessage with the rules defined in
-// the proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *SuccessMessage) Validate() error {
+// Validate checks the field values on SuccessResponse with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *SuccessResponse) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on SuccessMessage with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in SuccessMessageMultiError,
-// or nil if none found.
-func (m *SuccessMessage) ValidateAll() error {
+// ValidateAll checks the field values on SuccessResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// SuccessResponseMultiError, or nil if none found.
+func (m *SuccessResponse) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *SuccessMessage) validate(all bool) error {
+func (m *SuccessResponse) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
 
 	var errors []error
 
-	// no validation rules for Message
+	if all {
+		switch v := interface{}(m.GetData()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, SuccessResponseValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, SuccessResponseValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetData()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return SuccessResponseValidationError{
+				field:  "Data",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
 	if len(errors) > 0 {
-		return SuccessMessageMultiError(errors)
+		return SuccessResponseMultiError(errors)
 	}
 
 	return nil
 }
 
-// SuccessMessageMultiError is an error wrapping multiple validation errors
-// returned by SuccessMessage.ValidateAll() if the designated constraints
+// SuccessResponseMultiError is an error wrapping multiple validation errors
+// returned by SuccessResponse.ValidateAll() if the designated constraints
 // aren't met.
-type SuccessMessageMultiError []error
+type SuccessResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m SuccessMessageMultiError) Error() string {
+func (m SuccessResponseMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -750,11 +777,11 @@ func (m SuccessMessageMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m SuccessMessageMultiError) AllErrors() []error { return m }
+func (m SuccessResponseMultiError) AllErrors() []error { return m }
 
-// SuccessMessageValidationError is the validation error returned by
-// SuccessMessage.Validate if the designated constraints aren't met.
-type SuccessMessageValidationError struct {
+// SuccessResponseValidationError is the validation error returned by
+// SuccessResponse.Validate if the designated constraints aren't met.
+type SuccessResponseValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -762,22 +789,22 @@ type SuccessMessageValidationError struct {
 }
 
 // Field function returns field value.
-func (e SuccessMessageValidationError) Field() string { return e.field }
+func (e SuccessResponseValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e SuccessMessageValidationError) Reason() string { return e.reason }
+func (e SuccessResponseValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e SuccessMessageValidationError) Cause() error { return e.cause }
+func (e SuccessResponseValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e SuccessMessageValidationError) Key() bool { return e.key }
+func (e SuccessResponseValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e SuccessMessageValidationError) ErrorName() string { return "SuccessMessageValidationError" }
+func (e SuccessResponseValidationError) ErrorName() string { return "SuccessResponseValidationError" }
 
 // Error satisfies the builtin error interface
-func (e SuccessMessageValidationError) Error() string {
+func (e SuccessResponseValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -789,14 +816,14 @@ func (e SuccessMessageValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sSuccessMessage.%s: %s%s",
+		"invalid %sSuccessResponse.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = SuccessMessageValidationError{}
+var _ error = SuccessResponseValidationError{}
 
 var _ interface {
 	Field() string
@@ -804,7 +831,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = SuccessMessageValidationError{}
+} = SuccessResponseValidationError{}
 
 // Validate checks the field values on GetUsersRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the

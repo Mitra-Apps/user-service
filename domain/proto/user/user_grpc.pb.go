@@ -31,8 +31,8 @@ const (
 type UserServiceClient interface {
 	GetUsers(ctx context.Context, in *GetUsersRequest, opts ...grpc.CallOption) (*GetUsersResponse, error)
 	Login(ctx context.Context, in *UserLoginRequest, opts ...grpc.CallOption) (*UserLoginResponse, error)
-	Register(ctx context.Context, in *UserRegisterRequest, opts ...grpc.CallOption) (*SuccessMessage, error)
-	CreateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*SuccessMessage, error)
+	Register(ctx context.Context, in *UserRegisterRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	CreateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*SuccessResponse, error)
 }
 
 type userServiceClient struct {
@@ -61,8 +61,8 @@ func (c *userServiceClient) Login(ctx context.Context, in *UserLoginRequest, opt
 	return out, nil
 }
 
-func (c *userServiceClient) Register(ctx context.Context, in *UserRegisterRequest, opts ...grpc.CallOption) (*SuccessMessage, error) {
-	out := new(SuccessMessage)
+func (c *userServiceClient) Register(ctx context.Context, in *UserRegisterRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
 	err := c.cc.Invoke(ctx, UserService_Register_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -70,8 +70,8 @@ func (c *userServiceClient) Register(ctx context.Context, in *UserRegisterReques
 	return out, nil
 }
 
-func (c *userServiceClient) CreateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*SuccessMessage, error) {
-	out := new(SuccessMessage)
+func (c *userServiceClient) CreateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
 	err := c.cc.Invoke(ctx, UserService_CreateRole_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -85,8 +85,8 @@ func (c *userServiceClient) CreateRole(ctx context.Context, in *Role, opts ...gr
 type UserServiceServer interface {
 	GetUsers(context.Context, *GetUsersRequest) (*GetUsersResponse, error)
 	Login(context.Context, *UserLoginRequest) (*UserLoginResponse, error)
-	Register(context.Context, *UserRegisterRequest) (*SuccessMessage, error)
-	CreateRole(context.Context, *Role) (*SuccessMessage, error)
+	Register(context.Context, *UserRegisterRequest) (*SuccessResponse, error)
+	CreateRole(context.Context, *Role) (*SuccessResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -100,10 +100,10 @@ func (UnimplementedUserServiceServer) GetUsers(context.Context, *GetUsersRequest
 func (UnimplementedUserServiceServer) Login(context.Context, *UserLoginRequest) (*UserLoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedUserServiceServer) Register(context.Context, *UserRegisterRequest) (*SuccessMessage, error) {
+func (UnimplementedUserServiceServer) Register(context.Context, *UserRegisterRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
-func (UnimplementedUserServiceServer) CreateRole(context.Context, *Role) (*SuccessMessage, error) {
+func (UnimplementedUserServiceServer) CreateRole(context.Context, *Role) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRole not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}

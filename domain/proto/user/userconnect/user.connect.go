@@ -56,8 +56,8 @@ var (
 type UserServiceClient interface {
 	GetUsers(context.Context, *connect.Request[user.GetUsersRequest]) (*connect.Response[user.GetUsersResponse], error)
 	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error)
-	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessMessage], error)
-	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessMessage], error)
+	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error)
+	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 }
 
 // NewUserServiceClient constructs a client for the proto.UserService service. By default, it uses
@@ -82,13 +82,13 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceLoginMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		register: connect.NewClient[user.UserRegisterRequest, user.SuccessMessage](
+		register: connect.NewClient[user.UserRegisterRequest, user.SuccessResponse](
 			httpClient,
 			baseURL+UserServiceRegisterProcedure,
 			connect.WithSchema(userServiceRegisterMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		createRole: connect.NewClient[user.Role, user.SuccessMessage](
+		createRole: connect.NewClient[user.Role, user.SuccessResponse](
 			httpClient,
 			baseURL+UserServiceCreateRoleProcedure,
 			connect.WithSchema(userServiceCreateRoleMethodDescriptor),
@@ -101,8 +101,8 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 type userServiceClient struct {
 	getUsers   *connect.Client[user.GetUsersRequest, user.GetUsersResponse]
 	login      *connect.Client[user.UserLoginRequest, user.UserLoginResponse]
-	register   *connect.Client[user.UserRegisterRequest, user.SuccessMessage]
-	createRole *connect.Client[user.Role, user.SuccessMessage]
+	register   *connect.Client[user.UserRegisterRequest, user.SuccessResponse]
+	createRole *connect.Client[user.Role, user.SuccessResponse]
 }
 
 // GetUsers calls proto.UserService.GetUsers.
@@ -116,12 +116,12 @@ func (c *userServiceClient) Login(ctx context.Context, req *connect.Request[user
 }
 
 // Register calls proto.UserService.Register.
-func (c *userServiceClient) Register(ctx context.Context, req *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessMessage], error) {
+func (c *userServiceClient) Register(ctx context.Context, req *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return c.register.CallUnary(ctx, req)
 }
 
 // CreateRole calls proto.UserService.CreateRole.
-func (c *userServiceClient) CreateRole(ctx context.Context, req *connect.Request[user.Role]) (*connect.Response[user.SuccessMessage], error) {
+func (c *userServiceClient) CreateRole(ctx context.Context, req *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error) {
 	return c.createRole.CallUnary(ctx, req)
 }
 
@@ -129,8 +129,8 @@ func (c *userServiceClient) CreateRole(ctx context.Context, req *connect.Request
 type UserServiceHandler interface {
 	GetUsers(context.Context, *connect.Request[user.GetUsersRequest]) (*connect.Response[user.GetUsersResponse], error)
 	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error)
-	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessMessage], error)
-	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessMessage], error)
+	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error)
+	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 }
 
 // NewUserServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -190,10 +190,10 @@ func (UnimplementedUserServiceHandler) Login(context.Context, *connect.Request[u
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.Login is not implemented"))
 }
 
-func (UnimplementedUserServiceHandler) Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessMessage], error) {
+func (UnimplementedUserServiceHandler) Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.Register is not implemented"))
 }
 
-func (UnimplementedUserServiceHandler) CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessMessage], error) {
+func (UnimplementedUserServiceHandler) CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.CreateRole is not implemented"))
 }
