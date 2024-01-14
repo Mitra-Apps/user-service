@@ -9,6 +9,7 @@ import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 import "validate/validate.proto";
 import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
 
 message User {
     string id = 1;
@@ -28,7 +29,11 @@ message Role {
     string role_name = 2;
     string description = 3;
     bool is_active = 4;
-    string permission = 5;
+    google.protobuf.Struct permission = 5;
+}
+
+message ListRole {
+    repeated Role roles = 1;
 }
 
 message UserLoginRequest {
@@ -67,17 +72,24 @@ service UserService {
     }
     rpc Login(UserLoginRequest) returns (UserLoginResponse) {
         option (google.api.http) = {
-            post: "/users/login"
+            post: "/api/v1/users/users/login"
         };
     }
     rpc Register(UserRegisterRequest) returns (SuccessResponse) {
         option (google.api.http) = {
             post: "/api/v1/users/register"
+            body: "*"
         };
     }
     rpc CreateRole(Role) returns (SuccessResponse) {
         option (google.api.http) = {
             post: "/api/v1/users/createrole"
+            body: "*"
+        };
+    }
+    rpc GetRole(google.protobuf.Empty) returns (SuccessResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/users/getrole"
         };
     }
 }

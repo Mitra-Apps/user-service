@@ -26,4 +26,5 @@ type ServiceInterface interface {
 	Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error)
 	Register(ctx context.Context, req *pb.UserRegisterRequest) error
 	CreateRole(ctx context.Context, role *entity.Role) error
+	GetRole(ctx context.Context) ([]entity.Role, error)
 }

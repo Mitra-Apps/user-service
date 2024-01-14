@@ -10,6 +10,7 @@ import (
 	"github.com/Mitra-Apps/be-user-service/service"
 	"github.com/Mitra-Apps/be-user-service/service/mock"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 func TestNew(t *testing.T) {
@@ -181,6 +182,62 @@ func TestGrpcRoute_Register(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GrpcRoute.Register() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGrpcRoute_CreateRole(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		req *pb.Role
+	}
+	tests := []struct {
+		name    string
+		g       *GrpcRoute
+		args    args
+		want    *pb.SuccessResponse
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.g.CreateRole(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GrpcRoute.CreateRole() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GrpcRoute.CreateRole() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGrpcRoute_GetRole(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		req *emptypb.Empty
+	}
+	tests := []struct {
+		name    string
+		g       *GrpcRoute
+		args    args
+		want    *pb.SuccessResponse
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.g.GetRole(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GrpcRoute.GetRole() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GrpcRoute.GetRole() = %v, want %v", got, tt.want)
 			}
 		})
 	}

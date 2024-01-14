@@ -22,3 +22,11 @@ func NewRoleRepoImpl(db *gorm.DB) repository.Role {
 func (r *RoleRepoImpl) Create(ctx context.Context, role *entity.Role) error {
 	return r.db.WithContext(ctx).Create(role).Error
 }
+
+func (r *RoleRepoImpl) GetRole(ctx context.Context) ([]entity.Role, error) {
+	var roles []entity.Role
+	if err := r.db.WithContext(ctx).Find(&roles).Error; err != nil {
+		return nil, err
+	}
+	return roles, nil
+}

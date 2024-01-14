@@ -52,7 +52,7 @@ func (p *Postgre) Create(ctx context.Context, user *entity.User, roleIds []strin
 		for _, roleId := range roleIds {
 			fmt.Println(roleId)
 			if err := tx.Exec("Insert into user_roles (user_id,role_id) values (?,?)",
-				user.Id, roleId).Debug().Error; err != nil {
+				user.Id, roleId).Error; err != nil {
 				return err
 			}
 		}

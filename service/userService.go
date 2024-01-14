@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/Mitra-Apps/be-user-service/config"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
-	epb "google.golang.org/genproto/googleapis/rpc/errdetails"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
@@ -44,38 +44,43 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*enti
 }
 
 func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) error {
+	fmt.Println("register service")
+	//hashing password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
 	user := &entity.User{
 		Username:    req.Email,
-		Password:    req.Password,
+		Password:    string(hashedPassword),
 		Email:       req.Email,
 		PhoneNumber: req.PhoneNumber,
 		Name:        req.Name,
 		Address:     req.Address,
 	}
-	if err := s.userRepository.Create(ctx, user, req.RoleId); err != nil {
-		fmt.Println(err.Error())
-		st := status.New(codes.InvalidArgument, "Invalid input")
-		ds, err := st.WithDetails(
-			&epb.BadRequest{
-				FieldViolations: []*epb.BadRequest_FieldViolation{
-					{
-						Field:       "Email or Phone Number",
-						Description: "Email or Phone number already exist",
-					},
-				},
-			},
-		)
-		if err != nil {
-			return st.Err()
-		}
-		return ds.Err()
-	}
 
+	if err := s.userRepository.Create(ctx, user, req.RoleId); err != nil {
+		errResponse := &config.ErrorResponse{
+			Code:       codes.InvalidArgument.String(),
+			CodeDetail: codes.InvalidArgument.String(), //TODO:, check any detail error code needed
+			Message:    "email dan/atau no. telp sudah terdaftar",
+		}
+		return NewError(codes.InvalidArgument, errResponse)
+	}
 	return nil
 }
 
 func (s *Service) CreateRole(ctx context.Context, role *entity.Role) error {
 	return s.roleRepo.Create(ctx, role)
+}
+
+func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
+	roles, err := s.roleRepo.GetRole(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return roles, nil
 }
 
 func checkPassword(password, hashedPassword string) error {

@@ -70,6 +70,21 @@ func (mr *MockServiceInterfaceMockRecorder) GetAll(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockServiceInterface)(nil).GetAll), ctx)
 }
 
+// GetRole mocks base method.
+func (m *MockServiceInterface) GetRole(ctx context.Context) ([]entity.Role, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRole", ctx)
+	ret0, _ := ret[0].([]entity.Role)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRole indicates an expected call of GetRole.
+func (mr *MockServiceInterfaceMockRecorder) GetRole(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRole", reflect.TypeOf((*MockServiceInterface)(nil).GetRole), ctx)
+}
+
 // Login mocks base method.
 func (m *MockServiceInterface) Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error) {
 	m.ctrl.T.Helper()

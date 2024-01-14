@@ -153,3 +153,52 @@ func Test_checkPassword(t *testing.T) {
 		})
 	}
 }
+
+func TestService_CreateRole(t *testing.T) {
+	type args struct {
+		ctx  context.Context
+		role *entity.Role
+	}
+	tests := []struct {
+		name    string
+		s       *Service
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.s.CreateRole(tt.args.ctx, tt.args.role); (err != nil) != tt.wantErr {
+				t.Errorf("Service.CreateRole() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestService_GetRole(t *testing.T) {
+	type args struct {
+		ctx context.Context
+	}
+	tests := []struct {
+		name    string
+		s       *Service
+		args    args
+		want    []entity.Role
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.s.GetRole(tt.args.ctx)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Service.GetRole() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Service.GetRole() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

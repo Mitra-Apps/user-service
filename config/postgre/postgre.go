@@ -36,7 +36,7 @@ func Connection() *gorm.DB {
 
 	db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
 
-	// db.Migrator().DropTable(&entity.User{}, &entity.Role{})
+	// db.Migrator().DropTable("user_roles", &entity.Role{}, &entity.User{})
 	err = db.AutoMigrate(&entity.User{}, &entity.Role{})
 	if err != nil {
 		logrus.Panicf("failed to migrate database: %v", err)

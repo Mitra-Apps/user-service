@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/Mitra-Apps/be-user-service/config"
 	"github.com/Mitra-Apps/be-user-service/config/postgre"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	userPostgreRepo "github.com/Mitra-Apps/be-user-service/domain/user/repository/postgre"
@@ -84,7 +85,7 @@ func GrpcNewServer(ctx context.Context, opts []grpc.ServerOption) *grpc.Server {
 }
 
 func HttpNewServer(ctx context.Context, grpcPort, httpPort string) error {
-	mux := runtime.NewServeMux()
+	mux := runtime.NewServeMux(runtime.WithErrorHandler(config.CustomErrorHandler))
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	if err := pb.RegisterUserServiceHandlerFromEndpoint(ctx, mux, fmt.Sprintf("localhost:%s", grpcPort), opts); err != nil {
 		return err

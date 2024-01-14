@@ -15,4 +15,5 @@ type User interface {
 
 type Role interface {
 	Create(ctx context.Context, role *entity.Role) error
+	GetRole(ctx context.Context) ([]entity.Role, error)
 }

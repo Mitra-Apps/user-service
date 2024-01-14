@@ -182,7 +182,34 @@ func (m *Role) validate(all bool) error {
 
 	// no validation rules for IsActive
 
-	// no validation rules for Permission
+	if all {
+		switch v := interface{}(m.GetPermission()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, RoleValidationError{
+					field:  "Permission",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, RoleValidationError{
+					field:  "Permission",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetPermission()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return RoleValidationError{
+				field:  "Permission",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
 	if len(errors) > 0 {
 		return RoleMultiError(errors)
@@ -260,6 +287,139 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = RoleValidationError{}
+
+// Validate checks the field values on ListRole with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *ListRole) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListRole with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in ListRoleMultiError, or nil
+// if none found.
+func (m *ListRole) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListRole) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetRoles() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListRoleValidationError{
+						field:  fmt.Sprintf("Roles[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListRoleValidationError{
+						field:  fmt.Sprintf("Roles[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListRoleValidationError{
+					field:  fmt.Sprintf("Roles[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return ListRoleMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListRoleMultiError is an error wrapping multiple validation errors returned
+// by ListRole.ValidateAll() if the designated constraints aren't met.
+type ListRoleMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListRoleMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListRoleMultiError) AllErrors() []error { return m }
+
+// ListRoleValidationError is the validation error returned by
+// ListRole.Validate if the designated constraints aren't met.
+type ListRoleValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListRoleValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListRoleValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListRoleValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListRoleValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListRoleValidationError) ErrorName() string { return "ListRoleValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ListRoleValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListRole.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListRoleValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListRoleValidationError{}
 
 // Validate checks the field values on UserLoginRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the
