@@ -58,13 +58,14 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) err
 		PhoneNumber: req.PhoneNumber,
 		Name:        req.Name,
 		Address:     req.Address,
+		IsActive:    false,
 	}
 
 	if err := s.userRepository.Create(ctx, user, req.RoleId); err != nil {
 		errResponse := &config.ErrorResponse{
 			Code:       codes.InvalidArgument.String(),
 			CodeDetail: codes.InvalidArgument.String(), //TODO:, check any detail error code needed
-			Message:    "email dan/atau no. telp sudah terdaftar",
+			Message:    "Email dan/atau No. Telp sudah terdaftar",
 		}
 		return NewError(codes.InvalidArgument, errResponse)
 	}
