@@ -690,10 +690,10 @@ func (m *UserRegisterRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetPassword()) < 6 {
+	if l := utf8.RuneCountInString(m.GetPassword()); l < 6 || l > 8 {
 		err := UserRegisterRequestValidationError{
 			field:  "Password",
-			reason: "value length must be at least 6 runes",
+			reason: "value length must be between 6 and 8 runes, inclusive",
 		}
 		if !all {
 			return err
@@ -712,10 +712,10 @@ func (m *UserRegisterRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if l := utf8.RuneCountInString(m.GetPhoneNumber()); l < 1 || l > 255 {
+	if l := utf8.RuneCountInString(m.GetPhoneNumber()); l < 9 || l > 14 {
 		err := UserRegisterRequestValidationError{
 			field:  "PhoneNumber",
-			reason: "value length must be between 1 and 255 runes, inclusive",
+			reason: "value length must be between 9 and 14 runes, inclusive",
 		}
 		if !all {
 			return err
@@ -723,16 +723,7 @@ func (m *UserRegisterRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if l := utf8.RuneCountInString(m.GetAddress()); l < 1 || l > 255 {
-		err := UserRegisterRequestValidationError{
-			field:  "Address",
-			reason: "value length must be between 1 and 255 runes, inclusive",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for Address
 
 	if len(errors) > 0 {
 		return UserRegisterRequestMultiError(errors)
