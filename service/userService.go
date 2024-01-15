@@ -13,10 +13,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 
+	"github.com/Mitra-Apps/be-user-service/config"
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
-	"github.com/Mitra-Apps/be-user-service/config"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	util "github.com/Mitra-Apps/be-utility-service/service"
 )
@@ -170,8 +170,7 @@ func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
 
 func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (user *entity.User, err error) {
 
-	email := strings.Replace(redisKey, config
-.OtpRedisPrefix, "", -1)
+	email := strings.Replace(redisKey, config.OtpRedisPrefix, "", -1)
 	user, err = s.userRepository.GetByEmail(ctx, email)
 	if err != nil {
 		ErrorCode = codes.Internal
