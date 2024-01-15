@@ -73,6 +73,7 @@ service UserService {
     rpc Login(UserLoginRequest) returns (UserLoginResponse) {
         option (google.api.http) = {
             post: "/api/v1/users/users/login"
+            body:"*"
         };
     }
     rpc Register(UserRegisterRequest) returns (SuccessResponse) {
