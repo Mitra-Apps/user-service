@@ -47,10 +47,10 @@ message UserLoginResponse{
 
 message UserRegisterRequest {
     string email = 1 [(validate.rules).string.email = true];
-    string password = 2 [(validate.rules).string = {min_len: 6}];
+    string password = 2 [(validate.rules).string = {min_len: 6; max_len: 8}];
     string name = 3 [(validate.rules).string = {min_len: 1, max_len: 255}]; 
-    string phone_number = 4 [(validate.rules).string = {min_len: 1, max_len: 255}];
-    string address = 5 [(validate.rules).string = {min_len: 1, max_len: 255}];
+    string phone_number = 4 [(validate.rules).string = {min_len: 9, max_len: 14}];
+    string address = 5 ;
     repeated string role_id = 6;
 }
 
