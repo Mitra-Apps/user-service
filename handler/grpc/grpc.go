@@ -55,15 +55,18 @@ func (g *GrpcRoute) Login(ctx context.Context, req *pb.UserLoginRequest) (*pb.Us
 	}, nil
 }
 
-func (g *GrpcRoute) Register(ctx context.Context, req *pb.UserRegisterRequest) (*pb.SuccessResponse, error) {
+func (g *GrpcRoute) Register(ctx context.Context, req *pb.UserRegisterRequest) (*pb.UserRegisterResponse, error) {
 	fmt.Println("test register grpc", req)
 	if err := req.ValidateAll(); err != nil {
 		return nil, err
 	}
-	if err := g.service.Register(ctx, req); err != nil {
+	otp, err := g.service.Register(ctx, req)
+	if err != nil {
 		return nil, err
 	}
-	return &pb.SuccessResponse{}, nil
+	return &pb.UserRegisterResponse{
+		Otp: otp,
+	}, nil
 }
 
 func (g *GrpcRoute) CreateRole(ctx context.Context, req *pb.Role) (*pb.SuccessResponse, error) {

@@ -54,6 +54,10 @@ message UserRegisterRequest {
     repeated string role_id = 6;
 }
 
+message UserRegisterResponse {
+    string otp = 1;
+}
+
 message SuccessResponse {
     google.protobuf.Any data = 1;
 }
@@ -76,7 +80,7 @@ service UserService {
             body:"*"
         };
     }
-    rpc Register(UserRegisterRequest) returns (SuccessResponse) {
+    rpc Register(UserRegisterRequest) returns (UserRegisterResponse) {
         option (google.api.http) = {
             post: "/api/v1/users/register"
             body: "*"

@@ -9,6 +9,7 @@ import (
 	context "context"
 	errors "errors"
 	user "github.com/Mitra-Apps/be-user-service/domain/proto/user"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	http "net/http"
 	strings "strings"
 )
@@ -59,7 +60,7 @@ var (
 type UserServiceClient interface {
 	GetUsers(context.Context, *connect.Request[user.GetUsersRequest]) (*connect.Response[user.GetUsersResponse], error)
 	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error)
-	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error)
+	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.UserRegisterResponse], error)
 	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 	GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 }
@@ -86,7 +87,7 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceLoginMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		register: connect.NewClient[user.UserRegisterRequest, user.SuccessResponse](
+		register: connect.NewClient[user.UserRegisterRequest, user.UserRegisterResponse](
 			httpClient,
 			baseURL+UserServiceRegisterProcedure,
 			connect.WithSchema(userServiceRegisterMethodDescriptor),
@@ -111,7 +112,7 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 type userServiceClient struct {
 	getUsers   *connect.Client[user.GetUsersRequest, user.GetUsersResponse]
 	login      *connect.Client[user.UserLoginRequest, user.UserLoginResponse]
-	register   *connect.Client[user.UserRegisterRequest, user.SuccessResponse]
+	register   *connect.Client[user.UserRegisterRequest, user.UserRegisterResponse]
 	createRole *connect.Client[user.Role, user.SuccessResponse]
 	getRole    *connect.Client[emptypb.Empty, user.SuccessResponse]
 }
@@ -127,7 +128,7 @@ func (c *userServiceClient) Login(ctx context.Context, req *connect.Request[user
 }
 
 // Register calls proto.UserService.Register.
-func (c *userServiceClient) Register(ctx context.Context, req *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error) {
+func (c *userServiceClient) Register(ctx context.Context, req *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.UserRegisterResponse], error) {
 	return c.register.CallUnary(ctx, req)
 }
 
@@ -145,7 +146,7 @@ func (c *userServiceClient) GetRole(ctx context.Context, req *connect.Request[em
 type UserServiceHandler interface {
 	GetUsers(context.Context, *connect.Request[user.GetUsersRequest]) (*connect.Response[user.GetUsersResponse], error)
 	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error)
-	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error)
+	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.UserRegisterResponse], error)
 	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 	GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 }
@@ -215,7 +216,7 @@ func (UnimplementedUserServiceHandler) Login(context.Context, *connect.Request[u
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.Login is not implemented"))
 }
 
-func (UnimplementedUserServiceHandler) Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error) {
+func (UnimplementedUserServiceHandler) Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.UserRegisterResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.Register is not implemented"))
 }
 

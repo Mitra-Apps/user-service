@@ -125,8 +125,10 @@ func TestService_Register(t *testing.T) {
 		case "success register user":
 			mockRegister(nil)(mockRepo)
 		}
+
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.s.Register(tt.args.ctx, tt.args.req); (err != nil) != tt.wantErr {
+			_, err := tt.s.Register(tt.args.ctx, tt.args.req)
+			if err != nil != tt.wantErr {
 				t.Errorf("Service.Register() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
