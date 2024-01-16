@@ -101,11 +101,12 @@ func (mr *MockServiceInterfaceMockRecorder) Login(ctx, payload any) *gomock.Call
 }
 
 // Register mocks base method.
-func (m *MockServiceInterface) Register(ctx context.Context, req *user.UserRegisterRequest) error {
+func (m *MockServiceInterface) Register(ctx context.Context, req *user.UserRegisterRequest) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Register", ctx, req)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Register indicates an expected call of Register.

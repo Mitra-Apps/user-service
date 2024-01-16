@@ -83,7 +83,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/SuccessResponse'
+                                $ref: '#/components/schemas/UserRegisterResponse'
                 default:
                     description: Default error response
                     content:
@@ -95,15 +95,12 @@ paths:
             tags:
                 - UserService
             operationId: UserService_Login
-            parameters:
-                - name: username
-                  in: query
-                  schema:
-                    type: string
-                - name: password
-                  in: query
-                  schema:
-                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UserLoginRequest'
+                required: true
             responses:
                 "200":
                     description: OK
@@ -191,6 +188,13 @@ components:
                     type: string
                 address:
                     type: string
+        UserLoginRequest:
+            type: object
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
         UserLoginResponse:
             type: object
             properties:
@@ -213,5 +217,10 @@ components:
                     type: array
                     items:
                         type: string
+        UserRegisterResponse:
+            type: object
+            properties:
+                otp:
+                    type: string
 tags:
     - name: UserService

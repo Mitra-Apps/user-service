@@ -10,6 +10,7 @@ import (
 
 	"github.com/Mitra-Apps/be-user-service/config"
 	"github.com/Mitra-Apps/be-user-service/config/postgre"
+	"github.com/Mitra-Apps/be-user-service/config/redis"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	userPostgreRepo "github.com/Mitra-Apps/be-user-service/domain/user/repository/postgre"
 	grpcRoute "github.com/Mitra-Apps/be-user-service/handler/grpc"
@@ -39,9 +40,10 @@ func main() {
 	}
 
 	db := postgre.Connection()
+	redis := redis.Connection()
 	usrRepo := userPostgreRepo.NewUserRepoImpl(db)
 	roleRepo := userPostgreRepo.NewRoleRepoImpl(db)
-	svc := service.New(usrRepo, roleRepo)
+	svc := service.New(usrRepo, roleRepo, redis)
 	grpcServer := GrpcNewServer(ctx, []grpc.ServerOption{})
 	route := grpcRoute.New(svc)
 	pb.RegisterUserServiceServer(grpcServer, route)

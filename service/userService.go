@@ -3,7 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
+	"math/rand"
+	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
@@ -33,6 +37,7 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*enti
 	if user == nil && err == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid username")
 	}
+
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Error getting user by email")
 	}
@@ -43,12 +48,12 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*enti
 	return user, nil
 }
 
-func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) error {
+func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (string, error) {
 	fmt.Println("register service")
 	//hashing password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	user := &entity.User{
@@ -67,9 +72,23 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) err
 			CodeDetail: codes.InvalidArgument.String(), //TODO:, check any detail error code needed
 			Message:    "Email dan/atau No. Telp sudah terdaftar",
 		}
-		return NewError(codes.InvalidArgument, errResponse)
+		return "", NewError(codes.InvalidArgument, errResponse)
 	}
-	return nil
+
+	otp := 0
+	generateNumber, err := s.generateUnique4DigitNumber()
+	if err == nil {
+		otp = generateNumber
+	}
+	otpString := strconv.Itoa(otp)
+	if otp != 0 {
+		redisKey := "otp:" + otpString
+		err = s.redis.Set(ctx, redisKey, "", time.Minute*5).Err()
+		if err != nil {
+			log.Print("Error Set Value to Redis")
+		}
+	}
+	return otpString, nil
 }
 
 func (s *Service) CreateRole(ctx context.Context, role *entity.Role) error {
@@ -82,6 +101,28 @@ func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
 		return nil, err
 	}
 	return roles, nil
+}
+
+func (s *Service) generateUnique4DigitNumber() (int, error) {
+	for {
+		randomNumber := generateRandom4DigitNumber()
+		// Check if the number exists in Redis
+		key := "otp:" + strconv.Itoa(randomNumber)
+		exists, err := s.redis.Exists(s.redis.Context(), key).Result()
+		if err != nil {
+			return 0, err
+		}
+
+		// If the number doesn't exist in Redis, return it
+		if exists == 0 {
+			return randomNumber, nil
+		}
+	}
+}
+
+func generateRandom4DigitNumber() int {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(9000) + 1000 // Ensure a 4-digit number
 }
 
 func checkPassword(password, hashedPassword string) error {
