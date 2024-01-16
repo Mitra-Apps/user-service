@@ -2,9 +2,14 @@ syntax = "proto3";
 
 package proto;
 
-option go_package = "github.com/Mitra-Apps/be-api-gateway/domain/proto/user;user";
+option go_package = "github.com/Mitra-Apps/be-user-service/domain/proto/user;user";
 
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
+import "validate/validate.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
 
 message User {
     string id = 1;
@@ -15,6 +20,20 @@ message User {
     string avatar_image_id = 6;
     string access_token = 7;
     bool is_active = 8;
+    string name = 9;
+    string address = 10;
+}
+
+message Role {
+    string id = 1;
+    string role_name = 2;
+    string description = 3;
+    bool is_active = 4;
+    google.protobuf.Struct permission = 5;
+}
+
+message ListRole {
+    repeated Role roles = 1;
 }
 
 message UserLoginRequest {
@@ -26,6 +45,23 @@ message UserLoginResponse{
     User user = 1;
 }
 
+message UserRegisterRequest {
+    string email = 1 [(validate.rules).string.email = true];
+    string password = 2 [(validate.rules).string = {min_len: 6; max_len: 8}];
+    string name = 3 [(validate.rules).string = {min_len: 1, max_len: 255}]; 
+    string phone_number = 4 [(validate.rules).string = {min_len: 9, max_len: 14}];
+    string address = 5 ;
+    repeated string role_id = 6;
+}
+
+message UserRegisterResponse {
+    string otp = 1;
+}
+
+message SuccessResponse {
+    google.protobuf.Any data = 1;
+}
+
 message GetUsersRequest {}
 
 message GetUsersResponse {
@@ -35,12 +71,30 @@ message GetUsersResponse {
 service UserService {
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {
         option (google.api.http) = {
-            get: "/users"
+            get: "/api/v1/users"
         };
     }
     rpc Login(UserLoginRequest) returns (UserLoginResponse) {
         option (google.api.http) = {
-            post: "/users/login"
+            post: "/api/v1/users/users/login"
+            body:"*"
+        };
+    }
+    rpc Register(UserRegisterRequest) returns (UserRegisterResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/users/register"
+            body: "*"
+        };
+    }
+    rpc CreateRole(Role) returns (SuccessResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/users/createrole"
+            body: "*"
+        };
+    }
+    rpc GetRole(google.protobuf.Empty) returns (SuccessResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/users/getrole"
         };
     }
 }
