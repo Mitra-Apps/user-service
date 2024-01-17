@@ -34,7 +34,7 @@ func (p *Postgre) GetAll(ctx context.Context) ([]*entity.User, error) {
 
 func (p *Postgre) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
 	var user *entity.User
-	res := p.db.Where("email = ?", email).First(&user)
+	res := p.db.Preload("Roles").Where("email = ?", email).First(&user)
 	if res.Error == gorm.ErrRecordNotFound {
 		return nil, nil
 	}
