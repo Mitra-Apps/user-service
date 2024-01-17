@@ -42,7 +42,7 @@ message UserLoginRequest {
 }
 
 message UserLoginResponse{
-    User user = 1;
+    string jwt = 1;
 }
 
 message UserRegisterRequest {
@@ -76,7 +76,7 @@ service UserService {
     }
     rpc Login(UserLoginRequest) returns (UserLoginResponse) {
         option (google.api.http) = {
-            post: "/api/v1/users/users/login"
+            post: "/api/v1/users/login"
             body:"*"
         };
     }

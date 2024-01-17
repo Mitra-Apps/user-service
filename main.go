@@ -7,7 +7,9 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 
+	"github.com/Mitra-Apps/be-user-service/auth"
 	"github.com/Mitra-Apps/be-user-service/config"
 	"github.com/Mitra-Apps/be-user-service/config/postgre"
 	"github.com/Mitra-Apps/be-user-service/config/redis"
@@ -25,9 +27,54 @@ import (
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
+
+// Middleware interceptor
+func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	// Check if the method should be excluded from the middleware
+	switch info.FullMethod {
+	case "/proto.UserService/Login":
+		// Middleware logic for specific route
+	case "/proto.UserService/Register":
+		// Middleware logic for specific route
+	default:
+		// Extract JWT token from metadata
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
+		}
+
+		authHeader, ok := md["authorization"]
+		if !ok || len(authHeader) == 0 {
+			return nil, status.Errorf(codes.Unauthenticated, "authorization token is not provided")
+		}
+
+		tokenString := strings.TrimPrefix(authHeader[0], "Bearer ")
+		if tokenString == authHeader[0] {
+			return nil, status.Errorf(codes.Unauthenticated, "invalid authorization format")
+		}
+
+		// Validate and parse the JWT token
+		token, err := auth.VerifyToken(tokenString)
+		if err != nil {
+			return nil, err
+		}
+
+		if err != nil || !token.Valid {
+			return nil, status.Errorf(codes.Unauthenticated, "invalid or expired token")
+		}
+
+		// Call the actual handler to process the request
+		return handler(ctx, req)
+	}
+	// Call the actual handler to process the request
+	return handler(ctx, req)
+}
 
 func main() {
 	ctx := context.Background()
@@ -77,6 +124,7 @@ func GrpcNewServer(ctx context.Context, opts []grpc.ServerOption) *grpc.Server {
 			grpc_logrus.UnaryServerInterceptor(logrusEntry, logrusOpts...),
 			grpc_recovery.UnaryServerInterceptor(),
 			apmgrpc.NewUnaryServerInterceptor(apmgrpc.WithRecovery()),
+			middlewareInterceptor,
 		)),
 	)
 
