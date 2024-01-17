@@ -13,8 +13,8 @@ import (
 )
 
 type JwtCustomClaim struct {
-	Username string `json:"username"`
-	Roles    []entity.Role
+	UserId string `json:"userId"`
+	Roles  []int64
 	jwt.RegisteredClaims
 }
 
@@ -27,10 +27,15 @@ func GenerateToken(ctx context.Context, user *entity.User) (string, error) {
 		return "", echo.NewHTTPError(http.StatusBadRequest, "Invalid JWT expired time")
 	}
 
+	var roleIds []int64
+	for _, role := range user.Roles {
+		roleIds = append(roleIds, int64(role.ID))
+	}
+
 	// Define the token payload
 	claims := &JwtCustomClaim{
-		Username: user.Name,
-		Roles:    user.Roles,
+		UserId: user.Id.String(),
+		Roles:  roleIds,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expireTime)),
 		},
