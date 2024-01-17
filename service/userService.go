@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -13,9 +14,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/Mitra-Apps/be-user-service/auth"
 	"github.com/Mitra-Apps/be-user-service/config"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/labstack/echo"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
@@ -26,26 +29,30 @@ func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
 	return users, nil
 }
 
-func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error) {
+func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (string, error) {
 	if strings.Trim(payload.Username, " ") == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "Username is required")
+		return "", status.Errorf(codes.InvalidArgument, "Username is required")
 	}
 	if strings.Trim(payload.Password, " ") == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "Password is required")
+		return "", status.Errorf(codes.InvalidArgument, "Password is required")
 	}
 	user, err := s.userRepository.GetByEmail(ctx, payload.Username)
 	if user == nil && err == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "Invalid username")
+		return "", status.Errorf(codes.InvalidArgument, "Invalid username")
 	}
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Error getting user by email")
+		return "", status.Errorf(codes.Internal, "Error getting user by email")
 	}
 	err = checkPassword(payload.Password, user.Password)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "Invalid password")
+		return "", status.Errorf(codes.InvalidArgument, "Invalid password")
 	}
-	return user, nil
+	jwt, err := auth.GenerateToken(ctx, user)
+	if err != nil {
+		echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+	return jwt, nil
 }
 
 func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (string, error) {

@@ -66,6 +66,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/v1/users/login:
+        post:
+            tags:
+                - UserService
+            operationId: UserService_Login
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UserLoginRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserLoginResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/v1/users/register:
         post:
             tags:
@@ -84,30 +108,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/UserRegisterResponse'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Status'
-    /api/v1/users/users/login:
-        post:
-            tags:
-                - UserService
-            operationId: UserService_Login
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/UserLoginRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/UserLoginResponse'
                 default:
                     description: Default error response
                     content:
@@ -198,8 +198,8 @@ components:
         UserLoginResponse:
             type: object
             properties:
-                user:
-                    $ref: '#/components/schemas/User'
+                jwt:
+                    type: string
         UserRegisterRequest:
             type: object
             properties:
