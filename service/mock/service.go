@@ -86,10 +86,10 @@ func (mr *MockServiceInterfaceMockRecorder) GetRole(ctx any) *gomock.Call {
 }
 
 // Login mocks base method.
-func (m *MockServiceInterface) Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error) {
+func (m *MockServiceInterface) Login(ctx context.Context, payload entity.LoginRequest) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Login", ctx, payload)
-	ret0, _ := ret[0].(*entity.User)
+	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
