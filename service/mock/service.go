@@ -86,12 +86,13 @@ func (mr *MockServiceInterfaceMockRecorder) GetRole(ctx any) *gomock.Call {
 }
 
 // Login mocks base method.
-func (m *MockServiceInterface) Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error) {
+func (m *MockServiceInterface) Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, []int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Login", ctx, payload)
 	ret0, _ := ret[0].(*entity.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].([]int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // Login indicates an expected call of Login.

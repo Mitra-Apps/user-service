@@ -23,7 +23,7 @@ func New(userRepository repository.User, roleRepo repository.Role) *Service {
 //go:generate mockgen -source=service.go -destination=mock/service.go -package=mock
 type ServiceInterface interface {
 	GetAll(ctx context.Context) ([]*entity.User, error)
-	Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error)
+	Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, []int64, error)
 	Register(ctx context.Context, req *pb.UserRegisterRequest) error
 	CreateRole(ctx context.Context, role *entity.Role) error
 	GetRole(ctx context.Context) ([]entity.Role, error)

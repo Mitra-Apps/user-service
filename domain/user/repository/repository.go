@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/google/uuid"
 )
 
 //go:generate mockgen -source=repository.go -destination=mock/repository.go -package=mock
@@ -16,4 +17,5 @@ type User interface {
 type Role interface {
 	Create(ctx context.Context, role *entity.Role) error
 	GetRole(ctx context.Context) ([]entity.Role, error)
+	GetRoleByUserId(ctx context.Context, userID uuid.UUID) ([]*entity.Role, error)
 }

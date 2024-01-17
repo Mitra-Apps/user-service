@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"strconv"
 	"strings"
 	"time"
 
@@ -21,13 +20,7 @@ type Role struct {
 }
 
 func (r *Role) FromProto(role *pb.Role) error {
-	if role.Id != "" {
-		id, err := strconv.Atoi(role.Id)
-		if err != nil {
-			return err
-		}
-		r.ID = uint(id)
-	}
+	r.ID = uint(role.Id)
 	marshaller := jsonpb.Marshaler{}
 	jsonString, err := marshaller.MarshalToString(role.Permission)
 	if err != nil {
@@ -51,7 +44,7 @@ func (r *Role) ToProto() *pb.Role {
 	}
 
 	return &pb.Role{
-		Id:          strconv.Itoa(int(r.ID)),
+		Id:          int64(r.ID),
 		IsActive:    r.IsActive,
 		RoleName:    r.RoleName,
 		Description: r.Description,

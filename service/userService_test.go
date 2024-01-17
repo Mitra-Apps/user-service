@@ -39,34 +39,6 @@ func TestService_GetAll(t *testing.T) {
 	}
 }
 
-func TestService_Login(t *testing.T) {
-	type args struct {
-		ctx     context.Context
-		payload entity.LoginRequest
-	}
-	tests := []struct {
-		name    string
-		s       *Service
-		args    args
-		want    *entity.User
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.Login(tt.args.ctx, tt.args.payload)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Service.Login() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Service.Login() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestService_Register(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRepo := mock.NewMockUser(ctrl)
@@ -198,6 +170,38 @@ func TestService_GetRole(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Service.GetRole() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestService_Login(t *testing.T) {
+	type args struct {
+		ctx     context.Context
+		payload entity.LoginRequest
+	}
+	tests := []struct {
+		name    string
+		args    args
+		s       *Service
+		want    *entity.User
+		want1   []*entity.Role
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, err := tt.s.Login(tt.args.ctx, tt.args.payload)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Service.Login() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Service.Login() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("Service.Login() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}

@@ -22,25 +22,30 @@ func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
 	return users, nil
 }
 
-func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error) {
+func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, []int64, error) {
 	if strings.Trim(payload.Username, " ") == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "Username is required")
+		return nil, nil, status.Errorf(codes.InvalidArgument, "Username is required")
 	}
 	if strings.Trim(payload.Password, " ") == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "Password is required")
+		return nil, nil, status.Errorf(codes.InvalidArgument, "Password is required")
 	}
 	user, err := s.userRepository.GetByEmail(ctx, payload.Username)
 	if user == nil && err == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "Invalid username")
+		return nil, nil, status.Errorf(codes.InvalidArgument, "Invalid username")
 	}
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Error getting user by email")
+		return nil, nil, status.Errorf(codes.Internal, "Error getting user by email")
 	}
 	err = checkPassword(payload.Password, user.Password)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "Invalid password")
+		return nil, nil, status.Errorf(codes.InvalidArgument, "Invalid password")
 	}
-	return user, nil
+	roles, err := s.roleRepo.GetRoleByUserId(ctx, user.Id)
+	roleIds := []int64{}
+	for _, r := range roles {
+		roleIds = append(roleIds, int64(r.ID))
+	}
+	return user, roleIds, nil
 }
 
 func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) error {

@@ -25,7 +25,7 @@ message User {
 }
 
 message Role {
-    string id = 1;
+    int64 id = 1;
     string role_name = 2;
     string description = 3;
     bool is_active = 4;
@@ -43,6 +43,7 @@ message UserLoginRequest {
 
 message UserLoginResponse{
     User user = 1;
+    repeated int64 role_id = 2;
 }
 
 message UserRegisterRequest {

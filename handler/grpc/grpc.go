@@ -45,13 +45,14 @@ func (g *GrpcRoute) Login(ctx context.Context, req *pb.UserLoginRequest) (*pb.Us
 		Username: req.Username,
 		Password: req.Password,
 	}
-	user, err := g.service.Login(ctx, loginRequest)
+	user, roleIds, err := g.service.Login(ctx, loginRequest)
 	if err != nil {
 		return nil, err
 	}
 	protoUser := user.ToProto()
 	return &pb.UserLoginResponse{
-		User: protoUser,
+		User:   protoUser,
+		RoleId: roleIds,
 	}, nil
 }
 
