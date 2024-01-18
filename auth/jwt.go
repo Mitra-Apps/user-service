@@ -18,11 +18,10 @@ type JwtCustomClaim struct {
 	jwt.RegisteredClaims
 }
 
-var secretKey = []byte(lib.GetEnv("JWT_SECRET"))
-
 // GenerateJWT generates a JWT token with a specific payload
 func GenerateToken(ctx context.Context, user *entity.User) (string, error) {
 	expireTime, err := time.ParseDuration(lib.GetEnv("JWT_EXPIRED_TIME"))
+	var secretKey = []byte(lib.GetEnv("JWT_SECRET"))
 	if err != nil {
 		return "", echo.NewHTTPError(http.StatusBadRequest, "Invalid JWT expired time")
 	}
@@ -54,6 +53,7 @@ func GenerateToken(ctx context.Context, user *entity.User) (string, error) {
 }
 
 func VerifyToken(tokenString string) (*jwt.Token, error) {
+	var secretKey = []byte(lib.GetEnv("JWT_SECRET"))
 	// Parse the token
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Check signing method
