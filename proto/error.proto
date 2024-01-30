@@ -1,0 +1,9 @@
+syntax = "proto3";
+package proto;
+option go_package = "github.com/Mitra-Apps/be-user-service/domain/proto;error";
+
+enum ErrorCode {
+	UNKNOWN = 0;
+	AUTH_REGISTER_USER_UNVERIFIED = 1;
+	AUTH_REGISTER_USER_VERIFIED = 2;
+}

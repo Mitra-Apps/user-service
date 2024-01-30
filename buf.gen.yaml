@@ -4,6 +4,9 @@ managed:
   enabled: true
 
 plugins:
+  - name: openapiv2
+    out: docs
+    opt: disable_default_responses=true
   - plugin: buf.build/protocolbuffers/go:v1.31.0
     out: domain
     opt: paths=source_relative
@@ -21,4 +24,4 @@ plugins:
     opt: paths=source_relative
   - plugin: buf.build/community/google-gnostic-openapi:v0.7.0
     out: docs
-    opt: paths=source_relative
+    opt: paths=source_relative 

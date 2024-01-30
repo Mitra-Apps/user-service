@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -15,7 +14,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/Mitra-Apps/be-user-service/auth"
-	"github.com/Mitra-Apps/be-user-service/config"
+	"github.com/Mitra-Apps/be-user-service/config/tools"
+	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/labstack/echo"
@@ -56,9 +56,10 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (strin
 }
 
 func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (string, error) {
-	fmt.Println("register service")
+	var errResponse *tools.ErrorResponse
+
 	//hashing password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, err := s.hashing.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
 	}
@@ -73,13 +74,41 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		IsActive:    false,
 	}
 
-	if err := s.userRepository.Create(ctx, user, req.RoleId); err != nil {
-		errResponse := &config.ErrorResponse{
-			Code:       codes.InvalidArgument.String(),
-			CodeDetail: codes.InvalidArgument.String(), //TODO:, check any detail error code needed
-			Message:    "Email dan/atau No. Telp sudah terdaftar",
+	data, err := s.userRepository.GetByEmail(ctx, req.Email)
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		errResponse = &tools.ErrorResponse{
+			Code:       codes.Internal.String(),
+			CodeDetail: pbErr.ErrorCode_UNKNOWN.String(),
+			Message:    err.Error(),
+		}
+		return "", NewError(codes.Internal, errResponse)
+	}
+
+	if data != nil {
+		switch data.IsActive {
+		case false:
+			errResponse = &tools.ErrorResponse{
+				Code:       codes.InvalidArgument.String(),
+				CodeDetail: pbErr.ErrorCode_AUTH_REGISTER_USER_UNVERIFIED.String(), //TODO:, check any detail error code needed
+				Message:    "Email sudah terdaftar, mohon ke login page.",
+			}
+		case true:
+			errResponse = &tools.ErrorResponse{
+				Code:       codes.InvalidArgument.String(),
+				CodeDetail: pbErr.ErrorCode_AUTH_REGISTER_USER_VERIFIED.String(), //TODO:, check any detail error code needed
+				Message:    "Email dan/atau No. Telp sudah terdaftar.",
+			}
 		}
 		return "", NewError(codes.InvalidArgument, errResponse)
+	}
+
+	if err := s.userRepository.Create(ctx, user, req.RoleId); err != nil {
+		errResponse = &tools.ErrorResponse{
+			Code:       codes.Internal.String(),
+			CodeDetail: pbErr.ErrorCode_UNKNOWN.String(),
+			Message:    err.Error(),
+		}
+		return "", NewError(codes.Internal, errResponse)
 	}
 
 	otp := 0
