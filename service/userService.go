@@ -117,6 +117,7 @@ func (s *Service) generateUnique4DigitNumber() (int, error) {
 		key := "otp:" + strconv.Itoa(randomNumber)
 		exists, err := s.redis.Exists(s.redis.Context(), key).Result()
 		if err != nil {
+			log.Print("REDIS ERROR", err)
 			return 0, err
 		}
 
