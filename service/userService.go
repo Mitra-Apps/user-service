@@ -84,7 +84,9 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 
 	otp := 0
 	generateNumber, err := s.generateUnique4DigitNumber()
-	if err == nil {
+	if err != nil {
+		fmt.Print("Error Generate OTP TOKEN ", err)
+	} else {
 		otp = generateNumber
 	}
 	otpString := strconv.Itoa(otp)
@@ -117,7 +119,6 @@ func (s *Service) generateUnique4DigitNumber() (int, error) {
 		key := "otp:" + strconv.Itoa(randomNumber)
 		exists, err := s.redis.Exists(s.redis.Context(), key).Result()
 		if err != nil {
-			log.Print("REDIS ERROR", err)
 			return 0, err
 		}
 
