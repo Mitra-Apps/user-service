@@ -245,6 +245,13 @@ func Test_checkPassword(t *testing.T) {
 }
 
 func TestService_CreateRole(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockRepo := mock.NewMockRole(ctrl)
+	mockCreate := func(err error) func(m *mock.MockRole) {
+		return func(m *mock.MockRole) {
+			m.EXPECT().Create(gomock.Any(), gomock.Any()).Return(err)
+		}
+	}
 	type args struct {
 		ctx  context.Context
 		role *entity.Role
@@ -255,10 +262,21 @@ func TestService_CreateRole(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "create role unit test",
+			s: &Service{
+				roleRepo: mockRepo,
+			},
+			args: args{
+				ctx:  context.Background(),
+				role: &entity.Role{},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			mockCreate(nil)(mockRepo)
 			if err := tt.s.CreateRole(tt.args.ctx, tt.args.role); (err != nil) != tt.wantErr {
 				t.Errorf("Service.CreateRole() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -267,6 +285,21 @@ func TestService_CreateRole(t *testing.T) {
 }
 
 func TestService_GetRole(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockRepo := mock.NewMockRole(ctrl)
+	mockGetRole := func(data []entity.Role, err error) func(m *mock.MockRole) {
+		return func(m *mock.MockRole) {
+			m.EXPECT().GetRole(gomock.Any()).Return(data, err)
+		}
+	}
+	data := []entity.Role{
+		{
+			RoleName: "Merchant",
+		},
+		{
+			RoleName: "Customer",
+		},
+	}
 	type args struct {
 		ctx context.Context
 	}
@@ -277,10 +310,37 @@ func TestService_GetRole(t *testing.T) {
 		want    []entity.Role
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "error get role from repository",
+			s: &Service{
+				roleRepo: mockRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "success get role",
+			s: &Service{
+				roleRepo: mockRepo,
+			},
+			args: args{
+				ctx: context.Background(),
+			},
+			want:    data,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			switch tt.name {
+			case "error get role from repository":
+				mockGetRole(nil, errors.New("any error"))(mockRepo)
+			case "success get role":
+				mockGetRole(data, nil)(mockRepo)
+			}
 			got, err := tt.s.GetRole(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Service.GetRole() error = %v, wantErr %v", err, tt.wantErr)

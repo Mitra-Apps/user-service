@@ -7,22 +7,37 @@ import (
 	"testing"
 
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
+	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/service"
 	"github.com/Mitra-Apps/be-user-service/service/mock"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
+	"gorm.io/gorm"
 )
 
 func TestNew(t *testing.T) {
 	type args struct {
 		service service.ServiceInterface
 	}
+	ctrl := gomock.NewController(t)
+	mockSvc := mock.NewMockServiceInterface(ctrl)
+
 	tests := []struct {
 		name string
 		args args
 		want pb.UserServiceServer
 	}{
-		// TODO: Add test cases.
+		{
+			name: "implemented",
+			args: args{
+				service: mockSvc,
+			},
+			want: &GrpcRoute{
+				service: mockSvc,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -92,9 +107,9 @@ func TestGrpcRoute_Login(t *testing.T) {
 func TestGrpcRoute_Register(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockSvc := mock.NewMockServiceInterface(ctrl)
-	mockRegister := func(err error) func(m *mock.MockServiceInterface) {
+	mockRegister := func(otp string, err error) func(m *mock.MockServiceInterface) {
 		return func(m *mock.MockServiceInterface) {
-			m.EXPECT().Register(gomock.Any(), gomock.Any()).Return(err)
+			m.EXPECT().Register(gomock.Any(), gomock.Any()).Return(otp, err)
 		}
 	}
 	type args struct {
@@ -105,7 +120,7 @@ func TestGrpcRoute_Register(t *testing.T) {
 		name    string
 		g       *GrpcRoute
 		args    args
-		want    *pb.SuccessResponse
+		want    *pb.UserRegisterResponse
 		wantErr bool
 	}{
 		{
@@ -138,7 +153,7 @@ func TestGrpcRoute_Register(t *testing.T) {
 					Email:       "email@mail.com",
 					Password:    "password",
 					Name:        "name",
-					PhoneNumber: "0123",
+					PhoneNumber: "0123456789",
 					Address:     "address",
 					RoleId:      []string{"1", "2"},
 				},
@@ -157,12 +172,14 @@ func TestGrpcRoute_Register(t *testing.T) {
 					Email:       "email@mail.com",
 					Password:    "password",
 					Name:        "name",
-					PhoneNumber: "0123",
+					PhoneNumber: "0123456789",
 					Address:     "address",
 					RoleId:      []string{"1", "2"},
 				},
 			},
-			want:    &pb.SuccessResponse{},
+			want: &pb.UserRegisterResponse{
+				Otp: "",
+			},
 			wantErr: false,
 		},
 	}
@@ -170,9 +187,9 @@ func TestGrpcRoute_Register(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			switch tt.name {
 			case "test fail register user from service layer":
-				mockRegister(errors.New("error"))(mockSvc)
+				mockRegister("", errors.New("error"))(mockSvc)
 			case "test success register user":
-				mockRegister(nil)(mockSvc)
+				mockRegister("", nil)(mockSvc)
 			}
 
 			got, err := tt.g.Register(tt.args.ctx, tt.args.req)
@@ -188,6 +205,13 @@ func TestGrpcRoute_Register(t *testing.T) {
 }
 
 func TestGrpcRoute_CreateRole(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockSvc := mock.NewMockServiceInterface(ctrl)
+	mockCreateRole := func(err error) func(m *mock.MockServiceInterface) {
+		return func(m *mock.MockServiceInterface) {
+			m.EXPECT().CreateRole(gomock.Any(), gomock.Any()).Return(err)
+		}
+	}
 	type args struct {
 		ctx context.Context
 		req *pb.Role
@@ -199,10 +223,63 @@ func TestGrpcRoute_CreateRole(t *testing.T) {
 		want    *pb.SuccessResponse
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "error parsing from proto",
+			g:    &GrpcRoute{},
+			args: args{
+				ctx: context.Background(),
+				req: &pb.Role{
+					Id: "a",
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error create role from service layer",
+			g: &GrpcRoute{
+				service: mockSvc,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &pb.Role{
+					Id:          "1",
+					RoleName:    "merchant",
+					Description: "",
+					IsActive:    true,
+					Permission:  &structpb.Struct{},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "success",
+			g: &GrpcRoute{
+				service: mockSvc,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &pb.Role{
+					Id:          "1",
+					RoleName:    "merchant",
+					Description: "",
+					IsActive:    true,
+					Permission:  &structpb.Struct{},
+				},
+			},
+			want:    &pb.SuccessResponse{},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			switch tt.name {
+			case "error create role from service layer":
+				mockCreateRole(errors.New("any error"))(mockSvc)
+			case "success":
+				mockCreateRole(nil)(mockSvc)
+			}
 			got, err := tt.g.CreateRole(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GrpcRoute.CreateRole() error = %v, wantErr %v", err, tt.wantErr)
@@ -216,6 +293,35 @@ func TestGrpcRoute_CreateRole(t *testing.T) {
 }
 
 func TestGrpcRoute_GetRole(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockSvc := mock.NewMockServiceInterface(ctrl)
+	mockGetRole := func(data []entity.Role, err error) func(m *mock.MockServiceInterface) {
+		return func(m *mock.MockServiceInterface) {
+			m.EXPECT().GetRole(gomock.Any()).Return(data, err)
+		}
+	}
+	data := []entity.Role{
+		{
+			Model:    gorm.Model{ID: 1},
+			RoleName: "merchant",
+		},
+		{
+			Model:    gorm.Model{ID: 2},
+			RoleName: "customer",
+		},
+	}
+	pbData, _ := anypb.New(&pb.ListRole{
+		Roles: []*pb.Role{
+			{
+				Id:       "1",
+				RoleName: "merchant",
+			},
+			{
+				Id:       "2",
+				RoleName: "customer",
+			},
+		},
+	})
 	type args struct {
 		ctx context.Context
 		req *emptypb.Empty
@@ -227,10 +333,41 @@ func TestGrpcRoute_GetRole(t *testing.T) {
 		want    *pb.SuccessResponse
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "error get role from service layer",
+			g: &GrpcRoute{
+				service: mockSvc,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &emptypb.Empty{},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "success",
+			g: &GrpcRoute{
+				service: mockSvc,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &emptypb.Empty{},
+			},
+			want: &pb.SuccessResponse{
+				Data: pbData,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			switch tt.name {
+			case "error get role from service layer":
+				mockGetRole(nil, errors.New("any error"))(mockSvc)
+			case "success":
+				mockGetRole(data, nil)(mockSvc)
+			}
 			got, err := tt.g.GetRole(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GrpcRoute.GetRole() error = %v, wantErr %v", err, tt.wantErr)

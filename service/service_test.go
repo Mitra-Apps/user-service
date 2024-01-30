@@ -6,7 +6,9 @@ import (
 
 	"github.com/Mitra-Apps/be-user-service/config/tools"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
+	"github.com/Mitra-Apps/be-user-service/domain/user/repository/mock"
 	"github.com/go-redis/redis/v8"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNew(t *testing.T) {
@@ -16,12 +18,25 @@ func TestNew(t *testing.T) {
 		hashing        tools.BcryptInterface
 		redis          *redis.Client
 	}
+	ctrl := gomock.NewController(t)
+	mockUser := mock.NewMockUser(ctrl)
+	mockRole := mock.NewMockRole(ctrl)
 	tests := []struct {
 		name string
 		args args
 		want *Service
 	}{
-		// TODO: Add test cases.
+		{
+			name: "construct interface",
+			args: args{
+				userRepository: mockUser,
+				roleRepo:       mockRole,
+			},
+			want: &Service{
+				userRepository: mockUser,
+				roleRepo:       mockRole,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
