@@ -7,7 +7,7 @@
 *.dll
 *.so
 *.dylib
-.env
+docker-compose.local.yaml
 
 # Test binary, built with `go test -c`
 *.test
@@ -16,9 +16,9 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
+.env
 vendor/
 ignoredmodule/postgres-data/
-.env
 
 # Go workspace file
 go.work
