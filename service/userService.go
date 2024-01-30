@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -19,6 +18,7 @@ import (
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/labstack/echo"
+	"github.com/rs/zerolog/log"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
@@ -85,7 +85,7 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 	otp := 0
 	generateNumber, err := s.generateUnique4DigitNumber()
 	if err != nil {
-		fmt.Print("Error Generate OTP TOKEN ", err)
+		log.Print("Error Generate OTP TOKEN ", err)
 	} else {
 		otp = generateNumber
 	}
