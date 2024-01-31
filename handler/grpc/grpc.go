@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"log"
 
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
@@ -100,4 +101,14 @@ func (g *GrpcRoute) GetRole(ctx context.Context, req *emptypb.Empty) (*pb.Succes
 	return &pb.SuccessResponse{
 		Data: data,
 	}, nil
+}
+
+func (g *GrpcRoute) VerifyOTP(ctx context.Context, req *pb.VerifyOTPRequest) (*pb.VerifyOTPResponse, error) {
+	redisKey := "otp:" + req.Email
+	verified, err := g.service.VerifyOTP(ctx, int(req.OtpCode), redisKey)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+	log.Print(verified)
+	return &pb.VerifyOTPResponse{}, nil
 }

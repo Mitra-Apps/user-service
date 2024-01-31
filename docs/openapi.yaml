@@ -114,6 +114,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/v1/users/verify-token:
+        post:
+            tags:
+                - UserService
+            operationId: UserService_VerifyOtp
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/VerifyOTPRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VerifyOTPResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
 components:
     schemas:
         GetUsersResponse:
@@ -222,5 +246,16 @@ components:
             properties:
                 otp:
                     type: string
+        VerifyOTPRequest:
+            type: object
+            properties:
+                email:
+                    type: string
+                otpCode:
+                    type: integer
+                    format: int32
+        VerifyOTPResponse:
+            type: object
+            properties: {}
 tags:
     - name: UserService

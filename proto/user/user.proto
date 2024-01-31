@@ -68,6 +68,13 @@ message GetUsersResponse {
     repeated User users = 1;
 }
 
+message VerifyOTPRequest {
+    string email = 1;
+    int32 otp_code = 2;
+}
+
+message VerifyOTPResponse {}
+
 service UserService {
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {
         option (google.api.http) = {
@@ -95,6 +102,12 @@ service UserService {
     rpc GetRole(google.protobuf.Empty) returns (SuccessResponse) {
         option (google.api.http) = {
             get: "/api/v1/users/getrole"
+        };
+    }
+    rpc VerifyOtp(VerifyOTPRequest) returns (VerifyOTPResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/users/verify-token"
+            body: "*"
         };
     }
 }

@@ -1294,3 +1294,209 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetUsersResponseValidationError{}
+
+// Validate checks the field values on VerifyOTPRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *VerifyOTPRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on VerifyOTPRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// VerifyOTPRequestMultiError, or nil if none found.
+func (m *VerifyOTPRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *VerifyOTPRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Email
+
+	// no validation rules for OtpCode
+
+	if len(errors) > 0 {
+		return VerifyOTPRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// VerifyOTPRequestMultiError is an error wrapping multiple validation errors
+// returned by VerifyOTPRequest.ValidateAll() if the designated constraints
+// aren't met.
+type VerifyOTPRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m VerifyOTPRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m VerifyOTPRequestMultiError) AllErrors() []error { return m }
+
+// VerifyOTPRequestValidationError is the validation error returned by
+// VerifyOTPRequest.Validate if the designated constraints aren't met.
+type VerifyOTPRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e VerifyOTPRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e VerifyOTPRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e VerifyOTPRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e VerifyOTPRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e VerifyOTPRequestValidationError) ErrorName() string { return "VerifyOTPRequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e VerifyOTPRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sVerifyOTPRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = VerifyOTPRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = VerifyOTPRequestValidationError{}
+
+// Validate checks the field values on VerifyOTPResponse with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *VerifyOTPResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on VerifyOTPResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// VerifyOTPResponseMultiError, or nil if none found.
+func (m *VerifyOTPResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *VerifyOTPResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return VerifyOTPResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// VerifyOTPResponseMultiError is an error wrapping multiple validation errors
+// returned by VerifyOTPResponse.ValidateAll() if the designated constraints
+// aren't met.
+type VerifyOTPResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m VerifyOTPResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m VerifyOTPResponseMultiError) AllErrors() []error { return m }
+
+// VerifyOTPResponseValidationError is the validation error returned by
+// VerifyOTPResponse.Validate if the designated constraints aren't met.
+type VerifyOTPResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e VerifyOTPResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e VerifyOTPResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e VerifyOTPResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e VerifyOTPResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e VerifyOTPResponseValidationError) ErrorName() string {
+	return "VerifyOTPResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e VerifyOTPResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sVerifyOTPResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = VerifyOTPResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = VerifyOTPResponseValidationError{}

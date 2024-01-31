@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	"github.com/Mitra-Apps/be-user-service/config"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo"
 	"github.com/rs/zerolog/log"
 )
@@ -81,22 +83,24 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		}
 		return "", NewError(codes.InvalidArgument, errResponse)
 	}
-
-	otp := 0
-	generateNumber, err := s.generateUnique4DigitNumber()
+	redisKey := "otp:" + req.Email
+	generateNumber := generateRandom4DigitNumber()
+	otpString := strconv.Itoa(generateNumber)
+	redisPayload := RedisOTP{
+		Email: req.Email,
+		OTP:   otpString,
+	}
+	err = s.redis.Set(ctx, redisKey, redisPayload, time.Minute*5).Err()
 	if err != nil {
-		log.Print("Error Generate OTP TOKEN ", err)
-	} else {
-		otp = generateNumber
-	}
-	otpString := strconv.Itoa(otp)
-	if otp != 0 {
-		redisKey := "otp:" + otpString
-		err = s.redis.Set(ctx, redisKey, "", time.Minute*5).Err()
-		if err != nil {
-			log.Print("Error Set Value to Redis")
+		log.Print("Error Set Value to Redis")
+		errResponse := &config.ErrorResponse{
+			Code:       codes.InvalidArgument.String(),
+			CodeDetail: codes.InvalidArgument.String(),
+			Message:    "Error Set Value to Redis",
 		}
+		return "", NewError(codes.InvalidArgument, errResponse)
 	}
+
 	return otpString, nil
 }
 
@@ -112,20 +116,38 @@ func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
 	return roles, nil
 }
 
-func (s *Service) generateUnique4DigitNumber() (int, error) {
-	for {
-		randomNumber := generateRandom4DigitNumber()
-		// Check if the number exists in Redis
-		key := "otp:" + strconv.Itoa(randomNumber)
-		exists, err := s.redis.Exists(s.redis.Context(), key).Result()
-		if err != nil {
-			return 0, err
+func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (result bool, err error) {
+	storedJSON, err := s.redis.Get(s.redis.Context(), redisKey).Result()
+	if err == redis.Nil {
+		errResponse := &config.ErrorResponse{
+			Code:       codes.InvalidArgument.String(),
+			CodeDetail: codes.InvalidArgument.String(),
+			Message:    "Key Not Found",
+		}
+		return false, NewError(codes.InvalidArgument, errResponse)
+	} else if err != nil {
+		errResponse := &config.ErrorResponse{
+			Code:       codes.InvalidArgument.String(),
+			CodeDetail: codes.InvalidArgument.String(),
+			Message:    "Redis Error",
+		}
+		return false, NewError(codes.InvalidArgument, errResponse)
+	} else {
+		fmt.Println("Retrieved JSON string from Redis:", storedJSON)
+		// Convert the JSON string back to a JSON object
+		var retrievedObject map[string]interface{}
+		if err := json.Unmarshal([]byte(storedJSON), &retrievedObject); err != nil {
+			fmt.Println("Error unmarshaling JSON:", err)
+			errResponse := &config.ErrorResponse{
+				Code:       codes.InvalidArgument.String(),
+				CodeDetail: codes.InvalidArgument.String(),
+				Message:    "Unmarshal Error",
+			}
+			return false, NewError(codes.InvalidArgument, errResponse)
 		}
 
-		// If the number doesn't exist in Redis, return it
-		if exists == 0 {
-			return randomNumber, nil
-		}
+		fmt.Println("Parsed JSON object:", retrievedObject)
+		return true, nil
 	}
 }
 
