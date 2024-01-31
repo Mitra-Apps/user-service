@@ -15,7 +15,7 @@ type User struct {
 	PhoneNumber   string        `gorm:"type:varchar(50);not null;unique"`
 	AvatarImageId uuid.NullUUID `gorm:"type:varchar(255);null"`
 	AccessToken   *string       `gorm:"type:varchar(255);null"`
-	IsActive      bool          `gorm:"type:bool;not null;default:TRUE"`
+	IsActive      bool          `gorm:"type:bool;not null;default:FALSE"`
 	CreatedAt     time.Time     `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
 	CreatedBy     uuid.UUID     `gorm:"type:uuid;not null"`
 	UpdatedAt     *time.Time    `gorm:"type:timestamptz;null"`

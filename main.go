@@ -42,6 +42,8 @@ func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 		// Middleware logic for specific route
 	case "/proto.UserService/Register":
 		// Middleware logic for specific route
+	case "/proto.UserService/VerifyOtp":
+		// Middleware logic for specific route
 	default:
 		// Extract JWT token from metadata
 		md, ok := metadata.FromIncomingContext(ctx)

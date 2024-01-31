@@ -1365,3 +1365,209 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetUsersResponseValidationError{}
+
+// Validate checks the field values on VerifyOTPRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *VerifyOTPRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on VerifyOTPRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// VerifyOTPRequestMultiError, or nil if none found.
+func (m *VerifyOTPRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *VerifyOTPRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Email
+
+	// no validation rules for OtpCode
+
+	if len(errors) > 0 {
+		return VerifyOTPRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// VerifyOTPRequestMultiError is an error wrapping multiple validation errors
+// returned by VerifyOTPRequest.ValidateAll() if the designated constraints
+// aren't met.
+type VerifyOTPRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m VerifyOTPRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m VerifyOTPRequestMultiError) AllErrors() []error { return m }
+
+// VerifyOTPRequestValidationError is the validation error returned by
+// VerifyOTPRequest.Validate if the designated constraints aren't met.
+type VerifyOTPRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e VerifyOTPRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e VerifyOTPRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e VerifyOTPRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e VerifyOTPRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e VerifyOTPRequestValidationError) ErrorName() string { return "VerifyOTPRequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e VerifyOTPRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sVerifyOTPRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = VerifyOTPRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = VerifyOTPRequestValidationError{}
+
+// Validate checks the field values on ResendOTPRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *ResendOTPRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ResendOTPRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ResendOTPRequestMultiError, or nil if none found.
+func (m *ResendOTPRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ResendOTPRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Email
+
+	if len(errors) > 0 {
+		return ResendOTPRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ResendOTPRequestMultiError is an error wrapping multiple validation errors
+// returned by ResendOTPRequest.ValidateAll() if the designated constraints
+// aren't met.
+type ResendOTPRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ResendOTPRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ResendOTPRequestMultiError) AllErrors() []error { return m }
+
+// ResendOTPRequestValidationError is the validation error returned by
+// ResendOTPRequest.Validate if the designated constraints aren't met.
+type ResendOTPRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ResendOTPRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ResendOTPRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ResendOTPRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ResendOTPRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ResendOTPRequestValidationError) ErrorName() string { return "ResendOTPRequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ResendOTPRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sResendOTPRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ResendOTPRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ResendOTPRequestValidationError{}

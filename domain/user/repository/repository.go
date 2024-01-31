@@ -11,6 +11,7 @@ type User interface {
 	GetAll(ctx context.Context) ([]*entity.User, error)
 	GetByEmail(ctx context.Context, email string) (*entity.User, error)
 	Create(ctx context.Context, user *entity.User, roleIds []string) error
+	ActivateUserByEmail(ctx context.Context, email string) (bool, error)
 }
 
 type Role interface {

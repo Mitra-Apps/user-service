@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
@@ -11,10 +13,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 
+	"github.com/Mitra-Apps/be-user-service/config"
 	"github.com/Mitra-Apps/be-user-service/config/tools"
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/go-redis/redis"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
@@ -107,21 +111,23 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		}
 		return "", NewError(codes.Internal, errResponse)
 	}
-
-	if data != nil {
-		switch data.IsActive {
-		case false:
-			errResponse = &tools.ErrorResponse{
-				Code:       codes.InvalidArgument.String(),
-				CodeDetail: pbErr.ErrorCode_AUTH_REGISTER_USER_UNVERIFIED.String(), //TODO:, check any detail error code needed
-				Message:    "Email sudah terdaftar, mohon ke login page.",
-			}
-		case true:
-			errResponse = &tools.ErrorResponse{
-				Code:       codes.InvalidArgument.String(),
-				CodeDetail: pbErr.ErrorCode_AUTH_REGISTER_USER_VERIFIED.String(), //TODO:, check any detail error code needed
-				Message:    "Email dan/atau No. Telp sudah terdaftar.",
-			}
+	redisPayloadString, err := json.Marshal(redisPayload)
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		errResponse := &config.ErrorResponse{
+			Code:       codes.InvalidArgument.String(),
+			CodeDetail: codes.InvalidArgument.String(),
+			Message:    "Error Marshalling Redis Payload",
+		}
+		return "", NewError(codes.InvalidArgument, errResponse)
+	}
+	err = s.redis.Set(ctx, redisKey, redisPayloadString, time.Minute*5).Err()
+	if err != nil {
+		log.Print("Error Set Value to Redis", err)
+		errResponse := &config.ErrorResponse{
+			Code:       codes.InvalidArgument.String(),
+			CodeDetail: codes.InvalidArgument.String(),
+			Message:    "Error Set Value to Redis",
 		}
 		return "", NewError(codes.InvalidArgument, errResponse)
 	}
@@ -163,20 +169,56 @@ func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
 	return roles, nil
 }
 
-func (s *Service) generateUnique4DigitNumber() (int, error) {
-	for {
-		randomNumber := generateRandom4DigitNumber()
-		// Check if the number exists in Redis
-		key := "otp:" + strconv.Itoa(randomNumber)
-		exists, err := s.redis.Exists(s.redis.Context(), key).Result()
-		if err != nil {
-			return 0, err
+func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (result bool, err error) {
+	storedJSON, err := s.redis.Get(s.redis.Context(), redisKey).Result()
+	if err == redis.Nil {
+		errResponse := &config.ErrorResponse{
+			Code:       codes.InvalidArgument.String(),
+			CodeDetail: codes.InvalidArgument.String(),
+			Message:    "Key Not Found",
+		}
+		return false, NewError(codes.InvalidArgument, errResponse)
+	} else if err != nil {
+		errResponse := &config.ErrorResponse{
+			Code:       codes.InvalidArgument.String(),
+			CodeDetail: codes.InvalidArgument.String(),
+			Message:    "Redis Error",
+		}
+		return false, NewError(codes.InvalidArgument, errResponse)
+	} else {
+		fmt.Println("Retrieved JSON string from Redis:", storedJSON)
+		var retrievedObject map[string]interface{}
+
+		if err := json.Unmarshal([]byte(storedJSON), &retrievedObject); err != nil {
+			log.Print("Error unmarshaling JSON:", err)
+			errResponse := &config.ErrorResponse{
+				Code:       codes.InvalidArgument.String(),
+				CodeDetail: codes.InvalidArgument.String(),
+				Message:    "Unmarshal Error",
+			}
+			return false, NewError(codes.InvalidArgument, errResponse)
+		}
+		if retrievedObject["OTP"] == strconv.Itoa(otp) {
+			email := strings.Replace(redisKey, "otp:", "", -1)
+			_, err := s.userRepository.ActivateUserByEmail(ctx, email)
+			if err != nil {
+				errResponse := &config.ErrorResponse{
+					Code:       codes.InvalidArgument.String(),
+					CodeDetail: codes.InvalidArgument.String(),
+					Message:    "Activate User Error",
+				}
+				return false, NewError(codes.InvalidArgument, errResponse)
+			}
+		} else {
+			errResponse := &config.ErrorResponse{
+				Code:       codes.InvalidArgument.String(),
+				CodeDetail: codes.InvalidArgument.String(),
+				Message:    "OTP IS NOT MATCH",
+			}
+			return false, NewError(codes.InvalidArgument, errResponse)
 		}
 
-		// If the number doesn't exist in Redis, return it
-		if exists == 0 {
-			return randomNumber, nil
-		}
+		return true, nil
 	}
 }
 

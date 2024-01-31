@@ -107,6 +107,54 @@ paths:
                     content:
                         application/json:
                             schema:
+                                $ref: '#/components/schemas/UserRegisterResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/v1/users/resend-otp:
+        post:
+            tags:
+                - UserService
+            operationId: UserService_ResendOtp
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/VerifyOTPRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/v1/users/verify-token:
+        post:
+            tags:
+                - UserService
+            operationId: UserService_VerifyOtp
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/VerifyOTPRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
                                 $ref: '#/components/schemas/SuccessResponse'
                 default:
                     description: Default error response
@@ -212,5 +260,18 @@ components:
                     type: array
                     items:
                         type: string
+        UserRegisterResponse:
+            type: object
+            properties:
+                otp:
+                    type: string
+        VerifyOTPRequest:
+            type: object
+            properties:
+                email:
+                    type: string
+                otpCode:
+                    type: integer
+                    format: int32
 tags:
     - name: UserService

@@ -117,3 +117,21 @@ func (g *GrpcRoute) GetRole(ctx context.Context, req *emptypb.Empty) (*pb.Succes
 		Data: data,
 	}, nil
 }
+
+func (g *GrpcRoute) VerifyOtp(ctx context.Context, req *pb.VerifyOTPRequest) (*pb.SuccessResponse, error) {
+	redisKey := "otp:" + req.Email
+	_, err := g.service.VerifyOTP(ctx, int(req.OtpCode), redisKey)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+	return &pb.SuccessResponse{}, nil
+}
+
+func (g *GrpcRoute) ResendOtp(ctx context.Context, req *pb.ResendOTPRequest) (*pb.SuccessResponse, error) {
+	redisKey := "otp:" + req.Email
+	_, err := g.service.VerifyOTP(ctx, int(req.OtpCode), redisKey)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+	return &pb.SuccessResponse{}, nil
+}
