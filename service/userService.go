@@ -38,7 +38,7 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*enti
 			errResponse = &tools.ErrorResponse{
 				Code:       code.String(),
 				CodeDetail: pbErr.ErrorCode_AUTH_LOGIN_NOT_FOUND.String(),
-				Message:    err.Error(),
+				Message:    "Email belum terdaftar, mohon registrasi",
 			}
 		} else {
 			code = codes.Internal
@@ -51,7 +51,7 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*enti
 		return nil, NewError(code, errResponse)
 	}
 
-	if !user.IsActive {
+	if !user.IsVerified {
 		code = codes.InvalidArgument
 		errResponse = &tools.ErrorResponse{
 			Code:       code.String(),
@@ -66,7 +66,7 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*enti
 		errResponse = &tools.ErrorResponse{
 			Code:       code.String(),
 			CodeDetail: pbErr.ErrorCode_AUTH_LOGIN_PASSWORD_INCORRECT.String(),
-			Message:    err.Error(),
+			Message:    "Data yang dimasukkan tidak sesuai",
 		}
 		return nil, NewError(code, errResponse)
 	}
@@ -95,7 +95,6 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		PhoneNumber: req.PhoneNumber,
 		Name:        req.Name,
 		Address:     req.Address,
-		IsActive:    false,
 	}
 
 	data, err := s.userRepository.GetByEmail(ctx, req.Email)
@@ -109,7 +108,7 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 	}
 
 	if data != nil {
-		switch data.IsActive {
+		switch data.IsVerified {
 		case false:
 			errResponse = &tools.ErrorResponse{
 				Code:       codes.InvalidArgument.String(),
