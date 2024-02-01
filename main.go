@@ -9,11 +9,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Mitra-Apps/be-user-service/auth"
 	"github.com/Mitra-Apps/be-user-service/config/postgre"
 	"github.com/Mitra-Apps/be-user-service/config/redis"
 	"github.com/Mitra-Apps/be-user-service/config/tools"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
+	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	userPostgreRepo "github.com/Mitra-Apps/be-user-service/domain/user/repository/postgre"
 	grpcRoute "github.com/Mitra-Apps/be-user-service/handler/grpc"
 	"github.com/Mitra-Apps/be-user-service/service"
@@ -60,14 +60,14 @@ func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 		}
 
 		// Validate and parse the JWT token
-		token, err := auth.VerifyToken(tokenString)
-		if err != nil {
-			return nil, err
-		}
+		// token, err := service.VerifyToken(tokenString)
+		// if err != nil {
+		// 	return nil, err
+		// }
 
-		if err != nil || !token.Valid {
-			return nil, status.Errorf(codes.Unauthenticated, "invalid or expired token")
-		}
+		// if err != nil || !token.Valid {
+		// 	return nil, status.Errorf(codes.Unauthenticated, "invalid or expired token")
+		// }
 
 		// Call the actual handler to process the request
 		return handler(ctx, req)
@@ -87,6 +87,11 @@ func main() {
 	}
 
 	db := postgre.Connection()
+	user := &entity.User{}
+	err = db.Where("name = '1'").First(user).Error
+	fmt.Println("not found", err)
+
+	fmt.Println(user)
 	redis := redis.Connection()
 	usrRepo := userPostgreRepo.NewUserRepoImpl(db)
 	roleRepo := userPostgreRepo.NewRoleRepoImpl(db)

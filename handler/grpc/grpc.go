@@ -39,21 +39,32 @@ func (g *GrpcRoute) GetUsers(ctx context.Context, req *pb.GetUsersRequest) (*pb.
 	}, nil
 }
 
-func (g *GrpcRoute) Login(ctx context.Context, req *pb.UserLoginRequest) (*pb.UserLoginResponse, error) {
+func (g *GrpcRoute) Login(ctx context.Context, req *pb.UserLoginRequest) (*pb.SuccessResponse, error) {
+	if err := req.ValidateAll(); err != nil {
+		return nil, err
+	}
 	loginRequest := entity.LoginRequest{
-		Username: req.Username,
+		Email:    req.Email,
 		Password: req.Password,
 	}
 	jwt, err := g.service.Login(ctx, loginRequest)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.UserLoginResponse{
-		Jwt: jwt,
+	token := &pb.UserLoginResponse{
+		AccessToken:  jwt.AccessToken,
+		RefreshToken: jwt.RefreshToken,
+	}
+	data, err := anypb.New(token)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+	return &pb.SuccessResponse{
+		Data: data,
 	}, nil
 }
 
-func (g *GrpcRoute) Register(ctx context.Context, req *pb.UserRegisterRequest) (*pb.UserRegisterResponse, error) {
+func (g *GrpcRoute) Register(ctx context.Context, req *pb.UserRegisterRequest) (*pb.SuccessResponse, error) {
 	if err := req.ValidateAll(); err != nil {
 		return nil, err
 	}
@@ -61,8 +72,15 @@ func (g *GrpcRoute) Register(ctx context.Context, req *pb.UserRegisterRequest) (
 	if err != nil {
 		return nil, err
 	}
-	return &pb.UserRegisterResponse{
+	otpProto := &pb.UserRegisterResponse{
 		Otp: otp,
+	}
+	data, err := anypb.New(otpProto)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+	return &pb.SuccessResponse{
+		Data: data,
 	}, nil
 }
 

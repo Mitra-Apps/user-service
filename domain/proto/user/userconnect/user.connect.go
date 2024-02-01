@@ -59,8 +59,8 @@ var (
 // UserServiceClient is a client for the proto.UserService service.
 type UserServiceClient interface {
 	GetUsers(context.Context, *connect.Request[user.GetUsersRequest]) (*connect.Response[user.GetUsersResponse], error)
-	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error)
-	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.UserRegisterResponse], error)
+	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.SuccessResponse], error)
+	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error)
 	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 	GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 }
@@ -81,13 +81,13 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceGetUsersMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		login: connect.NewClient[user.UserLoginRequest, user.UserLoginResponse](
+		login: connect.NewClient[user.UserLoginRequest, user.SuccessResponse](
 			httpClient,
 			baseURL+UserServiceLoginProcedure,
 			connect.WithSchema(userServiceLoginMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		register: connect.NewClient[user.UserRegisterRequest, user.UserRegisterResponse](
+		register: connect.NewClient[user.UserRegisterRequest, user.SuccessResponse](
 			httpClient,
 			baseURL+UserServiceRegisterProcedure,
 			connect.WithSchema(userServiceRegisterMethodDescriptor),
@@ -111,8 +111,8 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 // userServiceClient implements UserServiceClient.
 type userServiceClient struct {
 	getUsers   *connect.Client[user.GetUsersRequest, user.GetUsersResponse]
-	login      *connect.Client[user.UserLoginRequest, user.UserLoginResponse]
-	register   *connect.Client[user.UserRegisterRequest, user.UserRegisterResponse]
+	login      *connect.Client[user.UserLoginRequest, user.SuccessResponse]
+	register   *connect.Client[user.UserRegisterRequest, user.SuccessResponse]
 	createRole *connect.Client[user.Role, user.SuccessResponse]
 	getRole    *connect.Client[emptypb.Empty, user.SuccessResponse]
 }
@@ -123,12 +123,12 @@ func (c *userServiceClient) GetUsers(ctx context.Context, req *connect.Request[u
 }
 
 // Login calls proto.UserService.Login.
-func (c *userServiceClient) Login(ctx context.Context, req *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error) {
+func (c *userServiceClient) Login(ctx context.Context, req *connect.Request[user.UserLoginRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return c.login.CallUnary(ctx, req)
 }
 
 // Register calls proto.UserService.Register.
-func (c *userServiceClient) Register(ctx context.Context, req *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.UserRegisterResponse], error) {
+func (c *userServiceClient) Register(ctx context.Context, req *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return c.register.CallUnary(ctx, req)
 }
 
@@ -145,8 +145,8 @@ func (c *userServiceClient) GetRole(ctx context.Context, req *connect.Request[em
 // UserServiceHandler is an implementation of the proto.UserService service.
 type UserServiceHandler interface {
 	GetUsers(context.Context, *connect.Request[user.GetUsersRequest]) (*connect.Response[user.GetUsersResponse], error)
-	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error)
-	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.UserRegisterResponse], error)
+	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.SuccessResponse], error)
+	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error)
 	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 	GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 }
@@ -212,11 +212,11 @@ func (UnimplementedUserServiceHandler) GetUsers(context.Context, *connect.Reques
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.GetUsers is not implemented"))
 }
 
-func (UnimplementedUserServiceHandler) Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error) {
+func (UnimplementedUserServiceHandler) Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.Login is not implemented"))
 }
 
-func (UnimplementedUserServiceHandler) Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.UserRegisterResponse], error) {
+func (UnimplementedUserServiceHandler) Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.Register is not implemented"))
 }
 

@@ -112,6 +112,10 @@ func TestGrpcRoute_Register(t *testing.T) {
 			m.EXPECT().Register(gomock.Any(), gomock.Any()).Return(otp, err)
 		}
 	}
+	otp := &pb.UserRegisterResponse{
+		Otp: "",
+	}
+	data, _ := anypb.New(otp)
 	type args struct {
 		ctx context.Context
 		req *pb.UserRegisterRequest
@@ -120,7 +124,7 @@ func TestGrpcRoute_Register(t *testing.T) {
 		name    string
 		g       *GrpcRoute
 		args    args
-		want    *pb.UserRegisterResponse
+		want    *pb.SuccessResponse
 		wantErr bool
 	}{
 		{
@@ -177,8 +181,8 @@ func TestGrpcRoute_Register(t *testing.T) {
 					RoleId:      []string{"1", "2"},
 				},
 			},
-			want: &pb.UserRegisterResponse{
-				Otp: "",
+			want: &pb.SuccessResponse{
+				Data: data,
 			},
 			wantErr: false,
 		},

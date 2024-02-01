@@ -206,18 +206,10 @@
     "protoUserLoginRequest": {
       "type": "object",
       "properties": {
-        "username": {
+        "email": {
           "type": "string"
         },
         "password": {
-          "type": "string"
-        }
-      }
-    },
-    "protoUserLoginResponse": {
-      "type": "object",
-      "properties": {
-        "jwt": {
           "type": "string"
         }
       }
@@ -245,14 +237,6 @@
           "items": {
             "type": "string"
           }
-        }
-      }
-    },
-    "protoUserRegisterResponse": {
-      "type": "object",
-      "properties": {
-        "otp": {
-          "type": "string"
         }
       }
     },

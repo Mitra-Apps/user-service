@@ -4,21 +4,17 @@ import (
 	"context"
 	"log"
 	"math/rand"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
-	"github.com/Mitra-Apps/be-user-service/auth"
 	"github.com/Mitra-Apps/be-user-service/config/tools"
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
-	"github.com/labstack/echo"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
@@ -29,30 +25,58 @@ func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
 	return users, nil
 }
 
-func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (string, error) {
-	if strings.Trim(payload.Username, " ") == "" {
-		return "", status.Errorf(codes.InvalidArgument, "Username is required")
-	}
-	if strings.Trim(payload.Password, " ") == "" {
-		return "", status.Errorf(codes.InvalidArgument, "Password is required")
-	}
-	user, err := s.userRepository.GetByEmail(ctx, payload.Username)
-	if user == nil && err == nil {
-		return "", status.Errorf(codes.InvalidArgument, "Invalid username")
+func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*entity.LoginResponse, error) {
+	var (
+		code        codes.Code
+		errResponse *tools.ErrorResponse
+	)
+
+	user, err := s.userRepository.GetByEmail(ctx, payload.Email)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			code = codes.NotFound
+			errResponse = &tools.ErrorResponse{
+				Code:       code.String(),
+				CodeDetail: pbErr.ErrorCode_AUTH_LOGIN_NOT_FOUND.String(),
+				Message:    err.Error(),
+			}
+		} else {
+			code = codes.Internal
+			errResponse = &tools.ErrorResponse{
+				Code:       code.String(),
+				CodeDetail: pbErr.ErrorCode_UNKNOWN.String(),
+				Message:    err.Error(),
+			}
+		}
+		return nil, NewError(code, errResponse)
 	}
 
-	if err != nil {
-		return "", status.Errorf(codes.Internal, "Error getting user by email")
+	if !user.IsActive {
+		code = codes.InvalidArgument
+		errResponse = &tools.ErrorResponse{
+			Code:       code.String(),
+			CodeDetail: pbErr.ErrorCode_AUTH_LOGIN_USER_UNVERIFIED.String(),
+			Message:    "Email sudah terdaftar, silahkan lakukan verifikasi OTP",
+		}
+		return nil, NewError(code, errResponse)
 	}
-	err = checkPassword(payload.Password, user.Password)
-	if err != nil {
-		return "", status.Errorf(codes.InvalidArgument, "Invalid password")
+
+	if err := s.hashing.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password)); err != nil {
+		code = codes.InvalidArgument
+		errResponse = &tools.ErrorResponse{
+			Code:       code.String(),
+			CodeDetail: pbErr.ErrorCode_AUTH_LOGIN_PASSWORD_INCORRECT.String(),
+			Message:    err.Error(),
+		}
+		return nil, NewError(code, errResponse)
 	}
-	jwt, err := auth.GenerateToken(ctx, user)
-	if err != nil {
-		echo.NewHTTPError(http.StatusInternalServerError, err)
+
+	res := &entity.LoginResponse{
+		AccessToken:  "TODO:will add later",
+		RefreshToken: "TODO:will add later",
 	}
-	return jwt, nil
+
+	return res, nil
 }
 
 func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (string, error) {
@@ -65,9 +89,9 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 	}
 
 	user := &entity.User{
-		Username:    req.Email,
-		Password:    string(hashedPassword),
 		Email:       req.Email,
+		Password:    string(hashedPassword),
+		Username:    req.Email,
 		PhoneNumber: req.PhoneNumber,
 		Name:        req.Name,
 		Address:     req.Address,

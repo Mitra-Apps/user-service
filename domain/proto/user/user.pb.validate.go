@@ -443,15 +443,84 @@ func (m *UserLoginRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Username
+	if err := m._validateEmail(m.GetEmail()); err != nil {
+		err = UserLoginRequestValidationError{
+			field:  "Email",
+			reason: "value must be a valid email address",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Password
+	if l := utf8.RuneCountInString(m.GetPassword()); l < 6 || l > 8 {
+		err := UserLoginRequestValidationError{
+			field:  "Password",
+			reason: "value length must be between 6 and 8 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return UserLoginRequestMultiError(errors)
 	}
 
 	return nil
+}
+
+func (m *UserLoginRequest) _validateHostname(host string) error {
+	s := strings.ToLower(strings.TrimSuffix(host, "."))
+
+	if len(host) > 253 {
+		return errors.New("hostname cannot exceed 253 characters")
+	}
+
+	for _, part := range strings.Split(s, ".") {
+		if l := len(part); l == 0 || l > 63 {
+			return errors.New("hostname part must be non-empty and cannot exceed 63 characters")
+		}
+
+		if part[0] == '-' {
+			return errors.New("hostname parts cannot begin with hyphens")
+		}
+
+		if part[len(part)-1] == '-' {
+			return errors.New("hostname parts cannot end with hyphens")
+		}
+
+		for _, r := range part {
+			if (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-' {
+				return fmt.Errorf("hostname parts can only contain alphanumeric characters or hyphens, got %q", string(r))
+			}
+		}
+	}
+
+	return nil
+}
+
+func (m *UserLoginRequest) _validateEmail(addr string) error {
+	a, err := mail.ParseAddress(addr)
+	if err != nil {
+		return err
+	}
+	addr = a.Address
+
+	if len(addr) > 254 {
+		return errors.New("email addresses cannot exceed 254 characters")
+	}
+
+	parts := strings.SplitN(addr, "@", 2)
+
+	if len(parts[0]) > 64 {
+		return errors.New("email address local phrase cannot exceed 64 characters")
+	}
+
+	return m._validateHostname(parts[1])
 }
 
 // UserLoginRequestMultiError is an error wrapping multiple validation errors
@@ -547,7 +616,9 @@ func (m *UserLoginResponse) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Jwt
+	// no validation rules for AccessToken
+
+	// no validation rules for RefreshToken
 
 	if len(errors) > 0 {
 		return UserLoginResponseMultiError(errors)

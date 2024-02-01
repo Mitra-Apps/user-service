@@ -41,6 +41,37 @@ func TestService_GetAll(t *testing.T) {
 }
 
 func TestService_Login(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockRepo := mock.NewMockUser(ctrl)
+	mockLogin := func(user *entity.User, err error) func(m *mock.MockUser) {
+		return func(m *mock.MockUser) {
+			m.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, err)
+		}
+	}
+	mockHash := mTools.NewMockBcryptInterface(ctrl)
+	mockCompareHash := func(err error) func(m *mTools.MockBcryptInterface) {
+		return func(m *mTools.MockBcryptInterface) {
+			m.EXPECT().CompareHashAndPassword(gomock.Any(), gomock.Any()).Return(err)
+		}
+	}
+	loginRequest := &entity.LoginRequest{
+		Email:    "test@email.com",
+		Password: "test@123",
+	}
+	unverifiedUser := &entity.User{
+		Email:    "test@email.com",
+		Password: "test@123",
+		IsActive: false,
+	}
+	verifiedUser := &entity.User{
+		Email:    "test@email.com",
+		Password: "test@123",
+		IsActive: true,
+	}
+	res := &entity.LoginResponse{
+		AccessToken:  "acccess token",
+		RefreshToken: "refresh token",
+	}
 	type args struct {
 		ctx     context.Context
 		payload entity.LoginRequest
@@ -49,13 +80,88 @@ func TestService_Login(t *testing.T) {
 		name    string
 		s       *Service
 		args    args
-		want    *entity.User
+		want    *entity.LoginResponse
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "error record not found",
+			s: &Service{
+				userRepository: mockRepo,
+			},
+			args: args{
+				ctx:     context.Background(),
+				payload: *loginRequest,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "unexpected error",
+			s: &Service{
+				userRepository: mockRepo,
+			},
+			args: args{
+				ctx:     context.Background(),
+				payload: *loginRequest,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error unverified account",
+			s: &Service{
+				userRepository: mockRepo,
+			},
+			args: args{
+				ctx:     context.Background(),
+				payload: *loginRequest,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error password incorrect",
+			s: &Service{
+				userRepository: mockRepo,
+				hashing:        mockHash,
+			},
+			args: args{
+				ctx:     context.Background(),
+				payload: *loginRequest,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "success",
+			s: &Service{
+				userRepository: mockRepo,
+				hashing:        mockHash,
+			},
+			args: args{
+				ctx:     context.Background(),
+				payload: *loginRequest,
+			},
+			want:    res,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			switch tt.name {
+			case "error record not found":
+				mockLogin(nil, errors.New("record not found"))(mockRepo)
+			case "unexpected error":
+				mockLogin(nil, errors.New("other error"))(mockRepo)
+			case "error password incorrect":
+				mockLogin(verifiedUser, nil)(mockRepo)
+				mockCompareHash(errors.New("any error"))(mockHash)
+			case "error unverified account":
+				mockLogin(unverifiedUser, nil)(mockRepo)
+			case "success":
+				mockLogin(verifiedUser, nil)(mockRepo)
+				mockCompareHash(nil)(mockHash)
+			}
 			got, err := tt.s.Login(tt.args.ctx, tt.args.payload)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Service.Login() error = %v, wantErr %v", err, tt.wantErr)
