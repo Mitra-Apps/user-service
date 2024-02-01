@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/Mitra-Apps/be-user-service/config/tools"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
@@ -12,13 +13,15 @@ import (
 type Service struct {
 	userRepository repository.User
 	roleRepo       repository.Role
+	hashing        tools.BcryptInterface
 	redis          *redis.Client
 }
 
-func New(userRepository repository.User, roleRepo repository.Role, redis *redis.Client) *Service {
+func New(userRepository repository.User, roleRepo repository.Role, hashing tools.BcryptInterface, redis *redis.Client) *Service {
 	return &Service{
 		userRepository: userRepository,
 		roleRepo:       roleRepo,
+		hashing:        hashing,
 		redis:          redis,
 	}
 }
@@ -26,7 +29,7 @@ func New(userRepository repository.User, roleRepo repository.Role, redis *redis.
 //go:generate mockgen -source=service.go -destination=mock/service.go -package=mock
 type ServiceInterface interface {
 	GetAll(ctx context.Context) ([]*entity.User, error)
-	Login(ctx context.Context, payload entity.LoginRequest) (string, error)
+	Login(ctx context.Context, payload entity.LoginRequest) (*entity.LoginResponse, error)
 	Register(ctx context.Context, req *pb.UserRegisterRequest) (string, error)
 	CreateRole(ctx context.Context, role *entity.Role) error
 	GetRole(ctx context.Context) ([]entity.Role, error)

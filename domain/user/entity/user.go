@@ -16,7 +16,6 @@ type User struct {
 	AvatarImageId uuid.NullUUID `gorm:"type:varchar(255);null"`
 	AccessToken   *string       `gorm:"type:varchar(255);null"`
 	IsActive      bool          `gorm:"type:bool;not null;default:TRUE"`
-	IsVerified    bool          `gorm:"type:bool;not null;default:FALSE"`
 	CreatedAt     time.Time     `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
 	CreatedBy     uuid.UUID     `gorm:"type:uuid;not null"`
 	UpdatedAt     *time.Time    `gorm:"type:timestamptz;null"`
@@ -45,6 +44,11 @@ func (u *User) ToProto() *pb.User {
 }
 
 type LoginRequest struct {
-	Username string
+	Email    string
 	Password string
+}
+
+type LoginResponse struct {
+	AccessToken  string
+	RefreshToken string
 }

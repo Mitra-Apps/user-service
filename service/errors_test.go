@@ -3,14 +3,14 @@ package service
 import (
 	"testing"
 
-	"github.com/Mitra-Apps/be-user-service/config"
+	"github.com/Mitra-Apps/be-user-service/config/tools"
 	"google.golang.org/grpc/codes"
 )
 
 func TestNewError(t *testing.T) {
 	type args struct {
 		code   codes.Code
-		newErr *config.ErrorResponse
+		newErr *tools.ErrorResponse
 	}
 	tests := []struct {
 		name    string

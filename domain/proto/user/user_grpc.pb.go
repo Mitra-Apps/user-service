@@ -32,8 +32,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserServiceClient interface {
 	GetUsers(ctx context.Context, in *GetUsersRequest, opts ...grpc.CallOption) (*GetUsersResponse, error)
-	Login(ctx context.Context, in *UserLoginRequest, opts ...grpc.CallOption) (*UserLoginResponse, error)
-	Register(ctx context.Context, in *UserRegisterRequest, opts ...grpc.CallOption) (*UserRegisterResponse, error)
+	Login(ctx context.Context, in *UserLoginRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	Register(ctx context.Context, in *UserRegisterRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	CreateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*SuccessResponse, error)
 	GetRole(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
 }
@@ -55,8 +55,8 @@ func (c *userServiceClient) GetUsers(ctx context.Context, in *GetUsersRequest, o
 	return out, nil
 }
 
-func (c *userServiceClient) Login(ctx context.Context, in *UserLoginRequest, opts ...grpc.CallOption) (*UserLoginResponse, error) {
-	out := new(UserLoginResponse)
+func (c *userServiceClient) Login(ctx context.Context, in *UserLoginRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
 	err := c.cc.Invoke(ctx, UserService_Login_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -64,8 +64,8 @@ func (c *userServiceClient) Login(ctx context.Context, in *UserLoginRequest, opt
 	return out, nil
 }
 
-func (c *userServiceClient) Register(ctx context.Context, in *UserRegisterRequest, opts ...grpc.CallOption) (*UserRegisterResponse, error) {
-	out := new(UserRegisterResponse)
+func (c *userServiceClient) Register(ctx context.Context, in *UserRegisterRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
 	err := c.cc.Invoke(ctx, UserService_Register_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -96,8 +96,8 @@ func (c *userServiceClient) GetRole(ctx context.Context, in *emptypb.Empty, opts
 // for forward compatibility
 type UserServiceServer interface {
 	GetUsers(context.Context, *GetUsersRequest) (*GetUsersResponse, error)
-	Login(context.Context, *UserLoginRequest) (*UserLoginResponse, error)
-	Register(context.Context, *UserRegisterRequest) (*UserRegisterResponse, error)
+	Login(context.Context, *UserLoginRequest) (*SuccessResponse, error)
+	Register(context.Context, *UserRegisterRequest) (*SuccessResponse, error)
 	CreateRole(context.Context, *Role) (*SuccessResponse, error)
 	GetRole(context.Context, *emptypb.Empty) (*SuccessResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
@@ -110,10 +110,10 @@ type UnimplementedUserServiceServer struct {
 func (UnimplementedUserServiceServer) GetUsers(context.Context, *GetUsersRequest) (*GetUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUsers not implemented")
 }
-func (UnimplementedUserServiceServer) Login(context.Context, *UserLoginRequest) (*UserLoginResponse, error) {
+func (UnimplementedUserServiceServer) Login(context.Context, *UserLoginRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedUserServiceServer) Register(context.Context, *UserRegisterRequest) (*UserRegisterResponse, error) {
+func (UnimplementedUserServiceServer) Register(context.Context, *UserRegisterRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
 func (UnimplementedUserServiceServer) CreateRole(context.Context, *Role) (*SuccessResponse, error) {

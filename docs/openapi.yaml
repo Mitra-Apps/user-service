@@ -83,7 +83,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/UserLoginResponse'
+                                $ref: '#/components/schemas/SuccessResponse'
                 default:
                     description: Default error response
                     content:
@@ -107,7 +107,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/UserRegisterResponse'
+                                $ref: '#/components/schemas/SuccessResponse'
                 default:
                     description: Default error response
                     content:
@@ -191,14 +191,9 @@ components:
         UserLoginRequest:
             type: object
             properties:
-                username:
+                email:
                     type: string
                 password:
-                    type: string
-        UserLoginResponse:
-            type: object
-            properties:
-                jwt:
                     type: string
         UserRegisterRequest:
             type: object
@@ -217,10 +212,5 @@ components:
                     type: array
                     items:
                         type: string
-        UserRegisterResponse:
-            type: object
-            properties:
-                otp:
-                    type: string
 tags:
     - name: UserService

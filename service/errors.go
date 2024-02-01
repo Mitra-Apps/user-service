@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Mitra-Apps/be-user-service/config"
+	"github.com/Mitra-Apps/be-user-service/config/tools"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -14,7 +14,7 @@ var (
 	ErrWrongPassword = errors.New("password is wrong")
 )
 
-func NewError(code codes.Code, newErr *config.ErrorResponse) error {
+func NewError(code codes.Code, newErr *tools.ErrorResponse) error {
 	// Marshal the ErrorResponse struct to JSON
 	errJSON, marshalErr := json.Marshal(newErr)
 	if marshalErr != nil {

@@ -10,17 +10,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type Postgre struct {
+type userRepoImpl struct {
 	db *gorm.DB
 }
 
 func NewUserRepoImpl(db *gorm.DB) repository.User {
-	return &Postgre{
+	return &userRepoImpl{
 		db: db,
 	}
 }
 
-func (p *Postgre) GetAll(ctx context.Context) ([]*entity.User, error) {
+func (p *userRepoImpl) GetAll(ctx context.Context) ([]*entity.User, error) {
 	var accounts []*entity.User
 	res := p.db.Order("created_at DESC").Find(&accounts)
 	if res.Error == gorm.ErrRecordNotFound {
@@ -32,7 +32,7 @@ func (p *Postgre) GetAll(ctx context.Context) ([]*entity.User, error) {
 	return accounts, nil
 }
 
-func (p *Postgre) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
+func (p *userRepoImpl) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
 	var user *entity.User
 	res := p.db.Preload("Roles").Where("email = ?", email).First(&user)
 	if res.Error == gorm.ErrRecordNotFound {
@@ -44,7 +44,7 @@ func (p *Postgre) GetByEmail(ctx context.Context, email string) (*entity.User, e
 	return user, nil
 }
 
-func (p *Postgre) Create(ctx context.Context, user *entity.User, roleIds []string) error {
+func (p *userRepoImpl) Create(ctx context.Context, user *entity.User, roleIds []string) error {
 	err := p.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(user).Error; err != nil {
 			return err
