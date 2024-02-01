@@ -59,14 +59,14 @@ func TestService_Login(t *testing.T) {
 		Password: "test@123",
 	}
 	unverifiedUser := &entity.User{
-		Email:    "test@email.com",
-		Password: "test@123",
-		IsActive: false,
+		Email:      "test@email.com",
+		Password:   "test@123",
+		IsVerified: false,
 	}
 	verifiedUser := &entity.User{
-		Email:    "test@email.com",
-		Password: "test@123",
-		IsActive: true,
+		Email:      "test@email.com",
+		Password:   "test@123",
+		IsVerified: true,
 	}
 	res := &entity.LoginResponse{
 		AccessToken:  "acccess token",
@@ -204,13 +204,13 @@ func TestService_Register(t *testing.T) {
 	}
 
 	dataInactive := &entity.User{
-		Email:    "mail@mail.com",
-		IsActive: false,
+		Email:      "mail@mail.com",
+		IsVerified: false,
 	}
 
 	dataActive := &entity.User{
-		Email:    "mail@mail.com",
-		IsActive: true,
+		Email:      "mail@mail.com",
+		IsVerified: true,
 	}
 
 	type args struct {

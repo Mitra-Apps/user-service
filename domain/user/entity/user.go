@@ -23,6 +23,7 @@ type User struct {
 	Name          string        `gorm:"type:varchar(255);not null"`
 	Roles         []Role        `gorm:"many2many:user_roles;"`
 	Address       string        `gorm:"type:varchar(255);null"`
+	IsVerified    bool          `gorm:"type:bool;not null;default:FALSE"`
 }
 
 func (u *User) ToProto() *pb.User {
