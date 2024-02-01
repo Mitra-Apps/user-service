@@ -107,7 +107,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/UserRegisterResponse'
+                                $ref: '#/components/schemas/SuccessResponse'
                 default:
                     description: Default error response
                     content:
@@ -260,11 +260,6 @@ components:
                     type: array
                     items:
                         type: string
-        UserRegisterResponse:
-            type: object
-            properties:
-                otp:
-                    type: string
         VerifyOTPRequest:
             type: object
             properties:

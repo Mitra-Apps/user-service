@@ -125,6 +125,58 @@
           "UserService"
         ]
       }
+    },
+    "/api/v1/users/resend-otp": {
+      "post": {
+        "operationId": "UserService_ResendOtp",
+        "responses": {
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protoVerifyOTPRequest"
+            }
+          }
+        ],
+        "tags": [
+          "UserService"
+        ]
+      }
+    },
+    "/api/v1/users/verify-token": {
+      "post": {
+        "operationId": "UserService_VerifyOtp",
+        "responses": {
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protoVerifyOTPRequest"
+            }
+          }
+        ],
+        "tags": [
+          "UserService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -237,6 +289,18 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "protoVerifyOTPRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "otpCode": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

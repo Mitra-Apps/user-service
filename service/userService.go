@@ -142,7 +142,7 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 	}
 
 	otp := 0
-	generateNumber, err := s.generateUnique4DigitNumber()
+	generateNumber := generateRandom4DigitNumber()
 	if err == nil {
 		otp = generateNumber
 	}

@@ -55,6 +55,7 @@ require (
 	golang.org/x/tools v0.17.0 // indirect
 	google.golang.org/genproto v0.0.0-20240125205218-1f4bbc51befe // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240125205218-1f4bbc51befe // indirect
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0 // indirect
 	google.golang.org/grpc/examples v0.0.0-20240130185910-02858ee50640 // indirect
 	gorm.io/driver/mysql v1.5.2 // indirect
 	howett.net/plist v1.0.1 // indirect
