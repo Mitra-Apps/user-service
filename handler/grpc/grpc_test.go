@@ -11,7 +11,6 @@ import (
 	"github.com/Mitra-Apps/be-user-service/service"
 	"github.com/Mitra-Apps/be-user-service/service/mock"
 	"go.uber.org/mock/gomock"
-	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"gorm.io/gorm"
@@ -85,7 +84,7 @@ func TestGrpcRoute_Login(t *testing.T) {
 		name    string
 		g       *GrpcRoute
 		args    args
-		want    *pb.UserLoginResponse
+		want    *pb.SuccessResponse
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -112,10 +111,11 @@ func TestGrpcRoute_Register(t *testing.T) {
 			m.EXPECT().Register(gomock.Any(), gomock.Any()).Return(otp, err)
 		}
 	}
-	otp := &pb.UserRegisterResponse{
-		Otp: "",
+	otpStruct := map[string]interface{}{
+		"otp": "",
 	}
-	data, _ := anypb.New(otp)
+	data, _ := structpb.NewStruct(otpStruct)
+
 	type args struct {
 		ctx context.Context
 		req *pb.UserRegisterRequest
@@ -314,7 +314,8 @@ func TestGrpcRoute_GetRole(t *testing.T) {
 			RoleName: "customer",
 		},
 	}
-	pbData, _ := anypb.New(&pb.ListRole{
+
+	listRole := &pb.ListRole{
 		Roles: []*pb.Role{
 			{
 				Id:       "1",
@@ -325,7 +326,11 @@ func TestGrpcRoute_GetRole(t *testing.T) {
 				RoleName: "customer",
 			},
 		},
-	})
+	}
+	listStruct := map[string]interface{}{
+		"roles": listRole,
+	}
+	pbData, _ := structpb.NewStruct(listStruct)
 	type args struct {
 		ctx context.Context
 		req *emptypb.Empty

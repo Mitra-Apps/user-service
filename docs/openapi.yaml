@@ -164,7 +164,7 @@ components:
             type: object
             properties:
                 data:
-                    $ref: '#/components/schemas/GoogleProtobufAny'
+                    type: object
         User:
             type: object
             properties:

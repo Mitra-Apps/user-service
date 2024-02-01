@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/Mitra-Apps/be-user-service/config/redis"
 	mTools "github.com/Mitra-Apps/be-user-service/config/tools/mock"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
@@ -69,8 +70,8 @@ func TestService_Login(t *testing.T) {
 		IsVerified: true,
 	}
 	res := &entity.LoginResponse{
-		AccessToken:  "acccess token",
-		RefreshToken: "refresh token",
+		AccessToken:  "TODO:will add later",
+		RefreshToken: "TODO:will add later",
 	}
 	type args struct {
 		ctx     context.Context
@@ -175,6 +176,7 @@ func TestService_Login(t *testing.T) {
 }
 
 func TestService_Register(t *testing.T) {
+	redis := redis.Connection()
 	ctrl := gomock.NewController(t)
 	mockRepo := mock.NewMockUser(ctrl)
 	mockRegister := func(err error) func(m *mock.MockUser) {
@@ -282,19 +284,19 @@ func TestService_Register(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		//TODO: check success flow after otp is done and update the unit test
-		// {
-		// 	name: "success register user",
-		// 	s: &Service{
-		// 		userRepository: mockRepo,
-		// 		hashing:        mockHash,
-		// 	},
-		// 	args: args{
-		// 		ctx: context.Background(),
-		// 		req: req,
-		// 	},
-		// 	wantErr: false,
-		// },
+		{
+			name: "success",
+			s: &Service{
+				userRepository: mockRepo,
+				hashing:        mockHash,
+				redis:          redis,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		switch tt.name {
@@ -313,38 +315,16 @@ func TestService_Register(t *testing.T) {
 			mockHashing([]byte{}, nil)(mockHash)
 			mockGetEmail(nil, errors.New("record not found"))(mockRepo)
 			mockRegister(errors.New("error"))(mockRepo)
-			//TODO: check success flow after otp is done and update the unit test
-			// case "success register user":
-			// 	mockHashing([]byte{}, nil)(mockHash)
-			// 	mockGetEmail(nil, errors.New("record not found"))(mockRepo)
-			// 	mockRegister(nil)(mockRepo)
+		case "success":
+			mockHashing([]byte{}, nil)(mockHash)
+			mockGetEmail(nil, errors.New("record not found"))(mockRepo)
+			mockRegister(nil)(mockRepo)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := tt.s.Register(tt.args.ctx, tt.args.req)
 			if err != nil != tt.wantErr {
 				t.Errorf("Service.Register() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func Test_checkPassword(t *testing.T) {
-	type args struct {
-		password       string
-		hashedPassword string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := checkPassword(tt.args.password, tt.args.hashedPassword); (err != nil) != tt.wantErr {
-				t.Errorf("checkPassword() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

@@ -183,8 +183,3 @@ func generateRandom4DigitNumber() int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(9000) + 1000 // Ensure a 4-digit number
 }
-
-func checkPassword(password, hashedPassword string) error {
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-	return err
-}

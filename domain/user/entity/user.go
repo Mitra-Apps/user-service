@@ -50,6 +50,6 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken  string
-	RefreshToken string
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }
