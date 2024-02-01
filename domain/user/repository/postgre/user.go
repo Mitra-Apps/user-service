@@ -22,24 +22,16 @@ func NewUserRepoImpl(db *gorm.DB) repository.User {
 
 func (p *userRepoImpl) GetAll(ctx context.Context) ([]*entity.User, error) {
 	var accounts []*entity.User
-	res := p.db.Order("created_at DESC").Find(&accounts)
-	if res.Error == gorm.ErrRecordNotFound {
-		return nil, nil
-	}
-	if res.Error != nil {
-		return nil, res.Error
+	if err := p.db.Order("created_at DESC").Find(&accounts).Error; err != nil {
+		return nil, err
 	}
 	return accounts, nil
 }
 
 func (p *userRepoImpl) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
 	var user *entity.User
-	res := p.db.Preload("Roles").Where("email = ?", email).First(&user)
-	if res.Error == gorm.ErrRecordNotFound {
-		return nil, nil
-	}
-	if res.Error != nil {
-		return nil, res.Error
+	if err := p.db.Preload("Roles").Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
 	}
 	return user, nil
 }
