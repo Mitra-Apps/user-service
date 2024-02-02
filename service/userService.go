@@ -115,15 +115,17 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 	}
 	redisKey := tools.OtpRedisPrefix + req.Email
 	jsonData, err := json.Marshal(redisPayload)
-
 	if err != nil {
 		fmt.Println("Error marshalling JSON:", err)
-	} else {
-		err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5).Err()
-		if err != nil {
-			log.Print("Error Set Value to Redis")
-		}
+		return "", NewError(codes.Internal, codes.Internal.String(), err.Error())
 	}
+
+	err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5).Err()
+	if err != nil {
+		log.Print("Error Set Value to Redis")
+		return "", NewError(codes.Internal, codes.Internal.String(), err.Error())
+	}
+
 	return otpString, nil
 }
 

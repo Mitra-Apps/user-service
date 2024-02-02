@@ -115,3 +115,33 @@ func (mr *MockServiceInterfaceMockRecorder) Register(ctx, req any) *gomock.Call 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockServiceInterface)(nil).Register), ctx, req)
 }
+
+// ResendOTP mocks base method.
+func (m *MockServiceInterface) ResendOTP(ctx context.Context, email string) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResendOTP", ctx, email)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResendOTP indicates an expected call of ResendOTP.
+func (mr *MockServiceInterfaceMockRecorder) ResendOTP(ctx, email any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResendOTP", reflect.TypeOf((*MockServiceInterface)(nil).ResendOTP), ctx, email)
+}
+
+// VerifyOTP mocks base method.
+func (m *MockServiceInterface) VerifyOTP(ctx context.Context, otp int, redisKey string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyOTP", ctx, otp, redisKey)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VerifyOTP indicates an expected call of VerifyOTP.
+func (mr *MockServiceInterfaceMockRecorder) VerifyOTP(ctx, otp, redisKey any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyOTP", reflect.TypeOf((*MockServiceInterface)(nil).VerifyOTP), ctx, otp, redisKey)
+}

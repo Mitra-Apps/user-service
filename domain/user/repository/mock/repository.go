@@ -100,6 +100,21 @@ func (mr *MockUserMockRecorder) GetByID(ctx, ID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockUser)(nil).GetByID), ctx, ID)
 }
 
+// VerifyUserByEmail mocks base method.
+func (m *MockUser) VerifyUserByEmail(ctx context.Context, email string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyUserByEmail", ctx, email)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VerifyUserByEmail indicates an expected call of VerifyUserByEmail.
+func (mr *MockUserMockRecorder) VerifyUserByEmail(ctx, email any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyUserByEmail", reflect.TypeOf((*MockUser)(nil).VerifyUserByEmail), ctx, email)
+}
+
 // MockRole is a mock of Role interface.
 type MockRole struct {
 	ctrl     *gomock.Controller

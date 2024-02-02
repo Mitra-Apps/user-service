@@ -282,18 +282,18 @@ func TestService_Register(t *testing.T) {
 			wantErr: true,
 		},
 		//TODO: check success flow after otp is done and update the unit test
-		// {
-		// 	name: "success register user",
-		// 	s: &Service{
-		// 		userRepository: mockRepo,
-		// 		hashing:        mockHash,
-		// 	},
-		// 	args: args{
-		// 		ctx: context.Background(),
-		// 		req: req,
-		// 	},
-		// 	wantErr: false,
-		// },
+		{
+			name: "success register user",
+			s: &Service{
+				userRepository: mockRepo,
+				hashing:        mockHash,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		switch tt.name {
@@ -312,11 +312,10 @@ func TestService_Register(t *testing.T) {
 			mockHashing([]byte{}, nil)(mockHash)
 			mockGetEmail(nil, errors.New("record not found"))(mockRepo)
 			mockRegister(errors.New("error"))(mockRepo)
-			//TODO: check success flow after otp is done and update the unit test
-			// case "success register user":
-			// 	mockHashing([]byte{}, nil)(mockHash)
-			// 	mockGetEmail(nil, errors.New("record not found"))(mockRepo)
-			// 	mockRegister(nil)(mockRepo)
+		case "success register user":
+			mockHashing([]byte{}, nil)(mockHash)
+			mockGetEmail(nil, errors.New("record not found"))(mockRepo)
+			mockRegister(nil)(mockRepo)
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -432,29 +431,6 @@ func TestService_GetRole(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Service.GetRole() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestService_generateUnique4DigitNumber(t *testing.T) {
-	tests := []struct {
-		name    string
-		s       *Service
-		want    int
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.generateUnique4DigitNumber()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Service.generateUnique4DigitNumber() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("Service.generateUnique4DigitNumber() = %v, want %v", got, tt.want)
 			}
 		})
 	}
