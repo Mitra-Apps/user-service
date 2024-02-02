@@ -156,7 +156,7 @@ func (g *GrpcRoute) VerifyOtp(ctx context.Context, req *pb.VerifyOTPRequest) (*p
 	redisKey := "otp:" + req.Email
 	_, err := g.service.VerifyOTP(ctx, int(req.OtpCode), redisKey)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, err
 	}
 	return &pb.SuccessResponse{}, nil
 }
@@ -164,7 +164,7 @@ func (g *GrpcRoute) VerifyOtp(ctx context.Context, req *pb.VerifyOTPRequest) (*p
 func (g *GrpcRoute) ResendOtp(ctx context.Context, req *pb.ResendOTPRequest) (*pb.SuccessResponse, error) {
 	otp, err := g.service.ResendOTP(ctx, req.Email)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, err
 	}
 	resendOtpStruct := map[string]interface{}{
 		"otp": otp,
@@ -172,14 +172,14 @@ func (g *GrpcRoute) ResendOtp(ctx context.Context, req *pb.ResendOTPRequest) (*p
 
 	data, err := json.Marshal(resendOtpStruct)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, err
 	}
 	if err := json.Unmarshal(data, &resendOtpStruct); err != nil {
 		return nil, err
 	}
 	dataStruct, err := structpb.NewStruct(resendOtpStruct)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, err
 	}
 
 	return &pb.SuccessResponse{

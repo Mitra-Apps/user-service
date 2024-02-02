@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 
+	"github.com/Mitra-Apps/be-user-service/config/tools"
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
@@ -113,7 +114,7 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		"OTP": otpString,
 	}
 	if otp != 0 {
-		redisKey := otpRedisPrefix + data.Email
+		redisKey := tools.OtpRedisPrefix + data.Email
 		jsonData, err := json.Marshal(redisPayload)
 		if err != nil {
 			fmt.Println("Error marshalling JSON:", err)
@@ -143,7 +144,7 @@ func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
 func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (result bool, err error) {
 	storedJSON, err := s.redis.Get(s.redis.Context(), redisKey).Result()
 	if err == redis.Nil {
-		ErrorCode = codes.Internal
+		ErrorCode = codes.NotFound
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 		ErrorMessage = "Key Not Found"
 		return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
@@ -163,7 +164,7 @@ func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (resu
 			return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 		}
 		if retrievedObject["OTP"] == strconv.Itoa(otp) {
-			email := strings.Replace(redisKey, otpRedisPrefix, "", -1)
+			email := strings.Replace(redisKey, tools.OtpRedisPrefix, "", -1)
 			_, err := s.userRepository.VerifyUserByEmail(ctx, email)
 			if err != nil {
 				ErrorCode = codes.Internal
@@ -188,7 +189,7 @@ func (s *Service) ResendOTP(ctx context.Context, email string) (otp int, err err
 	redisPayload := map[string]interface{}{
 		"OTP": otpString,
 	}
-	redisKey := otpRedisPrefix + email
+	redisKey := tools.OtpRedisPrefix + email
 	// Marshal the JSON data
 	jsonData, err := json.Marshal(redisPayload)
 	if err != nil {
