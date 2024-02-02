@@ -144,9 +144,9 @@ func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
 func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (result bool, err error) {
 	storedJSON, err := s.redis.Get(s.redis.Context(), redisKey).Result()
 	if err == redis.Nil {
-		ErrorCode = codes.NotFound
-		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
-		ErrorMessage = "Key Not Found"
+		ErrorCode = codes.InvalidArgument
+		ErrorCodeDetail = pbErr.ErrorCode_AUTH_OTP_INVALID.String()
+		ErrorMessage = "Kode Otp Tidak Berlaku"
 		return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	} else if err != nil {
 		ErrorCode = codes.Internal
