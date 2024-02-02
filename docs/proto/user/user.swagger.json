@@ -143,7 +143,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/protoVerifyOTPRequest"
+              "$ref": "#/definitions/protoResendOTPRequest"
             }
           }
         ],
@@ -189,6 +189,14 @@
             "type": "object",
             "$ref": "#/definitions/protoUser"
           }
+        }
+      }
+    },
+    "protoResendOTPRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
         }
       }
     },
@@ -245,6 +253,9 @@
           "type": "string"
         },
         "isActive": {
+          "type": "boolean"
+        },
+        "isVerified": {
           "type": "boolean"
         },
         "name": {

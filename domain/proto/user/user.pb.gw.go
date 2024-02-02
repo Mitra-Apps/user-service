@@ -205,7 +205,7 @@ func local_request_UserService_VerifyOtp_0(ctx context.Context, marshaler runtim
 }
 
 func request_UserService_ResendOtp_0(ctx context.Context, marshaler runtime.Marshaler, client UserServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq VerifyOTPRequest
+	var protoReq ResendOTPRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -222,7 +222,7 @@ func request_UserService_ResendOtp_0(ctx context.Context, marshaler runtime.Mars
 }
 
 func local_request_UserService_ResendOtp_0(ctx context.Context, marshaler runtime.Marshaler, server UserServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq VerifyOTPRequest
+	var protoReq ResendOTPRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)

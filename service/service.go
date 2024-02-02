@@ -33,4 +33,6 @@ type ServiceInterface interface {
 	Register(ctx context.Context, req *pb.UserRegisterRequest) (string, error)
 	CreateRole(ctx context.Context, role *entity.Role) error
 	GetRole(ctx context.Context) ([]entity.Role, error)
+	VerifyOTP(ctx context.Context, otp int, redisKey string) (result bool, err error)
+	ResendOTP(ctx context.Context, email string) (otp int, err error)
 }

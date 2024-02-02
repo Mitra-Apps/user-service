@@ -70,7 +70,7 @@ type UserServiceClient interface {
 	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 	GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	VerifyOtp(context.Context, *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error)
-	ResendOtp(context.Context, *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error)
+	ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error)
 }
 
 // NewUserServiceClient constructs a client for the proto.UserService service. By default, it uses
@@ -119,7 +119,7 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceVerifyOtpMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		resendOtp: connect.NewClient[user.VerifyOTPRequest, user.SuccessResponse](
+		resendOtp: connect.NewClient[user.ResendOTPRequest, user.SuccessResponse](
 			httpClient,
 			baseURL+UserServiceResendOtpProcedure,
 			connect.WithSchema(userServiceResendOtpMethodDescriptor),
@@ -136,7 +136,7 @@ type userServiceClient struct {
 	createRole *connect.Client[user.Role, user.SuccessResponse]
 	getRole    *connect.Client[emptypb.Empty, user.SuccessResponse]
 	verifyOtp  *connect.Client[user.VerifyOTPRequest, user.SuccessResponse]
-	resendOtp  *connect.Client[user.VerifyOTPRequest, user.SuccessResponse]
+	resendOtp  *connect.Client[user.ResendOTPRequest, user.SuccessResponse]
 }
 
 // GetUsers calls proto.UserService.GetUsers.
@@ -170,7 +170,7 @@ func (c *userServiceClient) VerifyOtp(ctx context.Context, req *connect.Request[
 }
 
 // ResendOtp calls proto.UserService.ResendOtp.
-func (c *userServiceClient) ResendOtp(ctx context.Context, req *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error) {
+func (c *userServiceClient) ResendOtp(ctx context.Context, req *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return c.resendOtp.CallUnary(ctx, req)
 }
 
@@ -182,7 +182,7 @@ type UserServiceHandler interface {
 	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 	GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	VerifyOtp(context.Context, *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error)
-	ResendOtp(context.Context, *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error)
+	ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error)
 }
 
 // NewUserServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -282,6 +282,6 @@ func (UnimplementedUserServiceHandler) VerifyOtp(context.Context, *connect.Reque
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.VerifyOtp is not implemented"))
 }
 
-func (UnimplementedUserServiceHandler) ResendOtp(context.Context, *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error) {
+func (UnimplementedUserServiceHandler) ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.ResendOtp is not implemented"))
 }

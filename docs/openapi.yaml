@@ -123,7 +123,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/VerifyOTPRequest'
+                            $ref: '#/components/schemas/ResendOTPRequest'
                 required: true
             responses:
                 "200":
@@ -179,6 +179,11 @@ components:
                     description: The type of the serialized message.
             additionalProperties: true
             description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
+        ResendOTPRequest:
+            type: object
+            properties:
+                email:
+                    type: string
         Role:
             type: object
             properties:
@@ -231,6 +236,8 @@ components:
                 accessToken:
                     type: string
                 isActive:
+                    type: boolean
+                isVerified:
                     type: boolean
                 name:
                     type: string

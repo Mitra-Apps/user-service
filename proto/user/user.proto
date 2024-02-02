@@ -20,8 +20,9 @@ message User {
     string avatar_image_id = 6;
     string access_token = 7;
     bool is_active = 8;
-    string name = 9;
-    string address = 10;
+    bool is_verified = 9;
+    string name = 10;
+    string address = 11;
 }
 
 message Role {
@@ -78,6 +79,10 @@ message ResendOTPRequest {
     string email = 1;
 }
 
+message ResendOTPResponse {
+    int32 otp_code = 2;
+}
+
 
 service UserService {
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {
@@ -114,7 +119,7 @@ service UserService {
             body: "*"
         };
     }
-    rpc ResendOtp(VerifyOTPRequest) returns (SuccessResponse) {
+    rpc ResendOtp(ResendOTPRequest) returns (SuccessResponse) {
         option (google.api.http) = {
             post: "/api/v1/users/resend-otp"
             body: "*"

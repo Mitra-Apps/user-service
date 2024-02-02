@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"log"
 
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
@@ -128,10 +129,10 @@ func (g *GrpcRoute) VerifyOtp(ctx context.Context, req *pb.VerifyOTPRequest) (*p
 }
 
 func (g *GrpcRoute) ResendOtp(ctx context.Context, req *pb.ResendOTPRequest) (*pb.SuccessResponse, error) {
-	redisKey := "otp:" + req.Email
-	_, err := g.service.VerifyOTP(ctx, int(req.OtpCode), redisKey)
+	otp, err := g.service.ResendOTP(ctx, req.Email)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
+	log.Print(otp)
 	return &pb.SuccessResponse{}, nil
 }

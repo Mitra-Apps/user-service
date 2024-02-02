@@ -39,7 +39,7 @@ type UserServiceClient interface {
 	CreateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*SuccessResponse, error)
 	GetRole(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
 	VerifyOtp(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
-	ResendOtp(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	ResendOtp(ctx context.Context, in *ResendOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 }
 
 type userServiceClient struct {
@@ -104,7 +104,7 @@ func (c *userServiceClient) VerifyOtp(ctx context.Context, in *VerifyOTPRequest,
 	return out, nil
 }
 
-func (c *userServiceClient) ResendOtp(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+func (c *userServiceClient) ResendOtp(ctx context.Context, in *ResendOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
 	out := new(SuccessResponse)
 	err := c.cc.Invoke(ctx, UserService_ResendOtp_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -123,7 +123,7 @@ type UserServiceServer interface {
 	CreateRole(context.Context, *Role) (*SuccessResponse, error)
 	GetRole(context.Context, *emptypb.Empty) (*SuccessResponse, error)
 	VerifyOtp(context.Context, *VerifyOTPRequest) (*SuccessResponse, error)
-	ResendOtp(context.Context, *VerifyOTPRequest) (*SuccessResponse, error)
+	ResendOtp(context.Context, *ResendOTPRequest) (*SuccessResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -149,7 +149,7 @@ func (UnimplementedUserServiceServer) GetRole(context.Context, *emptypb.Empty) (
 func (UnimplementedUserServiceServer) VerifyOtp(context.Context, *VerifyOTPRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyOtp not implemented")
 }
-func (UnimplementedUserServiceServer) ResendOtp(context.Context, *VerifyOTPRequest) (*SuccessResponse, error) {
+func (UnimplementedUserServiceServer) ResendOtp(context.Context, *ResendOTPRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResendOtp not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
@@ -274,7 +274,7 @@ func _UserService_VerifyOtp_Handler(srv interface{}, ctx context.Context, dec fu
 }
 
 func _UserService_ResendOtp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(VerifyOTPRequest)
+	in := new(ResendOTPRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -286,7 +286,7 @@ func _UserService_ResendOtp_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: UserService_ResendOtp_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).ResendOtp(ctx, req.(*VerifyOTPRequest))
+		return srv.(UserServiceServer).ResendOtp(ctx, req.(*ResendOTPRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

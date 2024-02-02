@@ -13,7 +13,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 
-	"github.com/Mitra-Apps/be-user-service/config"
 	"github.com/Mitra-Apps/be-user-service/config/tools"
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
@@ -111,23 +110,21 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		}
 		return "", NewError(codes.Internal, errResponse)
 	}
-	redisPayloadString, err := json.Marshal(redisPayload)
-	if err != nil {
-		fmt.Println("Error marshaling JSON:", err)
-		errResponse := &config.ErrorResponse{
-			Code:       codes.InvalidArgument.String(),
-			CodeDetail: codes.InvalidArgument.String(),
-			Message:    "Error Marshalling Redis Payload",
-		}
-		return "", NewError(codes.InvalidArgument, errResponse)
-	}
-	err = s.redis.Set(ctx, redisKey, redisPayloadString, time.Minute*5).Err()
-	if err != nil {
-		log.Print("Error Set Value to Redis", err)
-		errResponse := &config.ErrorResponse{
-			Code:       codes.InvalidArgument.String(),
-			CodeDetail: codes.InvalidArgument.String(),
-			Message:    "Error Set Value to Redis",
+
+	if data != nil {
+		switch data.IsVerified {
+		case false:
+			errResponse = &tools.ErrorResponse{
+				Code:       codes.InvalidArgument.String(),
+				CodeDetail: pbErr.ErrorCode_AUTH_REGISTER_USER_UNVERIFIED.String(), //TODO:, check any detail error code needed
+				Message:    "Email sudah terdaftar, mohon ke login page.",
+			}
+		case true:
+			errResponse = &tools.ErrorResponse{
+				Code:       codes.InvalidArgument.String(),
+				CodeDetail: pbErr.ErrorCode_AUTH_REGISTER_USER_VERIFIED.String(), //TODO:, check any detail error code needed
+				Message:    "Email dan/atau No. Telp sudah terdaftar.",
+			}
 		}
 		return "", NewError(codes.InvalidArgument, errResponse)
 	}
@@ -141,15 +138,14 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		return "", NewError(codes.Internal, errResponse)
 	}
 
-	otp := 0
-	generateNumber := generateRandom4DigitNumber()
-	if err == nil {
-		otp = generateNumber
-	}
+	otp := generateRandom4DigitNumber()
 	otpString := strconv.Itoa(otp)
+	redisPayload := map[string]interface{}{
+		"OTP": otpString,
+	}
 	if otp != 0 {
-		redisKey := "otp:" + otpString
-		err = s.redis.Set(ctx, redisKey, "", time.Minute*5).Err()
+		redisKey := otpRedisPrefix + data.Email
+		err = s.redis.Set(ctx, redisKey, redisPayload, time.Minute*5).Err()
 		if err != nil {
 			log.Print("Error Set Value to Redis")
 		}
@@ -172,14 +168,14 @@ func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
 func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (result bool, err error) {
 	storedJSON, err := s.redis.Get(s.redis.Context(), redisKey).Result()
 	if err == redis.Nil {
-		errResponse := &config.ErrorResponse{
+		errResponse := &tools.ErrorResponse{
 			Code:       codes.InvalidArgument.String(),
 			CodeDetail: codes.InvalidArgument.String(),
 			Message:    "Key Not Found",
 		}
 		return false, NewError(codes.InvalidArgument, errResponse)
 	} else if err != nil {
-		errResponse := &config.ErrorResponse{
+		errResponse := &tools.ErrorResponse{
 			Code:       codes.InvalidArgument.String(),
 			CodeDetail: codes.InvalidArgument.String(),
 			Message:    "Redis Error",
@@ -191,7 +187,7 @@ func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (resu
 
 		if err := json.Unmarshal([]byte(storedJSON), &retrievedObject); err != nil {
 			log.Print("Error unmarshaling JSON:", err)
-			errResponse := &config.ErrorResponse{
+			errResponse := &tools.ErrorResponse{
 				Code:       codes.InvalidArgument.String(),
 				CodeDetail: codes.InvalidArgument.String(),
 				Message:    "Unmarshal Error",
@@ -199,21 +195,21 @@ func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (resu
 			return false, NewError(codes.InvalidArgument, errResponse)
 		}
 		if retrievedObject["OTP"] == strconv.Itoa(otp) {
-			email := strings.Replace(redisKey, "otp:", "", -1)
-			_, err := s.userRepository.ActivateUserByEmail(ctx, email)
+			email := strings.Replace(redisKey, otpRedisPrefix, "", -1)
+			_, err := s.userRepository.VerifyUserByEmail(ctx, email)
 			if err != nil {
-				errResponse := &config.ErrorResponse{
+				errResponse := &tools.ErrorResponse{
 					Code:       codes.InvalidArgument.String(),
 					CodeDetail: codes.InvalidArgument.String(),
-					Message:    "Activate User Error",
+					Message:    "Verify User Error",
 				}
 				return false, NewError(codes.InvalidArgument, errResponse)
 			}
 		} else {
-			errResponse := &config.ErrorResponse{
+			errResponse := &tools.ErrorResponse{
 				Code:       codes.InvalidArgument.String(),
 				CodeDetail: codes.InvalidArgument.String(),
-				Message:    "OTP IS NOT MATCH",
+				Message:    "OTP Is Not Match",
 			}
 			return false, NewError(codes.InvalidArgument, errResponse)
 		}
@@ -222,12 +218,33 @@ func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (resu
 	}
 }
 
+func (s *Service) ResendOTP(ctx context.Context, email string) (otp int, err error) {
+	otp = generateRandom4DigitNumber()
+	otpString := strconv.Itoa(otp)
+	redisPayload := map[string]interface{}{
+		"OTP": otpString,
+	}
+	redisKey := otpRedisPrefix + email
+	// Marshal the JSON data
+	jsonData, err := json.Marshal(redisPayload)
+	if err != nil {
+		fmt.Println("Error marshalling JSON:", err)
+		return
+	}
+	err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5).Err()
+	if err != nil {
+		errResponse := &tools.ErrorResponse{
+			Code:       codes.InvalidArgument.String(),
+			CodeDetail: codes.InvalidArgument.String(),
+			Message:    "Error Set New Value To Redis",
+		}
+		return 0, NewError(codes.InvalidArgument, errResponse)
+	}
+
+	return otp, nil
+}
+
 func generateRandom4DigitNumber() int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(9000) + 1000 // Ensure a 4-digit number
-}
-
-func checkPassword(password, hashedPassword string) error {
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-	return err
 }
