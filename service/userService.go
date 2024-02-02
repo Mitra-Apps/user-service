@@ -113,9 +113,10 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 	redisPayload := map[string]interface{}{
 		"OTP": otpString,
 	}
+	log.Print("Cek Error 1")
 	redisKey := tools.OtpRedisPrefix + req.Email
+	log.Print("Cek Error 2", redisKey)
 	jsonData, err := json.Marshal(redisPayload)
-
 	if err != nil {
 		fmt.Println("Error marshalling JSON:", err)
 	} else {
