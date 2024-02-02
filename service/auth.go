@@ -1,116 +1,101 @@
 package service
 
-// import (
-// 	"context"
-// 	"fmt"
-// 	"net/http"
-// 	"strconv"
-// 	"time"
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
 
-// 	"github.com/Mitra-Apps/be-user-service/config/tools"
-// 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
-// 	"github.com/Mitra-Apps/be-user-service/lib"
-// 	jwt "github.com/golang-jwt/jwt/v5"
-// 	"github.com/google/uuid"
-// 	"github.com/labstack/echo"
-// 	"google.golang.org/grpc/codes"
-// )
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+)
 
-// type authClient struct {
-// 	secret   string
-// 	userRepo repository.User
-// }
+var (
+	errClaimingToken  = errors.New("claim token error")
+	errInvalidToken   = errors.New("invalid token error")
+	errTokenExpired   = errors.New("token expired error")
+	errUserIDRequired = errors.New("user id is required")
+)
 
-// type Authentication interface {
-// 	GenerateToken(ctx context.Context, userId uuid.UUID) (string, error)
-// 	VerifyToken(tokenString string) (uuid.UUID, error)
-// }
+type authClient struct {
+	secret string
+}
 
-// func NewAuthClient(secret string, userRepo repository.User) Authentication {
-// 	return &authClient{
-// 		secret:   secret,
-// 		userRepo: userRepo,
-// 	}
-// }
+//go:generate mockgen -source=auth.go -destination=mock/auth.go -package=mock
+type Authentication interface {
+	GenerateToken(ctx context.Context, id uuid.UUID, expiredMinute int) (token string, err error)
+	ValidateToken(ctx context.Context, requestToken string) (uuid.UUID, error)
+}
 
-// // GenerateJWT generates a JWT token with a specific payload
-// func (a *authClient) GenerateToken(ctx context.Context, userId uuid.UUID) (string, error) {
+// Authentication client constructor
+func NewAuthClient(secret string) *authClient {
+	return &authClient{
+		secret: secret,
+	}
+}
 
-// 	if userId == uuid.Nil {
-// 		return "", NewError(codes.InvalidArgument, &tools.ErrorResponse{
-// 			Code:       codes.InvalidArgument.String(),
-// 			CodeDetail: codes.Unknown.String(),
-// 			Message:    "need user id",
-// 		})
-// 	}
+// CreateAccessToken will create access token that will be used for user authentication.
+// access token will be needed in API that needs user to be authorized
+func (c *authClient) GenerateToken(ctx context.Context, id uuid.UUID, expiredMinute int) (token string, err error) {
+	if len(id) == 0 {
+		return "", errUserIDRequired
+	}
 
-// 	currentTime := time.Now().UTC()
-// 	//set token with criteria below and input userID into subject
-// 	//this will be needed to check which user is this token for
-// 	claims := &jwt.RegisteredClaims{
-// 		Subject:   strconv.Itoa(int(userID)),
-// 		ExpiresAt: jwt.NewNumericDate(currentTime.Add(time.Hour * 12)),
-// 		IssuedAt:  jwt.NewNumericDate(currentTime),
-// 	}
-// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-// 	t, err := token.SignedString([]byte(c.secret))
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return t, err
-// 	expireTime, err := time.ParseDuration(lib.GetEnv("JWT_EXPIRED_TIME"))
-// 	var secretKey = []byte(lib.GetEnv("JWT_SECRET"))
-// 	if err != nil {
-// 		return "", echo.NewHTTPError(http.StatusBadRequest, "Invalid JWT expired time")
-// 	}
+	currentTime := time.Now().UTC()
+	//set token with criteria below and input userID into subject
+	//this will be needed to check which user is this token for
+	claims := &jwt.RegisteredClaims{
+		Subject:   id.String(),
+		ExpiresAt: jwt.NewNumericDate(currentTime.Add(time.Minute * time.Duration(expiredMinute))),
+		IssuedAt:  jwt.NewNumericDate(currentTime),
+	}
+	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-// 	var roleNames []string
-// 	for _, role := range user.Roles {
-// 		roleNames = append(roleNames, role.RoleName)
-// 	}
+	token, err = t.SignedString([]byte(c.secret))
+	if err != nil {
+		return "", err
+	}
+	return token, err
+}
 
-// 	// Define the token payload
-// 	claims := &JwtCustomClaim{
-// 		UserId:    user.Id.String(),
-// 		RoleNames: roleNames,
-// 		RegisteredClaims: jwt.RegisteredClaims{
-// 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expireTime)),
-// 		},
-// 	}
+// ValidateTokens will validate whether the token is valid
+// and will return user id if the user is exist in our database
+// otherwise it will return error
+func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (uuid.UUID, error) {
+	token, err := jwt.Parse(requestToken, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(c.secret), nil
+	})
 
-// 	// Create the token
-// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	if err != nil {
+		return uuid.Nil, NewError(codes.Unauthenticated, codes.Unauthenticated.String(), err.Error())
+	}
+	// assert jwt.MapClaims type
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return uuid.Nil, NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errInvalidToken.Error())
+	}
 
-// 	// Sign the token with the secret key
-// 	tokenString, err := token.SignedString(secretKey)
-// 	if err != nil {
-// 		return "", fmt.Errorf("error signing token: %v", err)
-// 	}
+	currentTime := time.Now().UTC()
+	expTime, err := claims.GetExpirationTime()
+	if err != nil {
+		return uuid.Nil, NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
+	}
 
-// 	return tokenString, nil
-// }
+	if expTime.Before(currentTime) {
+		return uuid.Nil, NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errTokenExpired.Error())
+	}
 
-// func (a *authClient) VerifyToken(tokenString string) (uuid.UUID, error) {
-// 	var secretKey = []byte(lib.GetEnv("JWT_SECRET"))
-// 	// Parse the token
-// 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-// 		// Check signing method
-// 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-// 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-// 		}
+	//claim our user id input in subject from token
+	id := claims["sub"].(string)
+	var userID uuid.UUID
+	userID, err = uuid.Parse(id)
+	if err != nil {
+		return uuid.Nil, NewError(codes.Unauthenticated, codes.Unauthenticated.String(), err.Error())
+	}
 
-// 		// Provide the key for validation
-// 		return secretKey, nil
-// 	})
-
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error parsing token: %v", err)
-// 	}
-
-// 	// Validate the token
-// 	if !token.Valid {
-// 		return nil, fmt.Errorf("token is not valid")
-// 	}
-
-// 	return token, nil
-// }
+	return userID, nil
+}

@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/Mitra-Apps/be-user-service/config/postgre"
 	"github.com/Mitra-Apps/be-user-service/config/redis"
@@ -16,6 +15,7 @@ import (
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	userPostgreRepo "github.com/Mitra-Apps/be-user-service/domain/user/repository/postgre"
 	grpcRoute "github.com/Mitra-Apps/be-user-service/handler/grpc"
+	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	"github.com/Mitra-Apps/be-user-service/service"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/joho/godotenv"
@@ -27,11 +27,8 @@ import (
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
-	"google.golang.org/grpc/status"
 )
 
 // Middleware interceptor
@@ -48,32 +45,19 @@ func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 	case "/proto.UserService/ResendOtp":
 		// Middleware logic for specific route
 	default:
-		// Extract JWT token from metadata
-		md, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
-		}
-
-		authHeader, ok := md["authorization"]
-		if !ok || len(authHeader) == 0 {
-			return nil, status.Errorf(codes.Unauthenticated, "authorization token is not provided")
-		}
-
-		tokenString := strings.TrimPrefix(authHeader[0], "Bearer ")
-		if tokenString == authHeader[0] {
-			return nil, status.Errorf(codes.Unauthenticated, "invalid authorization format")
-		}
-
 		// Validate and parse the JWT token
-		// token, err := service.VerifyToken(tokenString)
-		// if err != nil {
-		// 	return nil, err
-		// }
+		token, err := middleware.GetToken(ctx)
+		if err != nil {
+			return nil, err
+		}
 
-		// if err != nil || !token.Valid {
-		// 	return nil, status.Errorf(codes.Unauthenticated, "invalid or expired token")
-		// }
+		auth := service.NewAuthClient(os.Getenv("JWT_SECRET"))
+		userId, err := auth.ValidateToken(ctx, token)
+		if err != nil {
+			return nil, err
+		}
 
+		ctx = middleware.SetUserIDKey(ctx, userId)
 		// Call the actual handler to process the request
 		return handler(ctx, req)
 	}
@@ -101,9 +85,10 @@ func main() {
 	usrRepo := userPostgreRepo.NewUserRepoImpl(db)
 	roleRepo := userPostgreRepo.NewRoleRepoImpl(db)
 	bcrypt := tools.New(&tools.Bcrypt{})
-	svc := service.New(usrRepo, roleRepo, bcrypt, redis)
+	auth := service.NewAuthClient(os.Getenv("JWT_SECRET"))
+	svc := service.New(usrRepo, roleRepo, bcrypt, redis, auth)
 	grpcServer := GrpcNewServer(ctx, []grpc.ServerOption{})
-	route := grpcRoute.New(svc)
+	route := grpcRoute.New(svc, auth)
 	pb.RegisterUserServiceServer(grpcServer, route)
 
 	go func() {

@@ -7,7 +7,6 @@
 *.dll
 *.so
 *.dylib
-.env
 
 # Test binary, built with `go test -c`
 *.test
@@ -19,7 +18,7 @@
 vendor/
 ignoredmodule/postgres-data/
 docker-compose.local.yaml
-.env
+*.env
 
 # Go workspace file
 go.work

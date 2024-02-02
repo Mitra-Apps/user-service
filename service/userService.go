@@ -17,7 +17,9 @@ import (
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	"github.com/go-redis/redis"
+	"github.com/google/uuid"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
@@ -28,63 +30,40 @@ func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
 	return users, nil
 }
 
-func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*entity.LoginResponse, error) {
-	var (
-		code        codes.Code
-		errResponse *tools.ErrorResponse
-	)
+func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (uuid.UUID, error) {
 
 	user, err := s.userRepository.GetByEmail(ctx, payload.Email)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			code = codes.NotFound
-			errResponse = &tools.ErrorResponse{
-				Code:       code.String(),
-				CodeDetail: pbErr.ErrorCode_AUTH_LOGIN_NOT_FOUND.String(),
-				Message:    err.Error(),
-			}
+			ErrorCode = codes.NotFound
+			ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_NOT_FOUND.String()
+			ErrorMessage = "Email belum terdaftar, mohon registrasi"
 		} else {
-			code = codes.Internal
-			errResponse = &tools.ErrorResponse{
-				Code:       code.String(),
-				CodeDetail: pbErr.ErrorCode_UNKNOWN.String(),
-				Message:    err.Error(),
-			}
+			ErrorCode = codes.Internal
+			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+			ErrorMessage = err.Error()
 		}
-		return nil, NewError(code, errResponse)
+		return uuid.Nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
-	if !user.IsActive {
-		code = codes.InvalidArgument
-		errResponse = &tools.ErrorResponse{
-			Code:       code.String(),
-			CodeDetail: pbErr.ErrorCode_AUTH_LOGIN_USER_UNVERIFIED.String(),
-			Message:    "Email sudah terdaftar, silahkan lakukan verifikasi OTP",
-		}
-		return nil, NewError(code, errResponse)
+	if !user.IsVerified {
+		ErrorCode = codes.InvalidArgument
+		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_USER_UNVERIFIED.String()
+		ErrorMessage = "Email sudah terdaftar, silahkan lakukan verifikasi OTP"
+		return uuid.Nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if err := s.hashing.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password)); err != nil {
-		code = codes.InvalidArgument
-		errResponse = &tools.ErrorResponse{
-			Code:       code.String(),
-			CodeDetail: pbErr.ErrorCode_AUTH_LOGIN_PASSWORD_INCORRECT.String(),
-			Message:    err.Error(),
-		}
-		return nil, NewError(code, errResponse)
+		ErrorCode = codes.InvalidArgument
+		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_PASSWORD_INCORRECT.String()
+		ErrorMessage = "Data yang dimasukkan tidak sesuai"
+		return uuid.Nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
-	res := &entity.LoginResponse{
-		AccessToken:  "TODO:will add later",
-		RefreshToken: "TODO:will add later",
-	}
-
-	return res, nil
+	return user.Id, nil
 }
 
 func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (string, error) {
-	var errResponse *tools.ErrorResponse
-
 	//hashing password
 	hashedPassword, err := s.hashing.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -98,44 +77,35 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		PhoneNumber: req.PhoneNumber,
 		Name:        req.Name,
 		Address:     req.Address,
-		IsActive:    false,
 	}
 
 	data, err := s.userRepository.GetByEmail(ctx, req.Email)
 	if err != nil && !strings.Contains(err.Error(), "not found") {
-		errResponse = &tools.ErrorResponse{
-			Code:       codes.Internal.String(),
-			CodeDetail: pbErr.ErrorCode_UNKNOWN.String(),
-			Message:    err.Error(),
-		}
-		return "", NewError(codes.Internal, errResponse)
+		ErrorCode = codes.Internal
+		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+		ErrorMessage = err.Error()
+		return "", NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if data != nil {
 		switch data.IsVerified {
 		case false:
-			errResponse = &tools.ErrorResponse{
-				Code:       codes.InvalidArgument.String(),
-				CodeDetail: pbErr.ErrorCode_AUTH_REGISTER_USER_UNVERIFIED.String(), //TODO:, check any detail error code needed
-				Message:    "Email sudah terdaftar, mohon ke login page.",
-			}
+			ErrorCode = codes.InvalidArgument
+			ErrorCodeDetail = pbErr.ErrorCode_AUTH_REGISTER_USER_UNVERIFIED.String()
+			ErrorMessage = "Email sudah terdaftar, mohon ke halaman login."
 		case true:
-			errResponse = &tools.ErrorResponse{
-				Code:       codes.InvalidArgument.String(),
-				CodeDetail: pbErr.ErrorCode_AUTH_REGISTER_USER_VERIFIED.String(), //TODO:, check any detail error code needed
-				Message:    "Email dan/atau No. Telp sudah terdaftar.",
-			}
+			ErrorCode = codes.InvalidArgument
+			ErrorCodeDetail = pbErr.ErrorCode_AUTH_REGISTER_USER_VERIFIED.String()
+			ErrorMessage = "Email dan/atau No. Telp sudah terdaftar."
 		}
-		return "", NewError(codes.InvalidArgument, errResponse)
+		return "", NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if err := s.userRepository.Create(ctx, user, req.RoleId); err != nil {
-		errResponse = &tools.ErrorResponse{
-			Code:       codes.Internal.String(),
-			CodeDetail: pbErr.ErrorCode_UNKNOWN.String(),
-			Message:    err.Error(),
-		}
-		return "", NewError(codes.Internal, errResponse)
+		ErrorCode = codes.Internal
+		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+		ErrorMessage = err.Error()
+		return "", NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	otp := generateRandom4DigitNumber()
@@ -158,6 +128,7 @@ func (s *Service) CreateRole(ctx context.Context, role *entity.Role) error {
 }
 
 func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
+	fmt.Println("get role service", middleware.GetUserIDValue(ctx))
 	roles, err := s.roleRepo.GetRole(ctx)
 	if err != nil {
 		return nil, err

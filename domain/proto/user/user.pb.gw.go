@@ -170,6 +170,7 @@ func local_request_UserService_GetRole_0(ctx context.Context, marshaler runtime.
 
 }
 
+<<<<<<< HEAD
 func request_UserService_VerifyOtp_0(ctx context.Context, marshaler runtime.Marshaler, client UserServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq VerifyOTPRequest
 	var metadata runtime.ServerMetadata
@@ -200,10 +201,18 @@ func local_request_UserService_VerifyOtp_0(ctx context.Context, marshaler runtim
 	}
 
 	msg, err := server.VerifyOtp(ctx, &protoReq)
+=======
+func request_UserService_GetOwnData_0(ctx context.Context, marshaler runtime.Marshaler, client UserServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq emptypb.Empty
+	var metadata runtime.ServerMetadata
+
+	msg, err := client.GetOwnData(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+>>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 	return msg, metadata, err
 
 }
 
+<<<<<<< HEAD
 func request_UserService_ResendOtp_0(ctx context.Context, marshaler runtime.Marshaler, client UserServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ResendOTPRequest
 	var metadata runtime.ServerMetadata
@@ -234,6 +243,13 @@ func local_request_UserService_ResendOtp_0(ctx context.Context, marshaler runtim
 	}
 
 	msg, err := server.ResendOtp(ctx, &protoReq)
+=======
+func local_request_UserService_GetOwnData_0(ctx context.Context, marshaler runtime.Marshaler, server UserServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq emptypb.Empty
+	var metadata runtime.ServerMetadata
+
+	msg, err := server.GetOwnData(ctx, &protoReq)
+>>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 	return msg, metadata, err
 
 }
@@ -369,7 +385,11 @@ func RegisterUserServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
+<<<<<<< HEAD
 	mux.Handle("POST", pattern_UserService_VerifyOtp_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+=======
+	mux.Handle("GET", pattern_UserService_GetOwnData_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+>>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -377,12 +397,20 @@ func RegisterUserServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
+<<<<<<< HEAD
 		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/proto.UserService/VerifyOtp", runtime.WithHTTPPathPattern("/api/v1/users/verify-token"))
+=======
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/proto.UserService/GetOwnData", runtime.WithHTTPPathPattern("/api/v1/users/getdata"))
+>>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
+<<<<<<< HEAD
 		resp, md, err := local_request_UserService_VerifyOtp_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+=======
+		resp, md, err := local_request_UserService_GetOwnData_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+>>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -390,6 +418,7 @@ func RegisterUserServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 			return
 		}
 
+<<<<<<< HEAD
 		forward_UserService_VerifyOtp_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
@@ -416,6 +445,9 @@ func RegisterUserServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		}
 
 		forward_UserService_ResendOtp_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+=======
+		forward_UserService_GetOwnData_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+>>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 
 	})
 
@@ -570,24 +602,37 @@ func RegisterUserServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
+<<<<<<< HEAD
 	mux.Handle("POST", pattern_UserService_VerifyOtp_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+=======
+	mux.Handle("GET", pattern_UserService_GetOwnData_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+>>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
+<<<<<<< HEAD
 		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/proto.UserService/VerifyOtp", runtime.WithHTTPPathPattern("/api/v1/users/verify-token"))
+=======
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/proto.UserService/GetOwnData", runtime.WithHTTPPathPattern("/api/v1/users/getdata"))
+>>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
+<<<<<<< HEAD
 		resp, md, err := request_UserService_VerifyOtp_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+=======
+		resp, md, err := request_UserService_GetOwnData_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+>>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
+<<<<<<< HEAD
 		forward_UserService_VerifyOtp_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
@@ -611,6 +656,9 @@ func RegisterUserServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		}
 
 		forward_UserService_ResendOtp_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+=======
+		forward_UserService_GetOwnData_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+>>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 
 	})
 
@@ -628,9 +676,13 @@ var (
 
 	pattern_UserService_GetRole_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "users", "getrole"}, ""))
 
+<<<<<<< HEAD
 	pattern_UserService_VerifyOtp_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "users", "verify-token"}, ""))
 
 	pattern_UserService_ResendOtp_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "users", "resend-otp"}, ""))
+=======
+	pattern_UserService_GetOwnData_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "users", "getdata"}, ""))
+>>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 )
 
 var (
@@ -644,7 +696,11 @@ var (
 
 	forward_UserService_GetRole_0 = runtime.ForwardResponseMessage
 
+<<<<<<< HEAD
 	forward_UserService_VerifyOtp_0 = runtime.ForwardResponseMessage
 
 	forward_UserService_ResendOtp_0 = runtime.ForwardResponseMessage
+=======
+	forward_UserService_GetOwnData_0 = runtime.ForwardResponseMessage
+>>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 )

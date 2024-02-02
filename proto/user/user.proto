@@ -8,7 +8,6 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 import "validate/validate.proto";
-import "google/protobuf/any.proto";
 import "google/protobuf/struct.proto";
 
 message User {
@@ -42,11 +41,6 @@ message UserLoginRequest {
     string password = 2 [(validate.rules).string = {min_len: 6; max_len: 8}];
 }
 
-message UserLoginResponse{
-    string access_token = 1;
-    string refresh_token = 2;
-}
-
 message UserRegisterRequest {
     string email = 1 [(validate.rules).string.email = true];
     string password = 2 [(validate.rules).string = {min_len: 6; max_len: 8}];
@@ -56,12 +50,8 @@ message UserRegisterRequest {
     repeated string role_id = 6;
 }
 
-message UserRegisterResponse {
-    string otp = 1;
-}
-
 message SuccessResponse {
-    google.protobuf.Any data = 1;
+    google.protobuf.Struct data = 1;
 }
 
 message GetUsersRequest {}
@@ -123,6 +113,11 @@ service UserService {
         option (google.api.http) = {
             post: "/api/v1/users/resend-otp"
             body: "*"
+        }
+    }
+    rpc GetOwnData(google.protobuf.Empty) returns (SuccessResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/users/getdata"
         };
     }
 }

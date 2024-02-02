@@ -10,6 +10,7 @@ import (
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository/mock"
+	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 )
 
@@ -54,23 +55,21 @@ func TestService_Login(t *testing.T) {
 			m.EXPECT().CompareHashAndPassword(gomock.Any(), gomock.Any()).Return(err)
 		}
 	}
+	userId := uuid.New()
 	loginRequest := &entity.LoginRequest{
 		Email:    "test@email.com",
 		Password: "test@123",
 	}
 	unverifiedUser := &entity.User{
-		Email:    "test@email.com",
-		Password: "test@123",
-		IsActive: false,
+		Email:      "test@email.com",
+		Password:   "test@123",
+		IsVerified: false,
 	}
 	verifiedUser := &entity.User{
-		Email:    "test@email.com",
-		Password: "test@123",
-		IsActive: true,
-	}
-	res := &entity.LoginResponse{
-		AccessToken:  "acccess token",
-		RefreshToken: "refresh token",
+		Id:         userId,
+		Email:      "test@email.com",
+		Password:   "test@123",
+		IsVerified: true,
 	}
 	type args struct {
 		ctx     context.Context
@@ -80,7 +79,7 @@ func TestService_Login(t *testing.T) {
 		name    string
 		s       *Service
 		args    args
-		want    *entity.LoginResponse
+		want    uuid.UUID
 		wantErr bool
 	}{
 		{
@@ -92,7 +91,7 @@ func TestService_Login(t *testing.T) {
 				ctx:     context.Background(),
 				payload: *loginRequest,
 			},
-			want:    nil,
+			want:    uuid.Nil,
 			wantErr: true,
 		},
 		{
@@ -104,7 +103,7 @@ func TestService_Login(t *testing.T) {
 				ctx:     context.Background(),
 				payload: *loginRequest,
 			},
-			want:    nil,
+			want:    uuid.Nil,
 			wantErr: true,
 		},
 		{
@@ -116,7 +115,7 @@ func TestService_Login(t *testing.T) {
 				ctx:     context.Background(),
 				payload: *loginRequest,
 			},
-			want:    nil,
+			want:    uuid.Nil,
 			wantErr: true,
 		},
 		{
@@ -129,7 +128,7 @@ func TestService_Login(t *testing.T) {
 				ctx:     context.Background(),
 				payload: *loginRequest,
 			},
-			want:    nil,
+			want:    uuid.Nil,
 			wantErr: true,
 		},
 		{
@@ -142,7 +141,7 @@ func TestService_Login(t *testing.T) {
 				ctx:     context.Background(),
 				payload: *loginRequest,
 			},
-			want:    res,
+			want:    userId,
 			wantErr: false,
 		},
 	}
@@ -204,13 +203,13 @@ func TestService_Register(t *testing.T) {
 	}
 
 	dataInactive := &entity.User{
-		Email:    "mail@mail.com",
-		IsActive: false,
+		Email:      "mail@mail.com",
+		IsVerified: false,
 	}
 
 	dataActive := &entity.User{
-		Email:    "mail@mail.com",
-		IsActive: true,
+		Email:      "mail@mail.com",
+		IsVerified: true,
 	}
 
 	type args struct {
@@ -324,27 +323,6 @@ func TestService_Register(t *testing.T) {
 			_, err := tt.s.Register(tt.args.ctx, tt.args.req)
 			if err != nil != tt.wantErr {
 				t.Errorf("Service.Register() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func Test_checkPassword(t *testing.T) {
-	type args struct {
-		password       string
-		hashedPassword string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := checkPassword(tt.args.password, tt.args.hashedPassword); (err != nil) != tt.wantErr {
-				t.Errorf("checkPassword() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
