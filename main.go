@@ -34,10 +34,15 @@ import (
 // Middleware interceptor
 func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	// Check if the method should be excluded from the middleware
+	log.Print(info.FullMethod)
 	switch info.FullMethod {
 	case "/proto.UserService/Login":
 		// Middleware logic for specific route
 	case "/proto.UserService/Register":
+		// Middleware logic for specific route
+	case "/proto.UserService/VerifyOtp":
+		// Middleware logic for specific route
+	case "/proto.UserService/ResendOtp":
 		// Middleware logic for specific route
 	default:
 		// Validate and parse the JWT token

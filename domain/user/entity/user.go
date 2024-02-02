@@ -38,6 +38,7 @@ func (u *User) ToProto() *pb.User {
 		PhoneNumber:   u.PhoneNumber,
 		Password:      u.Password,
 		IsActive:      u.IsActive,
+		IsVerified:    u.IsVerified,
 		AvatarImageId: avatarImageId,
 		Name:          u.Name,
 		Address:       u.Address,

@@ -19,8 +19,9 @@ message User {
     string avatar_image_id = 6;
     string access_token = 7;
     bool is_active = 8;
-    string name = 9;
-    string address = 10;
+    bool is_verified = 9;
+    string name = 10;
+    string address = 11;
 }
 
 message Role {
@@ -59,6 +60,20 @@ message GetUsersResponse {
     repeated User users = 1;
 }
 
+message VerifyOTPRequest {
+    string email = 1;
+    int32 otp_code = 2;
+}
+
+message ResendOTPRequest {
+    string email = 1;
+}
+
+message ResendOTPResponse {
+    int32 otp_code = 2;
+}
+
+
 service UserService {
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {
         option (google.api.http) = {
@@ -86,6 +101,18 @@ service UserService {
     rpc GetRole(google.protobuf.Empty) returns (SuccessResponse) {
         option (google.api.http) = {
             get: "/api/v1/users/getrole"
+        };
+    }
+    rpc VerifyOtp(VerifyOTPRequest) returns (SuccessResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/users/verify-token"
+            body: "*"
+        };
+    }
+    rpc ResendOtp(ResendOTPRequest) returns (SuccessResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/users/resend-otp"
+            body: "*"
         };
     }
     rpc GetOwnData(google.protobuf.Empty) returns (SuccessResponse) {

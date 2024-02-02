@@ -44,6 +44,10 @@ const (
 	UserServiceCreateRoleProcedure = "/proto.UserService/CreateRole"
 	// UserServiceGetRoleProcedure is the fully-qualified name of the UserService's GetRole RPC.
 	UserServiceGetRoleProcedure = "/proto.UserService/GetRole"
+	// UserServiceVerifyOtpProcedure is the fully-qualified name of the UserService's VerifyOtp RPC.
+	UserServiceVerifyOtpProcedure = "/proto.UserService/VerifyOtp"
+	// UserServiceResendOtpProcedure is the fully-qualified name of the UserService's ResendOtp RPC.
+	UserServiceResendOtpProcedure = "/proto.UserService/ResendOtp"
 	// UserServiceGetOwnDataProcedure is the fully-qualified name of the UserService's GetOwnData RPC.
 	UserServiceGetOwnDataProcedure = "/proto.UserService/GetOwnData"
 )
@@ -56,6 +60,8 @@ var (
 	userServiceRegisterMethodDescriptor   = userServiceServiceDescriptor.Methods().ByName("Register")
 	userServiceCreateRoleMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("CreateRole")
 	userServiceGetRoleMethodDescriptor    = userServiceServiceDescriptor.Methods().ByName("GetRole")
+	userServiceVerifyOtpMethodDescriptor  = userServiceServiceDescriptor.Methods().ByName("VerifyOtp")
+	userServiceResendOtpMethodDescriptor  = userServiceServiceDescriptor.Methods().ByName("ResendOtp")
 	userServiceGetOwnDataMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("GetOwnData")
 )
 
@@ -66,6 +72,8 @@ type UserServiceClient interface {
 	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error)
 	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 	GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	VerifyOtp(context.Context, *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error)
+	ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error)
 	GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 }
 
@@ -109,6 +117,18 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceGetRoleMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		verifyOtp: connect.NewClient[user.VerifyOTPRequest, user.SuccessResponse](
+			httpClient,
+			baseURL+UserServiceVerifyOtpProcedure,
+			connect.WithSchema(userServiceVerifyOtpMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		resendOtp: connect.NewClient[user.ResendOTPRequest, user.SuccessResponse](
+			httpClient,
+			baseURL+UserServiceResendOtpProcedure,
+			connect.WithSchema(userServiceResendOtpMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 		getOwnData: connect.NewClient[emptypb.Empty, user.SuccessResponse](
 			httpClient,
 			baseURL+UserServiceGetOwnDataProcedure,
@@ -125,6 +145,8 @@ type userServiceClient struct {
 	register   *connect.Client[user.UserRegisterRequest, user.SuccessResponse]
 	createRole *connect.Client[user.Role, user.SuccessResponse]
 	getRole    *connect.Client[emptypb.Empty, user.SuccessResponse]
+	verifyOtp  *connect.Client[user.VerifyOTPRequest, user.SuccessResponse]
+	resendOtp  *connect.Client[user.ResendOTPRequest, user.SuccessResponse]
 	getOwnData *connect.Client[emptypb.Empty, user.SuccessResponse]
 }
 
@@ -153,6 +175,16 @@ func (c *userServiceClient) GetRole(ctx context.Context, req *connect.Request[em
 	return c.getRole.CallUnary(ctx, req)
 }
 
+// VerifyOtp calls proto.UserService.VerifyOtp.
+func (c *userServiceClient) VerifyOtp(ctx context.Context, req *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return c.verifyOtp.CallUnary(ctx, req)
+}
+
+// ResendOtp calls proto.UserService.ResendOtp.
+func (c *userServiceClient) ResendOtp(ctx context.Context, req *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return c.resendOtp.CallUnary(ctx, req)
+}
+
 // GetOwnData calls proto.UserService.GetOwnData.
 func (c *userServiceClient) GetOwnData(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
 	return c.getOwnData.CallUnary(ctx, req)
@@ -165,6 +197,8 @@ type UserServiceHandler interface {
 	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error)
 	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 	GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	VerifyOtp(context.Context, *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error)
+	ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error)
 	GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 }
 
@@ -204,6 +238,18 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(userServiceGetRoleMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	userServiceVerifyOtpHandler := connect.NewUnaryHandler(
+		UserServiceVerifyOtpProcedure,
+		svc.VerifyOtp,
+		connect.WithSchema(userServiceVerifyOtpMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceResendOtpHandler := connect.NewUnaryHandler(
+		UserServiceResendOtpProcedure,
+		svc.ResendOtp,
+		connect.WithSchema(userServiceResendOtpMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	userServiceGetOwnDataHandler := connect.NewUnaryHandler(
 		UserServiceGetOwnDataProcedure,
 		svc.GetOwnData,
@@ -222,6 +268,10 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 			userServiceCreateRoleHandler.ServeHTTP(w, r)
 		case UserServiceGetRoleProcedure:
 			userServiceGetRoleHandler.ServeHTTP(w, r)
+		case UserServiceVerifyOtpProcedure:
+			userServiceVerifyOtpHandler.ServeHTTP(w, r)
+		case UserServiceResendOtpProcedure:
+			userServiceResendOtpHandler.ServeHTTP(w, r)
 		case UserServiceGetOwnDataProcedure:
 			userServiceGetOwnDataHandler.ServeHTTP(w, r)
 		default:
@@ -251,6 +301,14 @@ func (UnimplementedUserServiceHandler) CreateRole(context.Context, *connect.Requ
 
 func (UnimplementedUserServiceHandler) GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.GetRole is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) VerifyOtp(context.Context, *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.VerifyOtp is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.ResendOtp is not implemented"))
 }
 
 func (UnimplementedUserServiceHandler) GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {

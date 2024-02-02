@@ -61,3 +61,15 @@ func (p *userRepoImpl) Create(ctx context.Context, user *entity.User, roleIds []
 	})
 	return err
 }
+
+func (p *userRepoImpl) VerifyUserByEmail(ctx context.Context, email string) (bool, error) {
+	var user *entity.User
+	updatedFields := map[string]interface{}{
+		"is_verified": true,
+	}
+	res := p.db.Model(user).Where("email = ?", email).Updates(updatedFields)
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return true, nil
+}

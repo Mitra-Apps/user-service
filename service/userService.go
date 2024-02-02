@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -12,10 +13,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 
+	"github.com/Mitra-Apps/be-user-service/config/tools"
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
+	"github.com/go-redis/redis"
 	"github.com/google/uuid"
 )
 
@@ -105,17 +108,21 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		return "", NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
-	otp := 0
-	generateNumber, err := s.generateUnique4DigitNumber()
-	if err == nil {
-		otp = generateNumber
-	}
+	otp := generateRandom4DigitNumber()
 	otpString := strconv.Itoa(otp)
+	redisPayload := map[string]interface{}{
+		"OTP": otpString,
+	}
 	if otp != 0 {
-		redisKey := "otp:" + otpString
-		err = s.redis.Set(ctx, redisKey, "", time.Minute*5).Err()
+		redisKey := tools.OtpRedisPrefix + data.Email
+		jsonData, err := json.Marshal(redisPayload)
 		if err != nil {
-			log.Print("Error Set Value to Redis")
+			fmt.Println("Error marshalling JSON:", err)
+		} else {
+			err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5).Err()
+			if err != nil {
+				log.Print("Error Set Value to Redis")
+			}
 		}
 	}
 	return otpString, nil
@@ -134,21 +141,69 @@ func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
 	return roles, nil
 }
 
-func (s *Service) generateUnique4DigitNumber() (int, error) {
-	for {
-		randomNumber := generateRandom4DigitNumber()
-		// Check if the number exists in Redis
-		key := "otp:" + strconv.Itoa(randomNumber)
-		exists, err := s.redis.Exists(s.redis.Context(), key).Result()
-		if err != nil {
-			return 0, err
+func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (result bool, err error) {
+	storedJSON, err := s.redis.Get(s.redis.Context(), redisKey).Result()
+	if err == redis.Nil {
+		ErrorCode = codes.InvalidArgument
+		ErrorCodeDetail = pbErr.ErrorCode_AUTH_OTP_INVALID.String()
+		ErrorMessage = "Kode Otp Tidak Berlaku"
+		return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+	} else if err != nil {
+		ErrorCode = codes.Internal
+		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+		ErrorMessage = "Redis Error"
+		return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+	} else {
+		fmt.Println("Retrieved JSON string from Redis:", storedJSON)
+		var retrievedObject map[string]interface{}
+
+		if err := json.Unmarshal([]byte(storedJSON), &retrievedObject); err != nil {
+			ErrorCode = codes.Internal
+			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+			ErrorMessage = "Unmarshal Error"
+			return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		}
+		if retrievedObject["OTP"] == strconv.Itoa(otp) {
+			email := strings.Replace(redisKey, tools.OtpRedisPrefix, "", -1)
+			_, err := s.userRepository.VerifyUserByEmail(ctx, email)
+			if err != nil {
+				ErrorCode = codes.Internal
+				ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+				ErrorMessage = "Verify User Error"
+				return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+			}
+		} else {
+			ErrorCode = codes.Internal
+			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+			ErrorMessage = "OTP is not match"
+			return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 		}
 
-		// If the number doesn't exist in Redis, return it
-		if exists == 0 {
-			return randomNumber, nil
-		}
+		return true, nil
 	}
+}
+
+func (s *Service) ResendOTP(ctx context.Context, email string) (otp int, err error) {
+	otp = generateRandom4DigitNumber()
+	otpString := strconv.Itoa(otp)
+	redisPayload := map[string]interface{}{
+		"OTP": otpString,
+	}
+	redisKey := tools.OtpRedisPrefix + email
+	// Marshal the JSON data
+	jsonData, err := json.Marshal(redisPayload)
+	if err != nil {
+		fmt.Println("Error marshalling JSON:", err)
+		return
+	}
+	err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5).Err()
+	if err != nil {
+		ErrorCode = codes.Internal
+		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+		ErrorMessage = "Set Value Redis Error"
+		return 0, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+	}
+	return otp, nil
 }
 
 func generateRandom4DigitNumber() int {
