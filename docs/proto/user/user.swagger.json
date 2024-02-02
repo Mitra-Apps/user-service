@@ -58,6 +58,22 @@
         ]
       }
     },
+    "/api/v1/users/getdata": {
+      "get": {
+        "operationId": "UserService_GetOwnData",
+        "responses": {
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "UserService"
+        ]
+      }
+    },
     "/api/v1/users/getrole": {
       "get": {
         "operationId": "UserService_GetRole",

@@ -12,9 +12,17 @@ import (
 
 var (
 	ErrWrongPassword = errors.New("password is wrong")
+	ErrorCode        codes.Code
+	ErrorCodeDetail  string
+	ErrorMessage     string
 )
 
-func NewError(code codes.Code, newErr *tools.ErrorResponse) error {
+func NewError(code codes.Code, codeDetail string, message string) error {
+	newErr := &tools.ErrorResponse{
+		Code:       code.String(),
+		CodeDetail: codeDetail,
+		Message:    message,
+	}
 	// Marshal the ErrorResponse struct to JSON
 	errJSON, marshalErr := json.Marshal(newErr)
 	if marshalErr != nil {

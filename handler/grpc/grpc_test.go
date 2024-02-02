@@ -19,9 +19,11 @@ import (
 func TestNew(t *testing.T) {
 	type args struct {
 		service service.ServiceInterface
+		auth    service.Authentication
 	}
 	ctrl := gomock.NewController(t)
 	mockSvc := mock.NewMockServiceInterface(ctrl)
+	mockAuth := mock.NewMockAuthentication(ctrl)
 
 	tests := []struct {
 		name string
@@ -32,15 +34,17 @@ func TestNew(t *testing.T) {
 			name: "implemented",
 			args: args{
 				service: mockSvc,
+				auth:    mockAuth,
 			},
 			want: &GrpcRoute{
 				service: mockSvc,
+				auth:    mockAuth,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := New(tt.args.service); !reflect.DeepEqual(got, tt.want) {
+			if got := New(tt.args.service, tt.args.auth); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("New() = %v, want %v", got, tt.want)
 			}
 		})

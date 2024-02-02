@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
@@ -11,10 +12,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 
-	"github.com/Mitra-Apps/be-user-service/config/tools"
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/Mitra-Apps/be-user-service/handler/middleware"
+	"github.com/google/uuid"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
@@ -25,63 +27,40 @@ func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
 	return users, nil
 }
 
-func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*entity.LoginResponse, error) {
-	var (
-		code        codes.Code
-		errResponse *tools.ErrorResponse
-	)
+func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (uuid.UUID, error) {
 
 	user, err := s.userRepository.GetByEmail(ctx, payload.Email)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			code = codes.NotFound
-			errResponse = &tools.ErrorResponse{
-				Code:       code.String(),
-				CodeDetail: pbErr.ErrorCode_AUTH_LOGIN_NOT_FOUND.String(),
-				Message:    "Email belum terdaftar, mohon registrasi",
-			}
+			ErrorCode = codes.NotFound
+			ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_NOT_FOUND.String()
+			ErrorMessage = "Email belum terdaftar, mohon registrasi"
 		} else {
-			code = codes.Internal
-			errResponse = &tools.ErrorResponse{
-				Code:       code.String(),
-				CodeDetail: pbErr.ErrorCode_UNKNOWN.String(),
-				Message:    err.Error(),
-			}
+			ErrorCode = codes.Internal
+			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+			ErrorMessage = err.Error()
 		}
-		return nil, NewError(code, errResponse)
+		return uuid.Nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if !user.IsVerified {
-		code = codes.InvalidArgument
-		errResponse = &tools.ErrorResponse{
-			Code:       code.String(),
-			CodeDetail: pbErr.ErrorCode_AUTH_LOGIN_USER_UNVERIFIED.String(),
-			Message:    "Email sudah terdaftar, silahkan lakukan verifikasi OTP",
-		}
-		return nil, NewError(code, errResponse)
+		ErrorCode = codes.InvalidArgument
+		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_USER_UNVERIFIED.String()
+		ErrorMessage = "Email sudah terdaftar, silahkan lakukan verifikasi OTP"
+		return uuid.Nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if err := s.hashing.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password)); err != nil {
-		code = codes.InvalidArgument
-		errResponse = &tools.ErrorResponse{
-			Code:       code.String(),
-			CodeDetail: pbErr.ErrorCode_AUTH_LOGIN_PASSWORD_INCORRECT.String(),
-			Message:    "Data yang dimasukkan tidak sesuai",
-		}
-		return nil, NewError(code, errResponse)
+		ErrorCode = codes.InvalidArgument
+		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_PASSWORD_INCORRECT.String()
+		ErrorMessage = "Data yang dimasukkan tidak sesuai"
+		return uuid.Nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
-	res := &entity.LoginResponse{
-		AccessToken:  "TODO:will add later",
-		RefreshToken: "TODO:will add later",
-	}
-
-	return res, nil
+	return user.Id, nil
 }
 
 func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (string, error) {
-	var errResponse *tools.ErrorResponse
-
 	//hashing password
 	hashedPassword, err := s.hashing.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -99,39 +78,31 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 
 	data, err := s.userRepository.GetByEmail(ctx, req.Email)
 	if err != nil && !strings.Contains(err.Error(), "not found") {
-		errResponse = &tools.ErrorResponse{
-			Code:       codes.Internal.String(),
-			CodeDetail: pbErr.ErrorCode_UNKNOWN.String(),
-			Message:    err.Error(),
-		}
-		return "", NewError(codes.Internal, errResponse)
+		ErrorCode = codes.Internal
+		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+		ErrorMessage = err.Error()
+		return "", NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if data != nil {
 		switch data.IsVerified {
 		case false:
-			errResponse = &tools.ErrorResponse{
-				Code:       codes.InvalidArgument.String(),
-				CodeDetail: pbErr.ErrorCode_AUTH_REGISTER_USER_UNVERIFIED.String(), //TODO:, check any detail error code needed
-				Message:    "Email sudah terdaftar, mohon ke login page.",
-			}
+			ErrorCode = codes.InvalidArgument
+			ErrorCodeDetail = pbErr.ErrorCode_AUTH_REGISTER_USER_UNVERIFIED.String()
+			ErrorMessage = "Email sudah terdaftar, mohon ke login page."
 		case true:
-			errResponse = &tools.ErrorResponse{
-				Code:       codes.InvalidArgument.String(),
-				CodeDetail: pbErr.ErrorCode_AUTH_REGISTER_USER_VERIFIED.String(), //TODO:, check any detail error code needed
-				Message:    "Email dan/atau No. Telp sudah terdaftar.",
-			}
+			ErrorCode = codes.InvalidArgument
+			ErrorCodeDetail = pbErr.ErrorCode_AUTH_REGISTER_USER_VERIFIED.String()
+			ErrorMessage = "Email dan/atau No. Telp sudah terdaftar."
 		}
-		return "", NewError(codes.InvalidArgument, errResponse)
+		return "", NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if err := s.userRepository.Create(ctx, user, req.RoleId); err != nil {
-		errResponse = &tools.ErrorResponse{
-			Code:       codes.Internal.String(),
-			CodeDetail: pbErr.ErrorCode_UNKNOWN.String(),
-			Message:    err.Error(),
-		}
-		return "", NewError(codes.Internal, errResponse)
+		ErrorCode = codes.Internal
+		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+		ErrorMessage = err.Error()
+		return "", NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	otp := 0
@@ -155,6 +126,7 @@ func (s *Service) CreateRole(ctx context.Context, role *entity.Role) error {
 }
 
 func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
+	fmt.Println("get role service", middleware.GetUserIDValue(ctx))
 	roles, err := s.roleRepo.GetRole(ctx)
 	if err != nil {
 		return nil, err
@@ -182,9 +154,4 @@ func (s *Service) generateUnique4DigitNumber() (int, error) {
 func generateRandom4DigitNumber() int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(9000) + 1000 // Ensure a 4-digit number
-}
-
-func checkPassword(password, hashedPassword string) error {
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-	return err
 }

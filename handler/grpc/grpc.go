@@ -2,9 +2,12 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	"github.com/Mitra-Apps/be-user-service/service"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,12 +17,14 @@ import (
 
 type GrpcRoute struct {
 	service service.ServiceInterface
+	auth    service.Authentication
 	pb.UnimplementedUserServiceServer
 }
 
-func New(service service.ServiceInterface) pb.UserServiceServer {
+func New(service service.ServiceInterface, auth service.Authentication) pb.UserServiceServer {
 	return &GrpcRoute{
 		service: service,
+		auth:    auth,
 	}
 }
 
@@ -47,13 +52,23 @@ func (g *GrpcRoute) Login(ctx context.Context, req *pb.UserLoginRequest) (*pb.Su
 		Email:    req.Email,
 		Password: req.Password,
 	}
-	jwt, err := g.service.Login(ctx, loginRequest)
+	userId, err := g.service.Login(ctx, loginRequest)
 	if err != nil {
 		return nil, err
 	}
+
+	accessToken, err := g.auth.GenerateToken(ctx, userId, 60)
+	if err != nil {
+		return nil, err
+	}
+	refreshToken, err := g.auth.GenerateToken(ctx, userId, 43200)
+	if err != nil {
+		return nil, err
+	}
+
 	token := map[string]interface{}{
-		"access_token":  jwt.AccessToken,
-		"refresh_token": jwt.RefreshToken,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
 	}
 
 	data, err := structpb.NewStruct(token)
@@ -99,27 +114,40 @@ func (g *GrpcRoute) CreateRole(ctx context.Context, req *pb.Role) (*pb.SuccessRe
 }
 
 func (g *GrpcRoute) GetRole(ctx context.Context, req *emptypb.Empty) (*pb.SuccessResponse, error) {
+	fmt.Println("get role handler", middleware.GetUserIDValue(ctx))
 	roles, err := g.service.GetRole(ctx)
 	if err != nil {
+		fmt.Println("error 1", err.Error())
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	protoRoles := []*pb.Role{}
+	roleData := []*pb.Role{}
 	for _, r := range roles {
-		protoRoles = append(protoRoles, r.ToProto())
+		roleData = append(roleData, r.ToProto())
 	}
-	roleData := &pb.ListRole{
-		Roles: protoRoles,
-	}
-	roleStruct := map[string]interface{}{
+
+	rolesStruct := map[string]interface{}{
 		"roles": roleData,
 	}
-	data, err := structpb.NewStruct(roleStruct)
+
+	data, err := json.Marshal(rolesStruct)
 	if err != nil {
+		fmt.Println("error 3", err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	if err := json.Unmarshal(data, &rolesStruct); err != nil {
+		fmt.Println("error 4", err.Error())
+		return nil, err
+	}
+
+	dataStruct, err := structpb.NewStruct(rolesStruct)
+	if err != nil {
+		fmt.Println("error 5", err.Error())
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	return &pb.SuccessResponse{
-		Data: data,
+		Data: dataStruct,
 	}, nil
 }

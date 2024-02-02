@@ -25,6 +25,7 @@ const (
 	UserService_Register_FullMethodName   = "/proto.UserService/Register"
 	UserService_CreateRole_FullMethodName = "/proto.UserService/CreateRole"
 	UserService_GetRole_FullMethodName    = "/proto.UserService/GetRole"
+	UserService_GetOwnData_FullMethodName = "/proto.UserService/GetOwnData"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -36,6 +37,7 @@ type UserServiceClient interface {
 	Register(ctx context.Context, in *UserRegisterRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	CreateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*SuccessResponse, error)
 	GetRole(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
+	GetOwnData(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
 }
 
 type userServiceClient struct {
@@ -91,6 +93,15 @@ func (c *userServiceClient) GetRole(ctx context.Context, in *emptypb.Empty, opts
 	return out, nil
 }
 
+func (c *userServiceClient) GetOwnData(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_GetOwnData_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -100,6 +111,7 @@ type UserServiceServer interface {
 	Register(context.Context, *UserRegisterRequest) (*SuccessResponse, error)
 	CreateRole(context.Context, *Role) (*SuccessResponse, error)
 	GetRole(context.Context, *emptypb.Empty) (*SuccessResponse, error)
+	GetOwnData(context.Context, *emptypb.Empty) (*SuccessResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -121,6 +133,9 @@ func (UnimplementedUserServiceServer) CreateRole(context.Context, *Role) (*Succe
 }
 func (UnimplementedUserServiceServer) GetRole(context.Context, *emptypb.Empty) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRole not implemented")
+}
+func (UnimplementedUserServiceServer) GetOwnData(context.Context, *emptypb.Empty) (*SuccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOwnData not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -225,6 +240,24 @@ func _UserService_GetRole_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetOwnData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetOwnData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetOwnData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetOwnData(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -251,6 +284,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRole",
 			Handler:    _UserService_GetRole_Handler,
+		},
+		{
+			MethodName: "GetOwnData",
+			Handler:    _UserService_GetOwnData_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
