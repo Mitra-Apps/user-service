@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/Mitra-Apps/be-user-service/config/redis"
 	mTools "github.com/Mitra-Apps/be-user-service/config/tools/mock"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
@@ -110,6 +111,7 @@ func TestService_Login(t *testing.T) {
 			name: "error unverified account",
 			s: &Service{
 				userRepository: mockRepo,
+				hashing:        mockHash,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -157,6 +159,7 @@ func TestService_Login(t *testing.T) {
 				mockCompareHash(errors.New("any error"))(mockHash)
 			case "error unverified account":
 				mockLogin(unverifiedUser, nil)(mockRepo)
+				mockCompareHash(nil)(mockHash)
 			case "success":
 				mockLogin(verifiedUser, nil)(mockRepo)
 				mockCompareHash(nil)(mockHash)
@@ -287,6 +290,7 @@ func TestService_Register(t *testing.T) {
 			s: &Service{
 				userRepository: mockRepo,
 				hashing:        mockHash,
+				redis:          redis.Connection(),
 			},
 			args: args{
 				ctx: context.Background(),

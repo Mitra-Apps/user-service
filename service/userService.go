@@ -46,17 +46,17 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (uuid.
 		return uuid.Nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
-	if !user.IsVerified {
-		ErrorCode = codes.InvalidArgument
-		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_USER_UNVERIFIED.String()
-		ErrorMessage = "Email sudah terdaftar, silahkan lakukan verifikasi OTP"
-		return uuid.Nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
-	}
-
 	if err := s.hashing.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password)); err != nil {
 		ErrorCode = codes.InvalidArgument
 		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_PASSWORD_INCORRECT.String()
 		ErrorMessage = "Data yang dimasukkan tidak sesuai"
+		return uuid.Nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+	}
+
+	if !user.IsVerified {
+		ErrorCode = codes.InvalidArgument
+		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_USER_UNVERIFIED.String()
+		ErrorMessage = "Email sudah terdaftar, silahkan lakukan verifikasi OTP"
 		return uuid.Nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
