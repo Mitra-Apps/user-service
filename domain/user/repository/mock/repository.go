@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	entity "github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -82,6 +83,21 @@ func (m *MockUser) GetByEmail(ctx context.Context, email string) (*entity.User, 
 func (mr *MockUserMockRecorder) GetByEmail(ctx, email any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByEmail", reflect.TypeOf((*MockUser)(nil).GetByEmail), ctx, email)
+}
+
+// GetByID mocks base method.
+func (m *MockUser) GetByID(ctx context.Context, ID uuid.UUID) (*entity.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByID", ctx, ID)
+	ret0, _ := ret[0].(*entity.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByID indicates an expected call of GetByID.
+func (mr *MockUserMockRecorder) GetByID(ctx, ID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockUser)(nil).GetByID), ctx, ID)
 }
 
 // MockRole is a mock of Role interface.

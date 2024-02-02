@@ -88,4 +88,9 @@ service UserService {
             get: "/api/v1/users/getrole"
         };
     }
+    rpc GetOwnData(google.protobuf.Empty) returns (SuccessResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/users/getdata"
+        };
+    }
 }

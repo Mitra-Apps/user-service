@@ -6,6 +6,7 @@ import (
 
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
+	"github.com/google/uuid"
 
 	"gorm.io/gorm"
 )
@@ -31,6 +32,14 @@ func (p *userRepoImpl) GetAll(ctx context.Context) ([]*entity.User, error) {
 func (p *userRepoImpl) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
 	var user *entity.User
 	if err := p.db.Preload("Roles").Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (p *userRepoImpl) GetByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
+	var user *entity.User
+	if err := p.db.Preload("Roles").Where("id = ?", id).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil

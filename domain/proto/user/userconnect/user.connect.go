@@ -44,6 +44,8 @@ const (
 	UserServiceCreateRoleProcedure = "/proto.UserService/CreateRole"
 	// UserServiceGetRoleProcedure is the fully-qualified name of the UserService's GetRole RPC.
 	UserServiceGetRoleProcedure = "/proto.UserService/GetRole"
+	// UserServiceGetOwnDataProcedure is the fully-qualified name of the UserService's GetOwnData RPC.
+	UserServiceGetOwnDataProcedure = "/proto.UserService/GetOwnData"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -54,6 +56,7 @@ var (
 	userServiceRegisterMethodDescriptor   = userServiceServiceDescriptor.Methods().ByName("Register")
 	userServiceCreateRoleMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("CreateRole")
 	userServiceGetRoleMethodDescriptor    = userServiceServiceDescriptor.Methods().ByName("GetRole")
+	userServiceGetOwnDataMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("GetOwnData")
 )
 
 // UserServiceClient is a client for the proto.UserService service.
@@ -63,6 +66,7 @@ type UserServiceClient interface {
 	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error)
 	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 	GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 }
 
 // NewUserServiceClient constructs a client for the proto.UserService service. By default, it uses
@@ -105,6 +109,12 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceGetRoleMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		getOwnData: connect.NewClient[emptypb.Empty, user.SuccessResponse](
+			httpClient,
+			baseURL+UserServiceGetOwnDataProcedure,
+			connect.WithSchema(userServiceGetOwnDataMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -115,6 +125,7 @@ type userServiceClient struct {
 	register   *connect.Client[user.UserRegisterRequest, user.SuccessResponse]
 	createRole *connect.Client[user.Role, user.SuccessResponse]
 	getRole    *connect.Client[emptypb.Empty, user.SuccessResponse]
+	getOwnData *connect.Client[emptypb.Empty, user.SuccessResponse]
 }
 
 // GetUsers calls proto.UserService.GetUsers.
@@ -142,6 +153,11 @@ func (c *userServiceClient) GetRole(ctx context.Context, req *connect.Request[em
 	return c.getRole.CallUnary(ctx, req)
 }
 
+// GetOwnData calls proto.UserService.GetOwnData.
+func (c *userServiceClient) GetOwnData(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
+	return c.getOwnData.CallUnary(ctx, req)
+}
+
 // UserServiceHandler is an implementation of the proto.UserService service.
 type UserServiceHandler interface {
 	GetUsers(context.Context, *connect.Request[user.GetUsersRequest]) (*connect.Response[user.GetUsersResponse], error)
@@ -149,6 +165,7 @@ type UserServiceHandler interface {
 	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error)
 	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 	GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 }
 
 // NewUserServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -187,6 +204,12 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(userServiceGetRoleMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	userServiceGetOwnDataHandler := connect.NewUnaryHandler(
+		UserServiceGetOwnDataProcedure,
+		svc.GetOwnData,
+		connect.WithSchema(userServiceGetOwnDataMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/proto.UserService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case UserServiceGetUsersProcedure:
@@ -199,6 +222,8 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 			userServiceCreateRoleHandler.ServeHTTP(w, r)
 		case UserServiceGetRoleProcedure:
 			userServiceGetRoleHandler.ServeHTTP(w, r)
+		case UserServiceGetOwnDataProcedure:
+			userServiceGetOwnDataHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -226,4 +251,8 @@ func (UnimplementedUserServiceHandler) CreateRole(context.Context, *connect.Requ
 
 func (UnimplementedUserServiceHandler) GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.GetRole is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.GetOwnData is not implemented"))
 }
