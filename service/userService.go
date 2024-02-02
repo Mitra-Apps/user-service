@@ -13,7 +13,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 
-	"github.com/Mitra-Apps/be-user-service/config/tools"
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
@@ -115,9 +114,14 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 	}
 	if otp != 0 {
 		redisKey := otpRedisPrefix + data.Email
-		err = s.redis.Set(ctx, redisKey, redisPayload, time.Minute*5).Err()
+		jsonData, err := json.Marshal(redisPayload)
 		if err != nil {
-			log.Print("Error Set Value to Redis")
+			fmt.Println("Error marshalling JSON:", err)
+		} else {
+			err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5).Err()
+			if err != nil {
+				log.Print("Error Set Value to Redis")
+			}
 		}
 	}
 	return otpString, nil
@@ -139,50 +143,39 @@ func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
 func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (result bool, err error) {
 	storedJSON, err := s.redis.Get(s.redis.Context(), redisKey).Result()
 	if err == redis.Nil {
-		errResponse := &tools.ErrorResponse{
-			Code:       codes.InvalidArgument.String(),
-			CodeDetail: codes.InvalidArgument.String(),
-			Message:    "Key Not Found",
-		}
-		return false, NewError(codes.InvalidArgument, errResponse)
+		ErrorCode = codes.Internal
+		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+		ErrorMessage = "Key Not Found"
+		return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	} else if err != nil {
-		errResponse := &tools.ErrorResponse{
-			Code:       codes.InvalidArgument.String(),
-			CodeDetail: codes.InvalidArgument.String(),
-			Message:    "Redis Error",
-		}
-		return false, NewError(codes.InvalidArgument, errResponse)
+		ErrorCode = codes.Internal
+		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+		ErrorMessage = "Redis Error"
+		return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	} else {
 		fmt.Println("Retrieved JSON string from Redis:", storedJSON)
 		var retrievedObject map[string]interface{}
 
 		if err := json.Unmarshal([]byte(storedJSON), &retrievedObject); err != nil {
-			log.Print("Error unmarshaling JSON:", err)
-			errResponse := &tools.ErrorResponse{
-				Code:       codes.InvalidArgument.String(),
-				CodeDetail: codes.InvalidArgument.String(),
-				Message:    "Unmarshal Error",
-			}
-			return false, NewError(codes.InvalidArgument, errResponse)
+			ErrorCode = codes.Internal
+			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+			ErrorMessage = "Unmarshal Error"
+			return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 		}
 		if retrievedObject["OTP"] == strconv.Itoa(otp) {
 			email := strings.Replace(redisKey, otpRedisPrefix, "", -1)
 			_, err := s.userRepository.VerifyUserByEmail(ctx, email)
 			if err != nil {
-				errResponse := &tools.ErrorResponse{
-					Code:       codes.InvalidArgument.String(),
-					CodeDetail: codes.InvalidArgument.String(),
-					Message:    "Verify User Error",
-				}
-				return false, NewError(codes.InvalidArgument, errResponse)
+				ErrorCode = codes.Internal
+				ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+				ErrorMessage = "Verify User Error"
+				return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 			}
 		} else {
-			errResponse := &tools.ErrorResponse{
-				Code:       codes.InvalidArgument.String(),
-				CodeDetail: codes.InvalidArgument.String(),
-				Message:    "OTP Is Not Match",
-			}
-			return false, NewError(codes.InvalidArgument, errResponse)
+			ErrorCode = codes.Internal
+			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+			ErrorMessage = "OTP is not match"
+			return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 		}
 
 		return true, nil
@@ -204,14 +197,11 @@ func (s *Service) ResendOTP(ctx context.Context, email string) (otp int, err err
 	}
 	err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5).Err()
 	if err != nil {
-		errResponse := &tools.ErrorResponse{
-			Code:       codes.InvalidArgument.String(),
-			CodeDetail: codes.InvalidArgument.String(),
-			Message:    "Error Set New Value To Redis",
-		}
-		return 0, NewError(codes.InvalidArgument, errResponse)
+		ErrorCode = codes.Internal
+		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+		ErrorMessage = "Set Value Redis Error"
+		return 0, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
-
 	return otp, nil
 }
 

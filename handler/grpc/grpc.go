@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
@@ -167,6 +166,23 @@ func (g *GrpcRoute) ResendOtp(ctx context.Context, req *pb.ResendOTPRequest) (*p
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
-	log.Print(otp)
-	return &pb.SuccessResponse{}, nil
+	resendOtpStruct := map[string]interface{}{
+		"otp": otp,
+	}
+
+	data, err := json.Marshal(resendOtpStruct)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+	if err := json.Unmarshal(data, &resendOtpStruct); err != nil {
+		return nil, err
+	}
+	dataStruct, err := structpb.NewStruct(resendOtpStruct)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	return &pb.SuccessResponse{
+		Data: dataStruct,
+	}, nil
 }
