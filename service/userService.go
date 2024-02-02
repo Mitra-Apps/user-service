@@ -89,7 +89,7 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		case false:
 			ErrorCode = codes.InvalidArgument
 			ErrorCodeDetail = pbErr.ErrorCode_AUTH_REGISTER_USER_UNVERIFIED.String()
-			ErrorMessage = "Email sudah terdaftar, mohon ke login page."
+			ErrorMessage = "Email sudah terdaftar, mohon ke halaman login."
 		case true:
 			ErrorCode = codes.InvalidArgument
 			ErrorCodeDetail = pbErr.ErrorCode_AUTH_REGISTER_USER_VERIFIED.String()
