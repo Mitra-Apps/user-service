@@ -25,12 +25,9 @@ const (
 	UserService_Register_FullMethodName   = "/proto.UserService/Register"
 	UserService_CreateRole_FullMethodName = "/proto.UserService/CreateRole"
 	UserService_GetRole_FullMethodName    = "/proto.UserService/GetRole"
-<<<<<<< HEAD
 	UserService_VerifyOtp_FullMethodName  = "/proto.UserService/VerifyOtp"
 	UserService_ResendOtp_FullMethodName  = "/proto.UserService/ResendOtp"
-=======
 	UserService_GetOwnData_FullMethodName = "/proto.UserService/GetOwnData"
->>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -100,6 +97,24 @@ func (c *userServiceClient) GetRole(ctx context.Context, in *emptypb.Empty, opts
 	return out, nil
 }
 
+func (c *userServiceClient) VerifyOtp(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_VerifyOtp_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ResendOtp(ctx context.Context, in *ResendOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_ResendOtp_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *userServiceClient) GetOwnData(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error) {
 	out := new(SuccessResponse)
 	err := c.cc.Invoke(ctx, UserService_GetOwnData_FullMethodName, in, out, opts...)
@@ -118,12 +133,9 @@ type UserServiceServer interface {
 	Register(context.Context, *UserRegisterRequest) (*SuccessResponse, error)
 	CreateRole(context.Context, *Role) (*SuccessResponse, error)
 	GetRole(context.Context, *emptypb.Empty) (*SuccessResponse, error)
-<<<<<<< HEAD
 	VerifyOtp(context.Context, *VerifyOTPRequest) (*SuccessResponse, error)
 	ResendOtp(context.Context, *ResendOTPRequest) (*SuccessResponse, error)
-=======
 	GetOwnData(context.Context, *emptypb.Empty) (*SuccessResponse, error)
->>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -146,16 +158,14 @@ func (UnimplementedUserServiceServer) CreateRole(context.Context, *Role) (*Succe
 func (UnimplementedUserServiceServer) GetRole(context.Context, *emptypb.Empty) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRole not implemented")
 }
-<<<<<<< HEAD
 func (UnimplementedUserServiceServer) VerifyOtp(context.Context, *VerifyOTPRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyOtp not implemented")
 }
 func (UnimplementedUserServiceServer) ResendOtp(context.Context, *ResendOTPRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResendOtp not implemented")
-=======
+}
 func (UnimplementedUserServiceServer) GetOwnData(context.Context, *emptypb.Empty) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOwnData not implemented")
->>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -260,18 +270,12 @@ func _UserService_GetRole_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-<<<<<<< HEAD
 func _UserService_VerifyOtp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(VerifyOTPRequest)
-=======
-func _UserService_GetOwnData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
->>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-<<<<<<< HEAD
 		return srv.(UserServiceServer).VerifyOtp(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
@@ -298,7 +302,16 @@ func _UserService_ResendOtp_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).ResendOtp(ctx, req.(*ResendOTPRequest))
-=======
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetOwnData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
 		return srv.(UserServiceServer).GetOwnData(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
@@ -307,7 +320,6 @@ func _UserService_ResendOtp_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).GetOwnData(ctx, req.(*emptypb.Empty))
->>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -340,17 +352,16 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserService_GetRole_Handler,
 		},
 		{
-<<<<<<< HEAD
 			MethodName: "VerifyOtp",
 			Handler:    _UserService_VerifyOtp_Handler,
 		},
 		{
 			MethodName: "ResendOtp",
 			Handler:    _UserService_ResendOtp_Handler,
-=======
+		},
+		{
 			MethodName: "GetOwnData",
 			Handler:    _UserService_GetOwnData_Handler,
->>>>>>> a4fb885cac4f4666a16d03504d1c96fccf3e6548
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

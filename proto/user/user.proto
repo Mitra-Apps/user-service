@@ -113,7 +113,7 @@ service UserService {
         option (google.api.http) = {
             post: "/api/v1/users/resend-otp"
             body: "*"
-        }
+        };
     }
     rpc GetOwnData(google.protobuf.Empty) returns (SuccessResponse) {
         option (google.api.http) = {
