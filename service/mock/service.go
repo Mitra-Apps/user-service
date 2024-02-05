@@ -15,7 +15,6 @@ import (
 
 	user "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	entity "github.com/Mitra-Apps/be-user-service/domain/user/entity"
-	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -87,10 +86,10 @@ func (mr *MockServiceInterfaceMockRecorder) GetRole(ctx any) *gomock.Call {
 }
 
 // Login mocks base method.
-func (m *MockServiceInterface) Login(ctx context.Context, payload entity.LoginRequest) (uuid.UUID, error) {
+func (m *MockServiceInterface) Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Login", ctx, payload)
-	ret0, _ := ret[0].(uuid.UUID)
+	ret0, _ := ret[0].(*entity.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/google/uuid"
 )
 
@@ -31,7 +32,7 @@ func TestNewAuthClient(t *testing.T) {
 func Test_authClient_GenerateToken(t *testing.T) {
 	type args struct {
 		ctx           context.Context
-		id            uuid.UUID
+		user          *entity.User
 		expiredMinute int
 	}
 	tests := []struct {
@@ -45,7 +46,7 @@ func Test_authClient_GenerateToken(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotToken, err := tt.c.GenerateToken(tt.args.ctx, tt.args.id, tt.args.expiredMinute)
+			gotToken, err := tt.c.GenerateToken(tt.args.ctx, tt.args.user, tt.args.expiredMinute)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("authClient.GenerateToken() error = %v, wantErr %v", err, tt.wantErr)
 				return

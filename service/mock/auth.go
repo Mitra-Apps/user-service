@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	entity "github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -41,18 +42,18 @@ func (m *MockAuthentication) EXPECT() *MockAuthenticationMockRecorder {
 }
 
 // GenerateToken mocks base method.
-func (m *MockAuthentication) GenerateToken(ctx context.Context, id uuid.UUID, expiredMinute int) (string, error) {
+func (m *MockAuthentication) GenerateToken(ctx context.Context, user *entity.User, expiredMinute int) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenerateToken", ctx, id, expiredMinute)
+	ret := m.ctrl.Call(m, "GenerateToken", ctx, user, expiredMinute)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GenerateToken indicates an expected call of GenerateToken.
-func (mr *MockAuthenticationMockRecorder) GenerateToken(ctx, id, expiredMinute any) *gomock.Call {
+func (mr *MockAuthenticationMockRecorder) GenerateToken(ctx, user, expiredMinute any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateToken", reflect.TypeOf((*MockAuthentication)(nil).GenerateToken), ctx, id, expiredMinute)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateToken", reflect.TypeOf((*MockAuthentication)(nil).GenerateToken), ctx, user, expiredMinute)
 }
 
 // ValidateToken mocks base method.

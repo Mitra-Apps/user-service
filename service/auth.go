@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -18,13 +19,18 @@ var (
 	errUserIDRequired = errors.New("user id is required")
 )
 
+type jwtCustomClaim struct {
+	Roles []string `json:"roles"`
+	jwt.RegisteredClaims
+}
+
 type authClient struct {
 	secret string
 }
 
 //go:generate mockgen -source=auth.go -destination=mock/auth.go -package=mock
 type Authentication interface {
-	GenerateToken(ctx context.Context, id uuid.UUID, expiredMinute int) (token string, err error)
+	GenerateToken(ctx context.Context, user *entity.User, expiredMinute int) (token string, err error)
 	ValidateToken(ctx context.Context, requestToken string) (uuid.UUID, error)
 }
 
@@ -37,19 +43,30 @@ func NewAuthClient(secret string) *authClient {
 
 // CreateAccessToken will create access token that will be used for user authentication.
 // access token will be needed in API that needs user to be authorized
-func (c *authClient) GenerateToken(ctx context.Context, id uuid.UUID, expiredMinute int) (token string, err error) {
-	if len(id) == 0 {
+func (c *authClient) GenerateToken(ctx context.Context, user *entity.User, expiredMinute int) (token string, err error) {
+	if user.Id == uuid.Nil {
 		return "", errUserIDRequired
+	}
+
+	var roles []string
+	for _, role := range user.Roles {
+		roles = append(roles, role.RoleName)
 	}
 
 	currentTime := time.Now().UTC()
 	//set token with criteria below and input userID into subject
 	//this will be needed to check which user is this token for
-	claims := &jwt.RegisteredClaims{
-		Subject:   id.String(),
+	registeredClaims := jwt.RegisteredClaims{
+		Subject:   user.Id.String(),
 		ExpiresAt: jwt.NewNumericDate(currentTime.Add(time.Minute * time.Duration(expiredMinute))),
 		IssuedAt:  jwt.NewNumericDate(currentTime),
 	}
+
+	claims := &jwtCustomClaim{
+		Roles:            roles,
+		RegisteredClaims: registeredClaims,
+	}
+
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	token, err = t.SignedString([]byte(c.secret))

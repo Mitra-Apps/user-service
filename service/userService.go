@@ -19,7 +19,6 @@ import (
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	"github.com/go-redis/redis"
-	"github.com/google/uuid"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
@@ -30,7 +29,7 @@ func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
 	return users, nil
 }
 
-func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (uuid.UUID, error) {
+func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error) {
 
 	user, err := s.userRepository.GetByEmail(ctx, payload.Email)
 	if err != nil {
@@ -43,24 +42,24 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (uuid.
 			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 			ErrorMessage = err.Error()
 		}
-		return uuid.Nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if err := s.hashing.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password)); err != nil {
 		ErrorCode = codes.InvalidArgument
 		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_PASSWORD_INCORRECT.String()
 		ErrorMessage = "Data yang dimasukkan tidak sesuai"
-		return uuid.Nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if !user.IsVerified {
 		ErrorCode = codes.InvalidArgument
 		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_USER_UNVERIFIED.String()
 		ErrorMessage = "Email sudah terdaftar, silahkan lakukan verifikasi OTP"
-		return uuid.Nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
-	return user.Id, nil
+	return user, nil
 }
 
 func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (string, error) {

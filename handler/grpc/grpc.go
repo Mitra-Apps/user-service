@@ -52,16 +52,16 @@ func (g *GrpcRoute) Login(ctx context.Context, req *pb.UserLoginRequest) (*pb.Su
 		Email:    req.Email,
 		Password: req.Password,
 	}
-	userId, err := g.service.Login(ctx, loginRequest)
+	user, err := g.service.Login(ctx, loginRequest)
 	if err != nil {
 		return nil, err
 	}
 
-	accessToken, err := g.auth.GenerateToken(ctx, userId, 60)
+	accessToken, err := g.auth.GenerateToken(ctx, user, 60)
 	if err != nil {
 		return nil, err
 	}
-	refreshToken, err := g.auth.GenerateToken(ctx, userId, 43200)
+	refreshToken, err := g.auth.GenerateToken(ctx, user, 43200)
 	if err != nil {
 		return nil, err
 	}

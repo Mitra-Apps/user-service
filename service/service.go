@@ -8,7 +8,6 @@ import (
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
 	"github.com/go-redis/redis/v8"
-	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -35,7 +34,7 @@ func New(
 //go:generate mockgen -source=service.go -destination=mock/service.go -package=mock
 type ServiceInterface interface {
 	GetAll(ctx context.Context) ([]*entity.User, error)
-	Login(ctx context.Context, payload entity.LoginRequest) (uuid.UUID, error)
+	Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error)
 	Register(ctx context.Context, req *pb.UserRegisterRequest) (string, error)
 	CreateRole(ctx context.Context, role *entity.Role) error
 	GetRole(ctx context.Context) ([]entity.Role, error)
