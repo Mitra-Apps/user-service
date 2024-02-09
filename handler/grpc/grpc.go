@@ -154,11 +154,32 @@ func (g *GrpcRoute) GetRole(ctx context.Context, req *emptypb.Empty) (*pb.Succes
 
 func (g *GrpcRoute) VerifyOtp(ctx context.Context, req *pb.VerifyOTPRequest) (*pb.SuccessResponse, error) {
 	redisKey := "otp:" + req.Email
-	_, err := g.service.VerifyOTP(ctx, int(req.OtpCode), redisKey)
+	user, err := g.service.VerifyOTP(ctx, int(req.OtpCode), redisKey)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.SuccessResponse{}, nil
+	accessToken, err := g.auth.GenerateToken(ctx, user, 60)
+	if err != nil {
+		return nil, err
+	}
+	refreshToken, err := g.auth.GenerateToken(ctx, user, 43200)
+	if err != nil {
+		return nil, err
+	}
+
+	token := map[string]interface{}{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	}
+
+	data, err := structpb.NewStruct(token)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	return &pb.SuccessResponse{
+		Data: data,
+	}, nil
 }
 
 func (g *GrpcRoute) ResendOtp(ctx context.Context, req *pb.ResendOTPRequest) (*pb.SuccessResponse, error) {

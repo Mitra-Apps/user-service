@@ -6,13 +6,16 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Mitra-Apps/be-user-service/config/redis"
-	mTools "github.com/Mitra-Apps/be-user-service/config/tools/mock"
+	mockTools "github.com/Mitra-Apps/be-user-service/config/tools/mock"
+	"github.com/Mitra-Apps/be-user-service/config/tools/redis"
+	mockRedis "github.com/Mitra-Apps/be-user-service/config/tools/redis/mock"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository/mock"
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
+
+	r "github.com/go-redis/redis"
 )
 
 func TestService_GetAll(t *testing.T) {
@@ -50,9 +53,9 @@ func TestService_Login(t *testing.T) {
 			m.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, err)
 		}
 	}
-	mockHash := mTools.NewMockBcryptInterface(ctrl)
-	mockCompareHash := func(err error) func(m *mTools.MockBcryptInterface) {
-		return func(m *mTools.MockBcryptInterface) {
+	mockHash := mockTools.NewMockBcryptInterface(ctrl)
+	mockCompareHash := func(err error) func(m *mockTools.MockBcryptInterface) {
+		return func(m *mockTools.MockBcryptInterface) {
 			m.EXPECT().CompareHashAndPassword(gomock.Any(), gomock.Any()).Return(err)
 		}
 	}
@@ -80,7 +83,7 @@ func TestService_Login(t *testing.T) {
 		name    string
 		s       *Service
 		args    args
-		want    uuid.UUID
+		want    *entity.User
 		wantErr bool
 	}{
 		{
@@ -92,7 +95,7 @@ func TestService_Login(t *testing.T) {
 				ctx:     context.Background(),
 				payload: *loginRequest,
 			},
-			want:    uuid.Nil,
+			want:    nil,
 			wantErr: true,
 		},
 		{
@@ -104,7 +107,7 @@ func TestService_Login(t *testing.T) {
 				ctx:     context.Background(),
 				payload: *loginRequest,
 			},
-			want:    uuid.Nil,
+			want:    nil,
 			wantErr: true,
 		},
 		{
@@ -117,7 +120,7 @@ func TestService_Login(t *testing.T) {
 				ctx:     context.Background(),
 				payload: *loginRequest,
 			},
-			want:    uuid.Nil,
+			want:    nil,
 			wantErr: true,
 		},
 		{
@@ -130,7 +133,7 @@ func TestService_Login(t *testing.T) {
 				ctx:     context.Background(),
 				payload: *loginRequest,
 			},
-			want:    uuid.Nil,
+			want:    nil,
 			wantErr: true,
 		},
 		{
@@ -143,7 +146,7 @@ func TestService_Login(t *testing.T) {
 				ctx:     context.Background(),
 				payload: *loginRequest,
 			},
-			want:    userId,
+			want:    verifiedUser,
 			wantErr: false,
 		},
 	}
@@ -189,9 +192,9 @@ func TestService_Register(t *testing.T) {
 			m.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(data, err)
 		}
 	}
-	mockHash := mTools.NewMockBcryptInterface(ctrl)
-	mockHashing := func(hashedPassword []byte, err error) func(m *mTools.MockBcryptInterface) {
-		return func(m *mTools.MockBcryptInterface) {
+	mockHash := mockTools.NewMockBcryptInterface(ctrl)
+	mockHashing := func(hashedPassword []byte, err error) func(m *mockTools.MockBcryptInterface) {
+		return func(m *mockTools.MockBcryptInterface) {
 			m.EXPECT().GenerateFromPassword(gomock.Any(), gomock.Any()).Return(hashedPassword, err)
 		}
 	}
@@ -284,9 +287,8 @@ func TestService_Register(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		//TODO: check success flow after otp is done and update the unit test
 		{
-			name: "success register user",
+			name: "success register user error in redis",
 			s: &Service{
 				userRepository: mockRepo,
 				hashing:        mockHash,
@@ -296,7 +298,7 @@ func TestService_Register(t *testing.T) {
 				ctx: context.Background(),
 				req: req,
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -316,7 +318,7 @@ func TestService_Register(t *testing.T) {
 			mockHashing([]byte{}, nil)(mockHash)
 			mockGetEmail(nil, errors.New("record not found"))(mockRepo)
 			mockRegister(errors.New("error"))(mockRepo)
-		case "success register user":
+		case "success register user error in redis":
 			mockHashing([]byte{}, nil)(mockHash)
 			mockGetEmail(nil, errors.New("record not found"))(mockRepo)
 			mockRegister(nil)(mockRepo)
@@ -451,6 +453,245 @@ func Test_generateRandom4DigitNumber(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := generateRandom4DigitNumber(); got != tt.want {
 				t.Errorf("generateRandom4DigitNumber() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestService_VerifyOTP(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockUser := mock.NewMockUser(ctrl)
+	redis := mockRedis.NewMockRedisInterface(ctrl)
+	mockGetUser := func(user *entity.User, err error) func(m *mock.MockUser) {
+		return func(m *mock.MockUser) {
+			m.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, err)
+		}
+	}
+	mockUpdateUser := func(res bool, err error) func(m *mock.MockUser) {
+		return func(m *mock.MockUser) {
+			m.EXPECT().VerifyUserByEmail(gomock.Any(), gomock.Any()).Return(res, err)
+		}
+	}
+	mockGetStringKey := func(value string, err error) func(m *mockRedis.MockRedisInterface) {
+		return func(m *mockRedis.MockRedisInterface) {
+			m.EXPECT().GetStringKey(gomock.Any(), gomock.Any()).Return(value, err)
+		}
+	}
+	mockGetContext := func(ctx context.Context) func(m *mockRedis.MockRedisInterface) {
+		return func(m *mockRedis.MockRedisInterface) {
+			m.EXPECT().GetContext().Return(ctx)
+		}
+	}
+	id := uuid.New()
+	verifiedUser := &entity.User{
+		Id:         id,
+		Email:      "test@mail.com",
+		IsVerified: true,
+	}
+	unverifiedUser := &entity.User{
+		Id:         id,
+		Email:      "test@mail.com",
+		IsVerified: false,
+	}
+
+	failedStoredJSON := `{OTP:error`
+	succcessStoredJSON := `{"OTP":"1234"}`
+	redisKey := "otp:" + "test@mail.com"
+
+	type args struct {
+		ctx      context.Context
+		otp      int
+		redisKey string
+	}
+	tests := []struct {
+		name     string
+		s        *Service
+		args     args
+		wantUser *entity.User
+		wantErr  bool
+	}{
+		{
+			name: "error verify otp caused by verified user",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+			},
+			args: args{
+				ctx:      context.Background(),
+				otp:      generateRandom4DigitNumber(),
+				redisKey: redisKey,
+			},
+			wantUser: nil,
+			wantErr:  true,
+		},
+		{
+			name: "error verify otp caused by no record",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+			},
+			args: args{
+				ctx:      context.Background(),
+				otp:      generateRandom4DigitNumber(),
+				redisKey: redisKey,
+			},
+			wantUser: nil,
+			wantErr:  true,
+		},
+		{
+			name: "error verify otp caused by redis nil",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+			},
+			args: args{
+				ctx:      context.Background(),
+				otp:      generateRandom4DigitNumber(),
+				redisKey: redisKey,
+			},
+			wantUser: nil,
+			wantErr:  true,
+		},
+		{
+			name: "error verify otp caused by other redis error",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+			},
+			args: args{
+				ctx:      context.Background(),
+				otp:      generateRandom4DigitNumber(),
+				redisKey: redisKey,
+			},
+			wantUser: nil,
+			wantErr:  true,
+		},
+		{
+			name: "error verify otp caused by unmarshal stored json",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+			},
+			args: args{
+				ctx:      context.Background(),
+				otp:      generateRandom4DigitNumber(),
+				redisKey: redisKey,
+			},
+			wantUser: nil,
+			wantErr:  true,
+		},
+		{
+			name: "error verify otp caused by incorrect input otp",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+			},
+			args: args{
+				ctx:      context.Background(),
+				otp:      generateRandom4DigitNumber(),
+				redisKey: redisKey,
+			},
+			wantUser: nil,
+			wantErr:  true,
+		},
+		{
+			name: "error verify otp caused by error saving user",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+			},
+			args: args{
+				ctx:      context.Background(),
+				otp:      1234,
+				redisKey: redisKey,
+			},
+			wantUser: nil,
+			wantErr:  true,
+		},
+		{
+			name: "success",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+			},
+			args: args{
+				ctx:      context.Background(),
+				otp:      1234,
+				redisKey: redisKey,
+			},
+			wantUser: unverifiedUser,
+			wantErr:  false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			switch tt.name {
+			case "error verify otp caused by verified user":
+				mockGetUser(verifiedUser, nil)(mockUser)
+			case "error verify otp caused by no record":
+				mockGetUser(nil, errors.New("any error"))(mockUser)
+			case "error verify otp caused by redis nil":
+				mockGetUser(unverifiedUser, nil)(mockUser)
+				mockGetContext(context.Background())(redis)
+				mockGetStringKey("", r.Nil)(redis)
+			case "error verify otp caused by other redis error":
+				mockGetUser(unverifiedUser, nil)(mockUser)
+				mockGetContext(context.Background())(redis)
+				mockGetStringKey("", errors.New("other error"))(redis)
+			case "error verify otp caused by unmarshal stored json":
+				mockGetUser(unverifiedUser, nil)(mockUser)
+				mockGetContext(context.Background())(redis)
+				mockGetStringKey(failedStoredJSON, nil)(redis)
+			case "error verify otp caused by incorrect input otp":
+				mockGetUser(unverifiedUser, nil)(mockUser)
+				mockGetContext(context.Background())(redis)
+				mockGetStringKey(succcessStoredJSON, nil)(redis)
+			case "error verify otp caused by error saving user":
+				mockGetUser(unverifiedUser, nil)(mockUser)
+				mockGetContext(context.Background())(redis)
+				mockGetStringKey(succcessStoredJSON, nil)(redis)
+				mockUpdateUser(false, errors.New("any error"))(mockUser)
+			case "success":
+				mockGetUser(unverifiedUser, nil)(mockUser)
+				mockGetContext(context.Background())(redis)
+				mockGetStringKey(succcessStoredJSON, nil)(redis)
+				mockUpdateUser(true, nil)(mockUser)
+			}
+			gotUser, err := tt.s.VerifyOTP(tt.args.ctx, tt.args.otp, tt.args.redisKey)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Service.VerifyOTP() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotUser, tt.wantUser) {
+				t.Errorf("Service.VerifyOTP() = %v, want %v", gotUser, tt.wantUser)
+			}
+		})
+	}
+}
+
+func TestService_ResendOTP(t *testing.T) {
+	type args struct {
+		ctx   context.Context
+		email string
+	}
+	tests := []struct {
+		name    string
+		s       *Service
+		args    args
+		wantOtp int
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotOtp, err := tt.s.ResendOTP(tt.args.ctx, tt.args.email)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Service.ResendOTP() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotOtp != tt.wantOtp {
+				t.Errorf("Service.ResendOTP() = %v, want %v", gotOtp, tt.wantOtp)
 			}
 		})
 	}

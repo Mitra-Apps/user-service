@@ -119,7 +119,7 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		return "", NewError(codes.Internal, codes.Internal.String(), err.Error())
 	}
 
-	err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5).Err()
+	err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5)
 	if err != nil {
 		log.Print("Error Set Value to Redis")
 		return "", NewError(codes.Internal, codes.Internal.String(), err.Error())
@@ -141,46 +141,61 @@ func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
 	return roles, nil
 }
 
-func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (result bool, err error) {
-	storedJSON, err := s.redis.Get(s.redis.Context(), redisKey).Result()
-	if err == redis.Nil {
-		ErrorCode = codes.InvalidArgument
-		ErrorCodeDetail = pbErr.ErrorCode_AUTH_OTP_INVALID.String()
-		ErrorMessage = "Kode Otp Tidak Berlaku"
-		return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
-	} else if err != nil {
+func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (user *entity.User, err error) {
+
+	email := strings.Replace(redisKey, tools.OtpRedisPrefix, "", -1)
+	user, err = s.userRepository.GetByEmail(ctx, email)
+	if err != nil {
 		ErrorCode = codes.Internal
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
-		ErrorMessage = "Redis Error"
-		return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
-	} else {
-		fmt.Println("Retrieved JSON string from Redis:", storedJSON)
-		var retrievedObject map[string]interface{}
+		ErrorMessage = "Verify User Error"
+		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+	}
+	if user.IsVerified {
+		ErrorCode = codes.InvalidArgument
+		ErrorCodeDetail = pbErr.ErrorCode_AUTH_OTP_ERROR_VERIFIED_USER.String()
+		ErrorMessage = "Email sudah terverifikasi, silahkan login"
+		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+	}
 
-		if err := json.Unmarshal([]byte(storedJSON), &retrievedObject); err != nil {
-			ErrorCode = codes.Internal
-			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
-			ErrorMessage = "Unmarshal Error"
-			return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
-		}
-		if retrievedObject["OTP"] == strconv.Itoa(otp) {
-			email := strings.Replace(redisKey, tools.OtpRedisPrefix, "", -1)
-			_, err := s.userRepository.VerifyUserByEmail(ctx, email)
-			if err != nil {
-				ErrorCode = codes.Internal
-				ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
-				ErrorMessage = "Verify User Error"
-				return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
-			}
+	storedJSON, err := s.redis.GetStringKey(s.redis.GetContext(), redisKey)
+	if err != nil {
+		if err == redis.Nil {
+			ErrorCode = codes.InvalidArgument
+			ErrorCodeDetail = pbErr.ErrorCode_AUTH_OTP_INVALID.String()
+			ErrorMessage = "Kode OTP Tidak Berlaku"
 		} else {
 			ErrorCode = codes.Internal
 			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
-			ErrorMessage = "OTP is not match"
-			return false, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+			ErrorMessage = "Redis Error"
 		}
-
-		return true, nil
+		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
+
+	fmt.Println("Retrieved JSON string from Redis:", storedJSON)
+	var retrievedObject map[string]interface{}
+
+	if err := json.Unmarshal([]byte(storedJSON), &retrievedObject); err != nil {
+		ErrorCode = codes.Internal
+		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+		ErrorMessage = "Unmarshal Error"
+		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+	}
+	if retrievedObject["OTP"] != strconv.Itoa(otp) {
+		ErrorCode = codes.InvalidArgument
+		ErrorCodeDetail = pbErr.ErrorCode_AUTH_OTP_INVALID.String()
+		ErrorMessage = "Kode OTP Tidak Berlaku"
+		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+	}
+
+	if _, err = s.userRepository.VerifyUserByEmail(ctx, user.Email); err != nil {
+		ErrorCode = codes.Internal
+		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+		ErrorMessage = "Update User Error"
+		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+	}
+
+	return user, nil
 }
 
 func (s *Service) ResendOTP(ctx context.Context, email string) (otp int, err error) {
@@ -196,7 +211,7 @@ func (s *Service) ResendOTP(ctx context.Context, email string) (otp int, err err
 		fmt.Println("Error marshalling JSON:", err)
 		return
 	}
-	err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5).Err()
+	err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5)
 	if err != nil {
 		ErrorCode = codes.Internal
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()

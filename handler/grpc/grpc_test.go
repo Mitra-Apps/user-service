@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"reflect"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/service"
 	"github.com/Mitra-Apps/be-user-service/service/mock"
+	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -80,6 +82,40 @@ func TestGrpcRoute_GetUsers(t *testing.T) {
 }
 
 func TestGrpcRoute_Login(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockSvc := mock.NewMockServiceInterface(ctrl)
+	mockAuth := mock.NewMockAuthentication(ctrl)
+	mockLogin := func(user *entity.User, err error) func(m *mock.MockServiceInterface) {
+		return func(m *mock.MockServiceInterface) {
+			m.EXPECT().Login(gomock.Any(), gomock.Any()).Return(user, err)
+		}
+	}
+	mockGenerateToken := func(token string, err error) func(m *mock.MockAuthentication) {
+		return func(m *mock.MockAuthentication) {
+			m.EXPECT().GenerateToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(token, err)
+		}
+	}
+	req := &pb.UserLoginRequest{
+		Email:    "test@mail.com",
+		Password: "@Abc123",
+	}
+	user := &entity.User{
+		Id:         uuid.New(),
+		Email:      "test@mail.com",
+		IsVerified: true,
+	}
+	accessToken := "accessToken"
+	refreshToken := "refreshToken"
+	token := map[string]interface{}{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	}
+	data, _ := structpb.NewStruct(token)
+
+	res := &pb.SuccessResponse{
+		Data: data,
+	}
+
 	type args struct {
 		ctx context.Context
 		req *pb.UserLoginRequest
@@ -91,10 +127,92 @@ func TestGrpcRoute_Login(t *testing.T) {
 		want    *pb.SuccessResponse
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "error validation",
+			g: &GrpcRoute{
+				service: mockSvc,
+				auth:    mockAuth,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &pb.UserLoginRequest{
+					Email:    "111",
+					Password: "",
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error caused by login service",
+			g: &GrpcRoute{
+				service: mockSvc,
+				auth:    mockAuth,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error caused by generate access token",
+			g: &GrpcRoute{
+				service: mockSvc,
+				auth:    mockAuth,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error caused by generate refresh token",
+			g: &GrpcRoute{
+				service: mockSvc,
+				auth:    mockAuth,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "success",
+			g: &GrpcRoute{
+				service: mockSvc,
+				auth:    mockAuth,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    res,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			switch tt.name {
+			case "error caused by login service":
+				mockLogin(nil, errors.New("any error"))(mockSvc)
+			case "error caused by generate access token":
+				mockLogin(user, nil)(mockSvc)
+				mockGenerateToken("", errors.New("any error"))(mockAuth)
+			case "error caused by generate refresh token":
+				mockLogin(user, nil)(mockSvc)
+				mockGenerateToken(accessToken, nil)(mockAuth)
+				mockGenerateToken("", errors.New("any error"))(mockAuth)
+			case "success":
+				mockLogin(user, nil)(mockSvc)
+				mockGenerateToken(accessToken, nil)(mockAuth)
+				mockGenerateToken(refreshToken, nil)(mockAuth)
+			}
 			got, err := tt.g.Login(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GrpcRoute.Login() error = %v, wantErr %v", err, tt.wantErr)
@@ -308,7 +426,7 @@ func TestGrpcRoute_GetRole(t *testing.T) {
 			m.EXPECT().GetRole(gomock.Any()).Return(data, err)
 		}
 	}
-	data := []entity.Role{
+	roles := []entity.Role{
 		{
 			Model:    gorm.Model{ID: 1},
 			RoleName: "merchant",
@@ -319,22 +437,25 @@ func TestGrpcRoute_GetRole(t *testing.T) {
 		},
 	}
 
-	listRole := &pb.ListRole{
-		Roles: []*pb.Role{
-			{
-				Id:       "1",
-				RoleName: "merchant",
-			},
-			{
-				Id:       "2",
-				RoleName: "customer",
-			},
+	Roles := []*pb.Role{
+		{
+			Id:       "1",
+			RoleName: "merchant",
+		},
+		{
+			Id:       "2",
+			RoleName: "customer",
 		},
 	}
+
 	listStruct := map[string]interface{}{
-		"roles": listRole,
+		"roles": Roles,
 	}
+
+	data, _ := json.Marshal(listStruct)
+	json.Unmarshal(data, &listStruct)
 	pbData, _ := structpb.NewStruct(listStruct)
+
 	type args struct {
 		ctx context.Context
 		req *emptypb.Empty
@@ -379,7 +500,7 @@ func TestGrpcRoute_GetRole(t *testing.T) {
 			case "error get role from service layer":
 				mockGetRole(nil, errors.New("any error"))(mockSvc)
 			case "success":
-				mockGetRole(data, nil)(mockSvc)
+				mockGetRole(roles, nil)(mockSvc)
 			}
 			got, err := tt.g.GetRole(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
@@ -388,6 +509,163 @@ func TestGrpcRoute_GetRole(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GrpcRoute.GetRole() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGrpcRoute_VerifyOtp(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockSvc := mock.NewMockServiceInterface(ctrl)
+	mockAuth := mock.NewMockAuthentication(ctrl)
+	mockVerifyOtp := func(user *entity.User, err error) func(m *mock.MockServiceInterface) {
+		return func(m *mock.MockServiceInterface) {
+			m.EXPECT().VerifyOTP(gomock.Any(), gomock.Any(), gomock.Any()).Return(user, err)
+		}
+	}
+	mockGenerateToken := func(token string, err error) func(m *mock.MockAuthentication) {
+		return func(m *mock.MockAuthentication) {
+			m.EXPECT().GenerateToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(token, err)
+		}
+	}
+
+	user := &entity.User{
+		Id:         uuid.New(),
+		Email:      "test@mail.com",
+		IsVerified: true,
+	}
+	req := &pb.VerifyOTPRequest{
+		Email:   "test@mail.com",
+		OtpCode: 1234,
+	}
+	accessToken := "accessToken"
+	refreshToken := "refreshToken"
+	token := map[string]interface{}{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	}
+	data, _ := structpb.NewStruct(token)
+
+	res := &pb.SuccessResponse{
+		Data: data,
+	}
+
+	type args struct {
+		ctx context.Context
+		req *pb.VerifyOTPRequest
+	}
+	tests := []struct {
+		name    string
+		g       *GrpcRoute
+		args    args
+		want    *pb.SuccessResponse
+		wantErr bool
+	}{
+		{
+			name: "error caused by service verify otp",
+			g: &GrpcRoute{
+				service: mockSvc,
+				auth:    mockAuth,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error caused by generate access token",
+			g: &GrpcRoute{
+				service: mockSvc,
+				auth:    mockAuth,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error caused by generate refresh token",
+			g: &GrpcRoute{
+				service: mockSvc,
+				auth:    mockAuth,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "success",
+			g: &GrpcRoute{
+				service: mockSvc,
+				auth:    mockAuth,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    res,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			switch tt.name {
+			case "error caused by service verify otp":
+				mockVerifyOtp(nil, errors.New("any error"))(mockSvc)
+			case "error caused by generate access token":
+				mockVerifyOtp(user, nil)(mockSvc)
+				mockGenerateToken("", errors.New("any error"))(mockAuth)
+			case "error caused by generate refresh token":
+				mockVerifyOtp(user, nil)(mockSvc)
+				mockGenerateToken(accessToken, nil)(mockAuth)
+				mockGenerateToken("", errors.New("any error"))(mockAuth)
+			case "success":
+				mockVerifyOtp(user, nil)(mockSvc)
+				mockGenerateToken(accessToken, nil)(mockAuth)
+				mockGenerateToken(refreshToken, nil)(mockAuth)
+			}
+			got, err := tt.g.VerifyOtp(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GrpcRoute.VerifyOtp() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GrpcRoute.VerifyOtp() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGrpcRoute_ResendOtp(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		req *pb.ResendOTPRequest
+	}
+	tests := []struct {
+		name    string
+		g       *GrpcRoute
+		args    args
+		want    *pb.SuccessResponse
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.g.ResendOtp(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GrpcRoute.ResendOtp() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GrpcRoute.ResendOtp() = %v, want %v", got, tt.want)
 			}
 		})
 	}
