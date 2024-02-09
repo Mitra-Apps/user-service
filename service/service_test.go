@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/Mitra-Apps/be-user-service/config/tools"
+	"github.com/Mitra-Apps/be-user-service/config/tools/redis"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository/mock"
-	"github.com/go-redis/redis/v8"
 	"go.uber.org/mock/gomock"
 )
 
@@ -16,7 +16,7 @@ func TestNew(t *testing.T) {
 		userRepository repository.User
 		roleRepo       repository.Role
 		hashing        tools.BcryptInterface
-		redis          *redis.Client
+		redis          redis.RedisInterface
 		auth           Authentication
 	}
 	ctrl := gomock.NewController(t)

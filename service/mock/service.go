@@ -131,10 +131,10 @@ func (mr *MockServiceInterfaceMockRecorder) ResendOTP(ctx, email any) *gomock.Ca
 }
 
 // VerifyOTP mocks base method.
-func (m *MockServiceInterface) VerifyOTP(ctx context.Context, otp int, redisKey string) (bool, error) {
+func (m *MockServiceInterface) VerifyOTP(ctx context.Context, otp int, redisKey string) (*entity.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "VerifyOTP", ctx, otp, redisKey)
-	ret0, _ := ret[0].(bool)
+	ret0, _ := ret[0].(*entity.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

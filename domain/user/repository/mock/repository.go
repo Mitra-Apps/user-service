@@ -100,6 +100,20 @@ func (mr *MockUserMockRecorder) GetByID(ctx, ID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockUser)(nil).GetByID), ctx, ID)
 }
 
+// Save mocks base method.
+func (m *MockUser) Save(ctx context.Context, user *entity.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Save", ctx, user)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Save indicates an expected call of Save.
+func (mr *MockUserMockRecorder) Save(ctx, user any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockUser)(nil).Save), ctx, user)
+}
+
 // VerifyUserByEmail mocks base method.
 func (m *MockUser) VerifyUserByEmail(ctx context.Context, email string) (bool, error) {
 	m.ctrl.T.Helper()

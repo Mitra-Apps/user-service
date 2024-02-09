@@ -9,8 +9,8 @@ import (
 	"os"
 
 	"github.com/Mitra-Apps/be-user-service/config/postgre"
-	"github.com/Mitra-Apps/be-user-service/config/redis"
 	"github.com/Mitra-Apps/be-user-service/config/tools"
+	"github.com/Mitra-Apps/be-user-service/config/tools/redis"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	userPostgreRepo "github.com/Mitra-Apps/be-user-service/domain/user/repository/postgre"

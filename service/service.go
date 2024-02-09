@@ -4,24 +4,24 @@ import (
 	"context"
 
 	"github.com/Mitra-Apps/be-user-service/config/tools"
+	"github.com/Mitra-Apps/be-user-service/config/tools/redis"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
-	"github.com/go-redis/redis/v8"
 )
 
 type Service struct {
 	userRepository repository.User
 	roleRepo       repository.Role
 	hashing        tools.BcryptInterface
-	redis          *redis.Client
+	redis          redis.RedisInterface
 	auth           Authentication
 }
 
 func New(
 	userRepository repository.User,
 	roleRepo repository.Role, hashing tools.BcryptInterface,
-	redis *redis.Client, auth Authentication) *Service {
+	redis redis.RedisInterface, auth Authentication) *Service {
 	return &Service{
 		userRepository: userRepository,
 		roleRepo:       roleRepo,
@@ -38,6 +38,6 @@ type ServiceInterface interface {
 	Register(ctx context.Context, req *pb.UserRegisterRequest) (string, error)
 	CreateRole(ctx context.Context, role *entity.Role) error
 	GetRole(ctx context.Context) ([]entity.Role, error)
-	VerifyOTP(ctx context.Context, otp int, redisKey string) (result bool, err error)
+	VerifyOTP(ctx context.Context, otp int, redisKey string) (user *entity.User, err error)
 	ResendOTP(ctx context.Context, email string) (otp int, err error)
 }

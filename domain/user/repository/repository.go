@@ -13,6 +13,7 @@ type User interface {
 	GetByEmail(ctx context.Context, email string) (*entity.User, error)
 	GetByID(ctx context.Context, ID uuid.UUID) (*entity.User, error)
 	Create(ctx context.Context, user *entity.User, roleIds []string) error
+	Save(ctx context.Context, user *entity.User) error
 	VerifyUserByEmail(ctx context.Context, email string) (bool, error)
 }
 
