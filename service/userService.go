@@ -18,7 +18,6 @@ import (
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
-	"github.com/go-redis/redis"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
@@ -160,15 +159,9 @@ func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (user
 
 	storedJSON, err := s.redis.GetStringKey(s.redis.GetContext(), redisKey)
 	if err != nil {
-		if err == redis.Nil {
-			ErrorCode = codes.InvalidArgument
-			ErrorCodeDetail = pbErr.ErrorCode_AUTH_OTP_INVALID.String()
-			ErrorMessage = "Kode OTP Tidak Berlaku"
-		} else {
-			ErrorCode = codes.Internal
-			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
-			ErrorMessage = "Redis Error"
-		}
+		ErrorCode = codes.InvalidArgument
+		ErrorCodeDetail = pbErr.ErrorCode_AUTH_OTP_INVALID.String()
+		ErrorMessage = "Kode OTP Tidak Berlaku"
 		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
