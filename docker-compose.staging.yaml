@@ -5,7 +5,6 @@ services:
     ports:
       - 7100:7100
       - 7101:7101
-      - 6380:6379
     environment:
       - GRPC_PORT=7100
       - HTTP_PORT=7101
