@@ -14,7 +14,7 @@ services:
       - DB_NAME=user-service
       - JWT_SECRET=secret
       - JWT_EXPIRED_TIME=6h
-      - REDIS_SERVER=redis_staging:6380
+      - REDIS_SERVER=redis_staging:6379
     networks:
       - grpc_network
 networks:
