@@ -5,6 +5,7 @@ services:
     ports:
       - 7100:7100
       - 7101:7101
+      - 6380:6379
     environment:
       - GRPC_PORT=7100
       - HTTP_PORT=7101
@@ -14,7 +15,7 @@ services:
       - DB_NAME=user-service
       - JWT_SECRET=secret
       - JWT_EXPIRED_TIME=6h
-      - REDIS_SERVER=redis_staging:6379
+      - REDIS_SERVER=redis_staging:6380
     networks:
       - grpc_network
 networks:

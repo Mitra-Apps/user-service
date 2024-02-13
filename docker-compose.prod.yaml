@@ -5,6 +5,7 @@ services:
     ports:
       - 9100:9100
       - 9101:9101
+      - 6381:6379
     environment:
       - GRPC_PORT=9100
       - HTTP_PORT=9101
@@ -14,7 +15,7 @@ services:
       - DB_NAME=user-service
       - JWT_SECRET=secret
       - JWT_EXPIRED_TIME=6h
-      - REDIS_SERVER=redis_prod:6379
+      - REDIS_SERVER=redis_prod:6381
     networks:
       - grpc_network
 networks:
