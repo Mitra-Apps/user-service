@@ -817,6 +817,10 @@ func (m *SuccessResponse) validate(all bool) error {
 
 	var errors []error
 
+	// no validation rules for Code
+
+	// no validation rules for Message
+
 	if all {
 		switch v := interface{}(m.GetData()).(type) {
 		case interface{ ValidateAll() error }:

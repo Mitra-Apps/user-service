@@ -8,6 +8,7 @@ import (
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
+	"google.golang.org/grpc/codes"
 )
 
 type Service struct {
@@ -17,6 +18,12 @@ type Service struct {
 	redis          redis.RedisInterface
 	auth           Authentication
 }
+
+var (
+	ErrorCode       codes.Code
+	ErrorCodeDetail string
+	ErrorMessage    string
+)
 
 func New(
 	userRepository repository.User,

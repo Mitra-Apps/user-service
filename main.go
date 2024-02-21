@@ -17,6 +17,7 @@ import (
 	grpcRoute "github.com/Mitra-Apps/be-user-service/handler/grpc"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	"github.com/Mitra-Apps/be-user-service/service"
+	util "github.com/Mitra-Apps/be-utility-service/config/tools"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -33,18 +34,19 @@ import (
 
 // Middleware interceptor
 func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	// Check if the method should be excluded from the middleware
+	// Check if the method should be included from the middleware
 	log.Print(info.FullMethod)
+	addMiddleware := true
+	// Add the method that will be included for middleware
 	switch info.FullMethod {
-	case "/proto.UserService/Login":
+	case "/proto.UserService/GetUsers":
 		// Middleware logic for specific route
-	case "/proto.UserService/Register":
-		// Middleware logic for specific route
-	case "/proto.UserService/VerifyOtp":
-		// Middleware logic for specific route
-	case "/proto.UserService/ResendOtp":
+	case "/proto.UserService/GetOwnData":
 		// Middleware logic for specific route
 	default:
+		addMiddleware = false
+	}
+	if addMiddleware {
 		// Validate and parse the JWT token
 		token, err := middleware.GetToken(ctx)
 		if err != nil {
@@ -131,7 +133,16 @@ func GrpcNewServer(ctx context.Context, opts []grpc.ServerOption) *grpc.Server {
 }
 
 func HttpNewServer(ctx context.Context, grpcPort, httpPort string) error {
-	mux := runtime.NewServeMux(runtime.WithErrorHandler(tools.CustomErrorHandler))
+	mux := runtime.NewServeMux(runtime.WithErrorHandler(util.CustomErrorHandler))
+
+	mux.HandlePath("GET", "/docs/v1/users/openapi.yaml", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+		http.ServeFile(w, r, "docs/openapi.yaml")
+	})
+
+	mux.HandlePath("GET", "/docs/v1/users", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+		http.ServeFile(w, r, "docs/index.html")
+	})
+
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	if err := pb.RegisterUserServiceHandlerFromEndpoint(ctx, mux, fmt.Sprintf("localhost:%s", grpcPort), opts); err != nil {
 		return err

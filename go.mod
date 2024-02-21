@@ -4,6 +4,7 @@ go 1.21.3
 
 require (
 	connectrpc.com/connect v1.14.0
+	github.com/Mitra-Apps/be-utility-service v0.0.0-20240221141312-d24df4f1c1da
 	github.com/envoyproxy/protoc-gen-validate v1.0.4
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-redis/redis/v8 v8.11.5
@@ -44,7 +45,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/santhosh-tekuri/jsonschema v1.2.4 // indirect
-	github.com/stretchr/testify v1.8.4 // indirect
 	go.elastic.co/apm v1.15.0 // indirect
 	go.elastic.co/apm/module/apmhttp v1.15.0 // indirect
 	go.elastic.co/fastjson v1.3.0 // indirect

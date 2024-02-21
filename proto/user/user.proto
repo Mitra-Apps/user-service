@@ -51,7 +51,9 @@ message UserRegisterRequest {
 }
 
 message SuccessResponse {
-    google.protobuf.Struct data = 1;
+    int32 code = 1;
+    string message = 2;
+    google.protobuf.Struct data = 3;
 }
 
 message GetUsersRequest {}

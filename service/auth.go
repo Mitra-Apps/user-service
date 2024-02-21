@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	util "github.com/Mitra-Apps/be-utility-service/service"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -88,22 +89,22 @@ func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (uu
 	})
 
 	if err != nil {
-		return uuid.Nil, NewError(codes.Unauthenticated, codes.Unauthenticated.String(), err.Error())
+		return uuid.Nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), err.Error())
 	}
 	// assert jwt.MapClaims type
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return uuid.Nil, NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errInvalidToken.Error())
+		return uuid.Nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errInvalidToken.Error())
 	}
 
 	currentTime := time.Now().UTC()
 	expTime, err := claims.GetExpirationTime()
 	if err != nil {
-		return uuid.Nil, NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
+		return uuid.Nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
 	}
 
 	if expTime.Before(currentTime) {
-		return uuid.Nil, NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errTokenExpired.Error())
+		return uuid.Nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errTokenExpired.Error())
 	}
 
 	//claim our user id input in subject from token
@@ -111,7 +112,7 @@ func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (uu
 	var userID uuid.UUID
 	userID, err = uuid.Parse(id)
 	if err != nil {
-		return uuid.Nil, NewError(codes.Unauthenticated, codes.Unauthenticated.String(), err.Error())
+		return uuid.Nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), err.Error())
 	}
 
 	return userID, nil

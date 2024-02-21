@@ -18,6 +18,7 @@ import (
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
+	util "github.com/Mitra-Apps/be-utility-service/service"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
@@ -41,21 +42,21 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*enti
 			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 			ErrorMessage = err.Error()
 		}
-		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if err := s.hashing.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password)); err != nil {
 		ErrorCode = codes.InvalidArgument
 		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_PASSWORD_INCORRECT.String()
 		ErrorMessage = "Data yang dimasukkan tidak sesuai"
-		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if !user.IsVerified {
 		ErrorCode = codes.InvalidArgument
 		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_USER_UNVERIFIED.String()
 		ErrorMessage = "Email sudah terdaftar, silahkan lakukan verifikasi OTP"
-		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	return user, nil
@@ -82,7 +83,7 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		ErrorCode = codes.Internal
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 		ErrorMessage = err.Error()
-		return "", NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return "", util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if data != nil {
@@ -96,14 +97,14 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 			ErrorCodeDetail = pbErr.ErrorCode_AUTH_REGISTER_USER_VERIFIED.String()
 			ErrorMessage = "Email dan/atau No. Telp sudah terdaftar."
 		}
-		return "", NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return "", util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if err := s.userRepository.Create(ctx, user, req.RoleId); err != nil {
 		ErrorCode = codes.Internal
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 		ErrorMessage = err.Error()
-		return "", NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return "", util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	otp := generateRandom4DigitNumber()
@@ -115,13 +116,13 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 	jsonData, err := json.Marshal(redisPayload)
 	if err != nil {
 		fmt.Println("Error marshalling JSON:", err)
-		return "", NewError(codes.Internal, codes.Internal.String(), err.Error())
+		return "", util.NewError(codes.Internal, codes.Internal.String(), err.Error())
 	}
 
 	err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5)
 	if err != nil {
 		log.Print("Error Set Value to Redis")
-		return "", NewError(codes.Internal, codes.Internal.String(), err.Error())
+		return "", util.NewError(codes.Internal, codes.Internal.String(), err.Error())
 	}
 
 	return otpString, nil
@@ -148,13 +149,13 @@ func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (user
 		ErrorCode = codes.Internal
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 		ErrorMessage = "Verify User Error"
-		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 	if user.IsVerified {
 		ErrorCode = codes.InvalidArgument
 		ErrorCodeDetail = pbErr.ErrorCode_AUTH_OTP_ERROR_VERIFIED_USER.String()
 		ErrorMessage = "Email sudah terverifikasi, silahkan login"
-		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	storedJSON, err := s.redis.GetStringKey(s.redis.GetContext(), redisKey)
@@ -162,7 +163,7 @@ func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (user
 		ErrorCode = codes.InvalidArgument
 		ErrorCodeDetail = pbErr.ErrorCode_AUTH_OTP_INVALID.String()
 		ErrorMessage = "Kode OTP Tidak Berlaku"
-		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	fmt.Println("Retrieved JSON string from Redis:", storedJSON)
@@ -172,20 +173,20 @@ func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (user
 		ErrorCode = codes.Internal
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 		ErrorMessage = "Unmarshal Error"
-		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 	if retrievedObject["OTP"] != strconv.Itoa(otp) {
 		ErrorCode = codes.InvalidArgument
 		ErrorCodeDetail = pbErr.ErrorCode_AUTH_OTP_INVALID.String()
 		ErrorMessage = "Kode OTP Tidak Berlaku"
-		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if _, err = s.userRepository.VerifyUserByEmail(ctx, user.Email); err != nil {
 		ErrorCode = codes.Internal
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 		ErrorMessage = "Update User Error"
-		return nil, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	return user, nil
@@ -209,7 +210,7 @@ func (s *Service) ResendOTP(ctx context.Context, email string) (otp int, err err
 		ErrorCode = codes.Internal
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 		ErrorMessage = "Set Value Redis Error"
-		return 0, NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return 0, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 	return otp, nil
 }
