@@ -18,6 +18,7 @@ import (
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
+	utilPb "github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
 	util "github.com/Mitra-Apps/be-utility-service/service"
 )
 
@@ -83,7 +84,7 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		ErrorCode = codes.Internal
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 		ErrorMessage = err.Error()
-		return "", util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return "", util.NewError(codes.Internal, codes.Internal.String(), err.Error())
 	}
 
 	if data != nil {
@@ -122,6 +123,17 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 	err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5)
 	if err != nil {
 		log.Print("Error Set Value to Redis")
+		return "", util.NewError(codes.Internal, codes.Internal.String(), err.Error())
+	}
+
+	sendOtpReq := &utilPb.OtpMailReq{
+		Name:    user.Name,
+		Email:   user.Email,
+		OtpCode: int32(otp),
+	}
+	//send otp to email
+	_, err = s.utilService.SendOtpMail(ctx, sendOtpReq)
+	if err != nil {
 		return "", util.NewError(codes.Internal, codes.Internal.String(), err.Error())
 	}
 
@@ -199,11 +211,16 @@ func (s *Service) ResendOTP(ctx context.Context, email string) (otp int, err err
 		"OTP": otpString,
 	}
 	redisKey := tools.OtpRedisPrefix + email
+
+	user, err := s.userRepository.GetByEmail(ctx, email)
+	if err != nil {
+		return 0, util.NewError(codes.Internal, codes.Internal.String(), err.Error())
+	}
 	// Marshal the JSON data
 	jsonData, err := json.Marshal(redisPayload)
 	if err != nil {
 		fmt.Println("Error marshalling JSON:", err)
-		return
+		return 0, util.NewError(codes.Internal, codes.Internal.String(), err.Error())
 	}
 	err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5)
 	if err != nil {
@@ -211,6 +228,17 @@ func (s *Service) ResendOTP(ctx context.Context, email string) (otp int, err err
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 		ErrorMessage = "Set Value Redis Error"
 		return 0, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+	}
+
+	sendOtpReq := &utilPb.OtpMailReq{
+		Name:    user.Name,
+		Email:   user.Email,
+		OtpCode: int32(otp),
+	}
+	//send otp to email
+	_, err = s.utilService.SendOtpMail(ctx, sendOtpReq)
+	if err != nil {
+		return 0, util.NewError(codes.Internal, codes.Internal.String(), err.Error())
 	}
 	return otp, nil
 }
