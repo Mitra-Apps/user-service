@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -79,8 +78,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	utilityGrpcAddr := flag.String("utilityGrpcAddr", os.Getenv("GRPC_UTILITY_HOST"), "Utility service host")
-	utilityGrpcConn, err := grpc.Dial(*utilityGrpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	utilityGrpcConn, err := grpc.DialContext(ctx, os.Getenv("GRPC_UTILITY_HOST"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal("Cannot connect to utility grpc server ", err)
 	}
