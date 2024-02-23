@@ -8,6 +8,7 @@ import (
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
+	utilPb "github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
 	"google.golang.org/grpc/codes"
 )
 
@@ -16,6 +17,7 @@ type Service struct {
 	roleRepo       repository.Role
 	hashing        tools.BcryptInterface
 	redis          redis.RedisInterface
+	utilService    utilPb.MailServiceClient
 	auth           Authentication
 }
 
@@ -27,13 +29,17 @@ var (
 
 func New(
 	userRepository repository.User,
-	roleRepo repository.Role, hashing tools.BcryptInterface,
-	redis redis.RedisInterface, auth Authentication) *Service {
+	roleRepo repository.Role,
+	hashing tools.BcryptInterface,
+	redis redis.RedisInterface,
+	utilService utilPb.MailServiceClient,
+	auth Authentication) *Service {
 	return &Service{
 		userRepository: userRepository,
 		roleRepo:       roleRepo,
 		hashing:        hashing,
 		redis:          redis,
+		utilService:    utilService,
 		auth:           auth,
 	}
 }

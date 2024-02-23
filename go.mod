@@ -4,7 +4,7 @@ go 1.21.3
 
 require (
 	connectrpc.com/connect v1.14.0
-	github.com/Mitra-Apps/be-utility-service v0.0.0-20240222034306-8bc85a1d41cb
+	github.com/Mitra-Apps/be-utility-service v0.0.0-20240223032420-8ea52939c1af
 	github.com/envoyproxy/protoc-gen-validate v1.0.4
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-redis/redis/v8 v8.11.5
