@@ -12,10 +12,9 @@ import (
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository/mock"
+	r "github.com/go-redis/redis"
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
-
-	r "github.com/go-redis/redis"
 )
 
 func TestService_GetAll(t *testing.T) {
@@ -692,6 +691,177 @@ func TestService_ResendOTP(t *testing.T) {
 			}
 			if gotOtp != tt.wantOtp {
 				t.Errorf("Service.ResendOTP() = %v, want %v", gotOtp, tt.wantOtp)
+			}
+		})
+	}
+}
+
+func TestService_ChangePassword(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockUser := mock.NewMockUser(ctrl)
+	mockGetUser := func(user *entity.User, err error) func(m *mock.MockUser) {
+		return func(m *mock.MockUser) {
+			m.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, err)
+		}
+	}
+	mockSaveUser := func(err error) func(m *mock.MockUser) {
+		return func(m *mock.MockUser) {
+			m.EXPECT().Save(gomock.Any(), gomock.Any()).Return(err)
+		}
+	}
+	redis := mockRedis.NewMockRedisInterface(ctrl)
+	mockGetStringKey := func(value string, err error) func(m *mockRedis.MockRedisInterface) {
+		return func(m *mockRedis.MockRedisInterface) {
+			m.EXPECT().GetStringKey(gomock.Any(), gomock.Any()).Return(value, err)
+		}
+	}
+	mockGetContext := func(ctx context.Context) func(m *mockRedis.MockRedisInterface) {
+		return func(m *mockRedis.MockRedisInterface) {
+			m.EXPECT().GetContext().Return(ctx)
+		}
+	}
+	mockHash := mockTools.NewMockBcryptInterface(ctrl)
+	mockHashing := func(hashedPassword []byte, err error) func(m *mockTools.MockBcryptInterface) {
+		return func(m *mockTools.MockBcryptInterface) {
+			m.EXPECT().GenerateFromPassword(gomock.Any(), gomock.Any()).Return(hashedPassword, err)
+		}
+	}
+	req := &pb.ChangePasswordRequest{
+		Email:    "test@mail.com",
+		Password: "password",
+		OtpCode:  1234,
+	}
+	succcessStoredJSON := `{"OTP":"1234"}`
+	user := &entity.User{
+		Email:    "test@mail.com",
+		Password: string([]byte{'a'}),
+	}
+	type args struct {
+		ctx context.Context
+		req *pb.ChangePasswordRequest
+	}
+	tests := []struct {
+		name    string
+		s       *Service
+		args    args
+		want    *entity.User
+		wantErr bool
+	}{
+		{
+			name: "error unregistered email",
+			s: &Service{
+				userRepository: mockUser,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error repository issue",
+			s: &Service{
+				userRepository: mockUser,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error verify otp",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error hashing password",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+				hashing:        mockHash,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error update user data",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+				hashing:        mockHash,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "success",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+				hashing:        mockHash,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    user,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		switch tt.name {
+		case "error unregistered email":
+			mockGetUser(nil, errors.New("record not found"))(mockUser)
+		case "error repository issue":
+			mockGetUser(nil, errors.New("any error"))(mockUser)
+		case "error verify otp":
+			mockGetUser(user, nil)(mockUser)
+			mockGetContext(context.Background())(redis)
+			mockGetStringKey("", errors.New("any error"))(redis)
+		case "error hashing password":
+			mockGetUser(user, nil)(mockUser)
+			mockGetContext(context.Background())(redis)
+			mockGetStringKey(succcessStoredJSON, nil)(redis)
+			mockHashing(nil, errors.New("any error"))(mockHash)
+		case "error update user data":
+			mockGetUser(user, nil)(mockUser)
+			mockGetContext(context.Background())(redis)
+			mockGetStringKey(succcessStoredJSON, nil)(redis)
+			mockHashing([]byte{'a'}, nil)(mockHash)
+			mockSaveUser(errors.New("any error"))(mockUser)
+		case "success":
+			mockGetUser(user, nil)(mockUser)
+			mockGetContext(context.Background())(redis)
+			mockGetStringKey(succcessStoredJSON, nil)(redis)
+			mockHashing([]byte{'a'}, nil)(mockHash)
+			mockSaveUser(nil)(mockUser)
+		}
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.s.ChangePassword(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Service.ChangePassword() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Service.ChangePassword() = %v, want %v", got, tt.want)
 			}
 		})
 	}

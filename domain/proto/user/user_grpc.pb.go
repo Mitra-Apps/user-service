@@ -20,14 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	UserService_GetUsers_FullMethodName   = "/proto.UserService/GetUsers"
-	UserService_Login_FullMethodName      = "/proto.UserService/Login"
-	UserService_Register_FullMethodName   = "/proto.UserService/Register"
-	UserService_CreateRole_FullMethodName = "/proto.UserService/CreateRole"
-	UserService_GetRole_FullMethodName    = "/proto.UserService/GetRole"
-	UserService_VerifyOtp_FullMethodName  = "/proto.UserService/VerifyOtp"
-	UserService_ResendOtp_FullMethodName  = "/proto.UserService/ResendOtp"
-	UserService_GetOwnData_FullMethodName = "/proto.UserService/GetOwnData"
+	UserService_GetUsers_FullMethodName       = "/proto.UserService/GetUsers"
+	UserService_Login_FullMethodName          = "/proto.UserService/Login"
+	UserService_Register_FullMethodName       = "/proto.UserService/Register"
+	UserService_CreateRole_FullMethodName     = "/proto.UserService/CreateRole"
+	UserService_GetRole_FullMethodName        = "/proto.UserService/GetRole"
+	UserService_VerifyOtp_FullMethodName      = "/proto.UserService/VerifyOtp"
+	UserService_ResendOtp_FullMethodName      = "/proto.UserService/ResendOtp"
+	UserService_GetOwnData_FullMethodName     = "/proto.UserService/GetOwnData"
+	UserService_ChangePassword_FullMethodName = "/proto.UserService/ChangePassword"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -42,6 +43,7 @@ type UserServiceClient interface {
 	VerifyOtp(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	ResendOtp(ctx context.Context, in *ResendOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	GetOwnData(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 }
 
 type userServiceClient struct {
@@ -124,6 +126,15 @@ func (c *userServiceClient) GetOwnData(ctx context.Context, in *emptypb.Empty, o
 	return out, nil
 }
 
+func (c *userServiceClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_ChangePassword_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -136,6 +147,7 @@ type UserServiceServer interface {
 	VerifyOtp(context.Context, *VerifyOTPRequest) (*SuccessResponse, error)
 	ResendOtp(context.Context, *ResendOTPRequest) (*SuccessResponse, error)
 	GetOwnData(context.Context, *emptypb.Empty) (*SuccessResponse, error)
+	ChangePassword(context.Context, *ChangePasswordRequest) (*SuccessResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -166,6 +178,9 @@ func (UnimplementedUserServiceServer) ResendOtp(context.Context, *ResendOTPReque
 }
 func (UnimplementedUserServiceServer) GetOwnData(context.Context, *emptypb.Empty) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOwnData not implemented")
+}
+func (UnimplementedUserServiceServer) ChangePassword(context.Context, *ChangePasswordRequest) (*SuccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -324,6 +339,24 @@ func _UserService_GetOwnData_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ChangePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ChangePassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ChangePassword(ctx, req.(*ChangePasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -362,6 +395,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetOwnData",
 			Handler:    _UserService_GetOwnData_Handler,
+		},
+		{
+			MethodName: "ChangePassword",
+			Handler:    _UserService_ChangePassword_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

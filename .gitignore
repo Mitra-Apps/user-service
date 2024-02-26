@@ -18,8 +18,8 @@
 vendor/
 ignoredmodule/postgres-data/
 docker-compose.local.yaml
-*.env
 
 # Go workspace file
 go.work
+.env
 
