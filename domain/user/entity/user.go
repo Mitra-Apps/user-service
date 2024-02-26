@@ -18,7 +18,7 @@ type User struct {
 	IsActive      bool          `gorm:"type:bool;not null;default:TRUE"`
 	CreatedAt     time.Time     `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
 	CreatedBy     uuid.UUID     `gorm:"type:uuid;not null"`
-	UpdatedAt     *time.Time    `gorm:"type:timestamptz;null"`
+	UpdatedAt     time.Time     `gorm:"type:timestamptz;null;default:CURRENT_TIMESTAMP"`
 	UpdatedBy     uuid.NullUUID `gorm:"type:uuid;null"`
 	Name          string        `gorm:"type:varchar(255);not null"`
 	Roles         []Role        `gorm:"many2many:user_roles;"`

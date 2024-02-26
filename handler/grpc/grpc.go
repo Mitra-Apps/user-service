@@ -207,3 +207,35 @@ func (g *GrpcRoute) ResendOtp(ctx context.Context, req *pb.ResendOTPRequest) (*p
 		Data: dataStruct,
 	}, nil
 }
+
+func (g *GrpcRoute) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*pb.SuccessResponse, error) {
+	if err := req.ValidateAll(); err != nil {
+		return nil, err
+	}
+	user, err := g.service.ChangePassword(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	accessToken, err := g.auth.GenerateToken(ctx, user, 60)
+	if err != nil {
+		return nil, err
+	}
+	refreshToken, err := g.auth.GenerateToken(ctx, user, 43200)
+	if err != nil {
+		return nil, err
+	}
+	token := map[string]interface{}{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	}
+	data, err := structpb.NewStruct(token)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+	res := &pb.SuccessResponse{
+		Code:    int32(codes.OK),
+		Message: "Sandi berhasil diubah!",
+		Data:    data,
+	}
+	return res, nil
+}

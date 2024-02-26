@@ -13,6 +13,7 @@ import (
 	"github.com/Mitra-Apps/be-user-service/service/mock"
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"gorm.io/gorm"
@@ -666,6 +667,150 @@ func TestGrpcRoute_ResendOtp(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GrpcRoute.ResendOtp() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGrpcRoute_ChangePassword(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockSvc := mock.NewMockServiceInterface(ctrl)
+	mockChangePassword := func(user *entity.User, err error) func(m *mock.MockServiceInterface) {
+		return func(m *mock.MockServiceInterface) {
+			m.EXPECT().ChangePassword(gomock.Any(), gomock.Any()).Return(user, err)
+		}
+	}
+	mockAuth := mock.NewMockAuthentication(ctrl)
+	mockGenerateToken := func(token string, err error) func(m *mock.MockAuthentication) {
+		return func(m *mock.MockAuthentication) {
+			m.EXPECT().GenerateToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(token, err)
+		}
+	}
+	req := &pb.ChangePasswordRequest{
+		Email:    "test@mail.com",
+		Password: "@Abc123",
+	}
+	user := &entity.User{
+		Id:         uuid.New(),
+		Email:      "test@mail.com",
+		IsVerified: true,
+	}
+	accessToken := "accessToken"
+	refreshToken := "refreshToken"
+	token := map[string]interface{}{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	}
+	data, _ := structpb.NewStruct(token)
+
+	res := &pb.SuccessResponse{
+		Code:    int32(codes.OK),
+		Message: "Sandi berhasil diubah!",
+		Data:    data,
+	}
+
+	type args struct {
+		ctx context.Context
+		req *pb.ChangePasswordRequest
+	}
+	tests := []struct {
+		name    string
+		g       *GrpcRoute
+		args    args
+		want    *pb.SuccessResponse
+		wantErr bool
+	}{
+		{
+			name: "error validate proto",
+			g: &GrpcRoute{
+				service: mockSvc,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &pb.ChangePasswordRequest{
+					Email: "a",
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error from change password service",
+			g: &GrpcRoute{
+				service: mockSvc,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error from generate access token",
+			g: &GrpcRoute{
+				service: mockSvc,
+				auth:    mockAuth,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error from generate refresh token",
+			g: &GrpcRoute{
+				service: mockSvc,
+				auth:    mockAuth,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "success",
+			g: &GrpcRoute{
+				service: mockSvc,
+				auth:    mockAuth,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			want:    res,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			switch tt.name {
+			case "error validate proto":
+			case "error from change password service":
+				mockChangePassword(nil, errors.New("any error"))(mockSvc)
+			case "error from generate access token":
+				mockChangePassword(user, nil)(mockSvc)
+				mockGenerateToken("", errors.New("any error"))(mockAuth)
+			case "error from generate refresh token":
+				mockChangePassword(user, nil)(mockSvc)
+				mockGenerateToken(accessToken, nil)(mockAuth)
+				mockGenerateToken("", errors.New("any error"))(mockAuth)
+			case "success":
+				mockChangePassword(user, nil)(mockSvc)
+				mockGenerateToken(accessToken, nil)(mockAuth)
+				mockGenerateToken(refreshToken, nil)(mockAuth)
+			}
+			got, err := tt.g.ChangePassword(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GrpcRoute.ChangePassword() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GrpcRoute.ChangePassword() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -75,6 +75,12 @@ message ResendOTPResponse {
     int32 otp_code = 2;
 }
 
+message ChangePasswordRequest {
+    string email = 1 [(validate.rules).string.email = true];
+    string password = 2 [(validate.rules).string = {min_len: 6; max_len: 8}];
+    int32 otp_code = 3;
+}
+
 
 service UserService {
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {
@@ -120,6 +126,12 @@ service UserService {
     rpc GetOwnData(google.protobuf.Empty) returns (SuccessResponse) {
         option (google.api.http) = {
             get: "/api/v1/users/getdata"
+        };
+    }
+    rpc ChangePassword(ChangePasswordRequest) returns (SuccessResponse) {
+         option (google.api.http) = {
+            post: "/api/v1/users/change-password"
+            body: "*"
         };
     }
 }
