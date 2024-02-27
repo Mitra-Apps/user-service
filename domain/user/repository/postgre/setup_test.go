@@ -53,7 +53,8 @@ func LocalDatabase() (*gorm.DB, error) {
 	return db, nil
 }
 
-func seedUser(db *gorm.DB) (*entity.User, error) {
+func seedUser(db *gorm.DB) ([]*entity.User, error) {
+	var users []*entity.User
 	user := &entity.User{
 		Name:     "name1",
 		Email:    "test1@mail.com",
@@ -63,5 +64,24 @@ func seedUser(db *gorm.DB) (*entity.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	users = append(users, user)
+	return users, nil
+}
+
+func seedRole(db *gorm.DB) (*[]entity.Role, error) {
+	role := []entity.Role{
+		{
+			RoleName: "customer",
+		},
+		{
+			RoleName: "merchant",
+		},
+	}
+	for _, v := range role {
+		err := db.Create(&v).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &role, nil
 }

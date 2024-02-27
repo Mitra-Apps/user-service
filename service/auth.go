@@ -20,7 +20,7 @@ var (
 	errUserIDRequired = errors.New("user id is required")
 )
 
-type jwtCustomClaim struct {
+type JwtCustomClaim struct {
 	Roles []string `json:"roles"`
 	jwt.RegisteredClaims
 }
@@ -32,7 +32,7 @@ type authClient struct {
 //go:generate mockgen -source=auth.go -destination=mock/auth.go -package=mock
 type Authentication interface {
 	GenerateToken(ctx context.Context, user *entity.User, expiredMinute int) (token string, err error)
-	ValidateToken(ctx context.Context, requestToken string) (uuid.UUID, error)
+	ValidateToken(ctx context.Context, requestToken string) (*JwtCustomClaim, error)
 }
 
 // Authentication client constructor
@@ -63,7 +63,7 @@ func (c *authClient) GenerateToken(ctx context.Context, user *entity.User, expir
 		IssuedAt:  jwt.NewNumericDate(currentTime),
 	}
 
-	claims := &jwtCustomClaim{
+	claims := &JwtCustomClaim{
 		Roles:            roles,
 		RegisteredClaims: registeredClaims,
 	}
@@ -80,7 +80,7 @@ func (c *authClient) GenerateToken(ctx context.Context, user *entity.User, expir
 // ValidateTokens will validate whether the token is valid
 // and will return user id if the user is exist in our database
 // otherwise it will return error
-func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (uuid.UUID, error) {
+func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (*JwtCustomClaim, error) {
 	token, err := jwt.Parse(requestToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -89,31 +89,47 @@ func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (uu
 	})
 
 	if err != nil {
-		return uuid.Nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), err.Error())
+		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), err.Error())
 	}
 	// assert jwt.MapClaims type
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return uuid.Nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errInvalidToken.Error())
+		fmt.Println("error 1")
+		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errInvalidToken.Error())
 	}
 
 	currentTime := time.Now().UTC()
 	expTime, err := claims.GetExpirationTime()
 	if err != nil {
-		return uuid.Nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
+		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
 	}
 
 	if expTime.Before(currentTime) {
-		return uuid.Nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errTokenExpired.Error())
+		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errTokenExpired.Error())
 	}
 
-	//claim our user id input in subject from token
-	id := claims["sub"].(string)
-	var userID uuid.UUID
-	userID, err = uuid.Parse(id)
+	sub, err := claims.GetSubject()
 	if err != nil {
-		return uuid.Nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), err.Error())
+		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
+	}
+	iat, err := claims.GetIssuedAt()
+	if err != nil {
+		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
+	}
+	var roles []string
+	claimRoles := claims["roles"].([]interface{})
+	for _, v := range claimRoles {
+		roles = append(roles, v.(string))
 	}
 
-	return userID, nil
+	res := &JwtCustomClaim{
+		Roles: roles,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   sub,
+			ExpiresAt: expTime,
+			IssuedAt:  iat,
+		},
+	}
+
+	return res, nil
 }

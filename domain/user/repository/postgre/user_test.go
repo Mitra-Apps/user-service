@@ -14,6 +14,10 @@ import (
 )
 
 func TestNewUserRepoImpl(t *testing.T) {
+	db, err := DBConn()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	type args struct {
 		db *gorm.DB
 	}
@@ -22,7 +26,15 @@ func TestNewUserRepoImpl(t *testing.T) {
 		args args
 		want repository.User
 	}{
-		// TODO: Add test cases.
+		{
+			name: "implemented",
+			args: args{
+				db: db,
+			},
+			want: &userRepoImpl{
+				db: db,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -34,6 +46,14 @@ func TestNewUserRepoImpl(t *testing.T) {
 }
 
 func Test_userRepoImpl_GetAll(t *testing.T) {
+	db, err := DBConn()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	user, err := seedUser(db)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	type args struct {
 		ctx context.Context
 	}
@@ -44,7 +64,17 @@ func Test_userRepoImpl_GetAll(t *testing.T) {
 		want    []*entity.User
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success",
+			p: &userRepoImpl{
+				db: db,
+			},
+			args: args{
+				ctx: context.Background(),
+			},
+			want:    user,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -101,7 +131,7 @@ func Test_userRepoImpl_GetByEmail(t *testing.T) {
 				ctx:   context.Background(),
 				email: "test1@mail.com",
 			},
-			want:    user,
+			want:    user[0],
 			wantErr: false,
 		},
 	}
@@ -122,6 +152,14 @@ func Test_userRepoImpl_GetByEmail(t *testing.T) {
 }
 
 func Test_userRepoImpl_GetByID(t *testing.T) {
+	db, err := DBConn()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	users, err := seedUser(db)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	type args struct {
 		ctx context.Context
 		id  uuid.UUID
@@ -133,7 +171,30 @@ func Test_userRepoImpl_GetByID(t *testing.T) {
 		want    *entity.User
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "error record not found",
+			p: &userRepoImpl{
+				db: db,
+			},
+			args: args{
+				ctx: context.Background(),
+				id:  uuid.Nil,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "success",
+			p: &userRepoImpl{
+				db: db,
+			},
+			args: args{
+				ctx: context.Background(),
+				id:  users[0].Id,
+			},
+			want:    users[0],
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -142,14 +203,22 @@ func Test_userRepoImpl_GetByID(t *testing.T) {
 				t.Errorf("userRepoImpl.GetByID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("userRepoImpl.GetByID() = %v, want %v", got, tt.want)
+			if got != nil {
+				if !reflect.DeepEqual(got.Id, tt.want.Id) {
+					t.Errorf("userRepoImpl.GetByID() = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}
 }
 
 func Test_userRepoImpl_Create(t *testing.T) {
+	db, err := DBConn()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	seedUser(db)
+	seedRole(db)
 	type args struct {
 		ctx     context.Context
 		user    *entity.User
@@ -161,7 +230,57 @@ func Test_userRepoImpl_Create(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "error create in db",
+			p: &userRepoImpl{
+				db: db,
+			},
+			args: args{
+				ctx: context.Background(),
+				user: &entity.User{
+					Name:     "name1",
+					Email:    "test1@mail.com",
+					Password: "password1",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error insert role ids in db",
+			p: &userRepoImpl{
+				db: db,
+			},
+			args: args{
+				ctx: context.Background(),
+				user: &entity.User{
+					Name:        "name1",
+					Username:    "test2@mail.com",
+					Email:       "test2@mail.com",
+					Password:    "password1",
+					PhoneNumber: "0123",
+				},
+				roleIds: []string{"3", "4"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "success",
+			p: &userRepoImpl{
+				db: db,
+			},
+			args: args{
+				ctx: context.Background(),
+				user: &entity.User{
+					Name:        "name1",
+					Username:    "test2@mail.com",
+					Email:       "test2@mail.com",
+					Password:    "password1",
+					PhoneNumber: "0123",
+				},
+				roleIds: []string{"1", "2"},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -181,7 +300,7 @@ func Test_userRepoImpl_Save(t *testing.T) {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	user.UpdatedAt = time.Now()
+	user[0].UpdatedAt = time.Now()
 	type args struct {
 		ctx  context.Context
 		user *entity.User
@@ -199,7 +318,7 @@ func Test_userRepoImpl_Save(t *testing.T) {
 			},
 			args: args{
 				ctx:  context.Background(),
-				user: user,
+				user: user[0],
 			},
 			wantErr: false,
 		},
@@ -214,6 +333,14 @@ func Test_userRepoImpl_Save(t *testing.T) {
 }
 
 func Test_userRepoImpl_VerifyUserByEmail(t *testing.T) {
+	db, err := DBConn()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	user, err := seedUser(db)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	type args struct {
 		ctx   context.Context
 		email string
@@ -225,7 +352,18 @@ func Test_userRepoImpl_VerifyUserByEmail(t *testing.T) {
 		want    bool
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success",
+			p: &userRepoImpl{
+				db: db,
+			},
+			args: args{
+				ctx:   context.Background(),
+				email: user[0].Email,
+			},
+			want:    true,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

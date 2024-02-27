@@ -19,6 +19,7 @@ import (
 	"github.com/Mitra-Apps/be-user-service/service"
 	util "github.com/Mitra-Apps/be-utility-service/config/tools"
 	utilPb "github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
+	"github.com/google/uuid"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -55,7 +56,18 @@ func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 		}
 
 		auth := service.NewAuthClient(os.Getenv("JWT_SECRET"))
-		userId, err := auth.ValidateToken(ctx, token)
+		claims, err := auth.ValidateToken(ctx, token)
+		if err != nil {
+			return nil, err
+		}
+
+		//claim our user id input in subject from token
+		id, err := claims.GetSubject()
+		if err != nil {
+			return nil, err
+		}
+		var userId uuid.UUID
+		userId, err = uuid.Parse(id)
 		if err != nil {
 			return nil, err
 		}

@@ -148,7 +148,9 @@ func (g *GrpcRoute) GetRole(ctx context.Context, req *emptypb.Empty) (*pb.Succes
 	}
 
 	return &pb.SuccessResponse{
-		Data: dataStruct,
+		Code:    int32(codes.OK),
+		Message: "roles data",
+		Data:    dataStruct,
 	}, nil
 }
 

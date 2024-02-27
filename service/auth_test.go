@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
@@ -59,6 +60,25 @@ func Test_authClient_GenerateToken(t *testing.T) {
 }
 
 func Test_authClient_ValidateToken(t *testing.T) {
+	auth := NewAuthClient("secret")
+	user := &entity.User{
+		Id: uuid.MustParse("b70a2a5e-bbd2-4000-96c0-aaa533b8236f"),
+		Roles: []entity.Role{
+			{
+				RoleName: "merchant",
+			},
+			{
+				RoleName: "customer",
+			},
+			{
+				RoleName: "admin",
+			},
+		},
+	}
+	token, err := auth.GenerateToken(context.Background(), user, 60)
+	if err != nil {
+		panic(err.Error())
+	}
 	type args struct {
 		ctx          context.Context
 		requestToken string
@@ -67,10 +87,30 @@ func Test_authClient_ValidateToken(t *testing.T) {
 		name    string
 		c       *authClient
 		args    args
-		want    uuid.UUID
+		want    *JwtCustomClaim
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success",
+			c: &authClient{
+				secret: "secret",
+			},
+			args: args{
+				ctx:          context.Background(),
+				requestToken: token,
+			},
+			want: &JwtCustomClaim{
+				Roles: []string{
+					"merchant",
+					"customer",
+					"admin",
+				},
+				RegisteredClaims: jwt.RegisteredClaims{
+					Subject: "b70a2a5e-bbd2-4000-96c0-aaa533b8236f",
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -79,8 +119,13 @@ func Test_authClient_ValidateToken(t *testing.T) {
 				t.Errorf("authClient.ValidateToken() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("authClient.ValidateToken() = %v, want %v", got, tt.want)
+			if got != nil {
+				if !reflect.DeepEqual(got.Roles, tt.want.Roles) {
+					t.Errorf("authClient.ValidateToken() = %v, want %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.Subject, tt.want.Subject) {
+					t.Errorf("authClient.ValidateToken() = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}

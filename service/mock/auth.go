@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	entity "github.com/Mitra-Apps/be-user-service/domain/user/entity"
-	uuid "github.com/google/uuid"
+	service "github.com/Mitra-Apps/be-user-service/service"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -57,10 +57,10 @@ func (mr *MockAuthenticationMockRecorder) GenerateToken(ctx, user, expiredMinute
 }
 
 // ValidateToken mocks base method.
-func (m *MockAuthentication) ValidateToken(ctx context.Context, requestToken string) (uuid.UUID, error) {
+func (m *MockAuthentication) ValidateToken(ctx context.Context, requestToken string) (*service.JwtCustomClaim, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidateToken", ctx, requestToken)
-	ret0, _ := ret[0].(uuid.UUID)
+	ret0, _ := ret[0].(*service.JwtCustomClaim)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

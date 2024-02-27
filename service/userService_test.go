@@ -866,3 +866,25 @@ func TestService_ChangePassword(t *testing.T) {
 		})
 	}
 }
+
+func Test_verifyOtpFromRedis(t *testing.T) {
+	type args struct {
+		s        *Service
+		otp      int
+		redisKey string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := verifyOtpFromRedis(tt.args.s, tt.args.otp, tt.args.redisKey); (err != nil) != tt.wantErr {
+				t.Errorf("verifyOtpFromRedis() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
