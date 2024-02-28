@@ -52,6 +52,11 @@ func TestService_Login(t *testing.T) {
 			m.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, err)
 		}
 	}
+	mockSaveUser := func(err error) func(m *mock.MockUser) {
+		return func(m *mock.MockUser) {
+			m.EXPECT().Save(gomock.Any(), gomock.Any()).Return(err)
+		}
+	}
 	mockHash := mockTools.NewMockBcryptInterface(ctrl)
 	mockCompareHash := func(err error) func(m *mockTools.MockBcryptInterface) {
 		return func(m *mockTools.MockBcryptInterface) {
@@ -69,10 +74,23 @@ func TestService_Login(t *testing.T) {
 		IsVerified: false,
 	}
 	verifiedUser := &entity.User{
-		Id:         userId,
-		Email:      "test@email.com",
-		Password:   "test@123",
-		IsVerified: true,
+		Id:                   userId,
+		Email:                "test@email.com",
+		Password:             "test@123",
+		IsVerified:           true,
+		WrongPasswordCounter: 0,
+	}
+	verifiedUserWrongPass2x := &entity.User{
+		Id:                   userId,
+		Email:                "test@email.com",
+		Password:             "test@123",
+		WrongPasswordCounter: 2,
+	}
+	verifiedUserWrongPass3x := &entity.User{
+		Id:                   userId,
+		Email:                "test@email.com",
+		Password:             "test@123",
+		WrongPasswordCounter: 3,
 	}
 	type args struct {
 		ctx     context.Context
@@ -136,6 +154,58 @@ func TestService_Login(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "error password incorrect 3x",
+			s: &Service{
+				userRepository: mockRepo,
+				hashing:        mockHash,
+			},
+			args: args{
+				ctx:     context.Background(),
+				payload: *loginRequest,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error password incorrect 3x after wrong pass login",
+			s: &Service{
+				userRepository: mockRepo,
+				hashing:        mockHash,
+			},
+			args: args{
+				ctx:     context.Background(),
+				payload: *loginRequest,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error saving wrong password counter",
+			s: &Service{
+				userRepository: mockRepo,
+				hashing:        mockHash,
+			},
+			args: args{
+				ctx:     context.Background(),
+				payload: *loginRequest,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "error saving wrong password counter back to 0",
+			s: &Service{
+				userRepository: mockRepo,
+				hashing:        mockHash,
+			},
+			args: args{
+				ctx:     context.Background(),
+				payload: *loginRequest,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
 			name: "success",
 			s: &Service{
 				userRepository: mockRepo,
@@ -157,14 +227,30 @@ func TestService_Login(t *testing.T) {
 			case "unexpected error":
 				mockLogin(nil, errors.New("other error"))(mockRepo)
 			case "error password incorrect":
-				mockLogin(verifiedUser, nil)(mockRepo)
+				mockLogin(unverifiedUser, nil)(mockRepo)
 				mockCompareHash(errors.New("any error"))(mockHash)
+				mockSaveUser(nil)(mockRepo)
 			case "error unverified account":
 				mockLogin(unverifiedUser, nil)(mockRepo)
 				mockCompareHash(nil)(mockHash)
+			case "error password incorrect 3x":
+				mockLogin(verifiedUserWrongPass3x, nil)(mockRepo)
+			case "error saving wrong password counter":
+				mockLogin(unverifiedUser, nil)(mockRepo)
+				mockCompareHash(errors.New("any error"))(mockHash)
+				mockSaveUser(errors.New("any error"))(mockRepo)
+			case "error password incorrect 3x after wrong pass login":
+				mockLogin(verifiedUserWrongPass2x, nil)(mockRepo)
+				mockCompareHash(errors.New("any error"))(mockHash)
+				mockSaveUser(nil)(mockRepo)
+			case "error saving wrong password counter back to 0":
+				mockLogin(verifiedUser, nil)(mockRepo)
+				mockCompareHash(nil)(mockHash)
+				mockSaveUser(errors.New("any error"))(mockRepo)
 			case "success":
 				mockLogin(verifiedUser, nil)(mockRepo)
 				mockCompareHash(nil)(mockHash)
+				mockSaveUser(nil)(mockRepo)
 			}
 			got, err := tt.s.Login(tt.args.ctx, tt.args.payload)
 			if (err != nil) != tt.wantErr {
