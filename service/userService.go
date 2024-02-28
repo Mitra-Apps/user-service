@@ -45,8 +45,24 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*enti
 		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
-	if err := s.hashing.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password)); err != nil {
+	if user.WrongPasswordCounter >= 3 {
 		ErrorCode = codes.InvalidArgument
+		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_PASSWORD_INCORRECT_3X.String()
+		ErrorMessage = "Anda telah melebihi limit kesalahan kata sandi, mohon ganti sandi anda"
+		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+	}
+
+	if err := s.hashing.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password)); err != nil {
+		user.WrongPasswordCounter++
+		if err = s.userRepository.Save(ctx, user); err != nil {
+			return nil, util.NewError(codes.Internal, codes.Unknown.String(), err.Error())
+		}
+		ErrorCode = codes.InvalidArgument
+		if user.WrongPasswordCounter >= 3 {
+			ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_PASSWORD_INCORRECT_3X.String()
+			ErrorMessage = "Anda telah melebihi limit kesalahan kata sandi, mohon ganti sandi anda"
+			return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		}
 		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_PASSWORD_INCORRECT.String()
 		ErrorMessage = "Data yang dimasukkan tidak sesuai"
 		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
@@ -57,6 +73,11 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*enti
 		ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_USER_UNVERIFIED.String()
 		ErrorMessage = "Email sudah terdaftar, silahkan lakukan verifikasi OTP"
 		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+	}
+
+	user.WrongPasswordCounter = 0
+	if err = s.userRepository.Save(ctx, user); err != nil {
+		return nil, util.NewError(codes.Internal, codes.Unknown.String(), err.Error())
 	}
 
 	return user, nil
