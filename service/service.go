@@ -8,7 +8,6 @@ import (
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
-	utilPb "github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
 	"google.golang.org/grpc/codes"
 )
 
@@ -17,7 +16,6 @@ type Service struct {
 	roleRepo       repository.Role
 	hashing        tools.BcryptInterface
 	redis          redis.RedisInterface
-	utilService    utilPb.MailServiceClient
 	auth           Authentication
 }
 
@@ -32,14 +30,12 @@ func New(
 	roleRepo repository.Role,
 	hashing tools.BcryptInterface,
 	redis redis.RedisInterface,
-	utilService utilPb.MailServiceClient,
 	auth Authentication) *Service {
 	return &Service{
 		userRepository: userRepository,
 		roleRepo:       roleRepo,
 		hashing:        hashing,
 		redis:          redis,
-		utilService:    utilService,
 		auth:           auth,
 	}
 }
@@ -48,10 +44,10 @@ func New(
 type ServiceInterface interface {
 	GetAll(ctx context.Context) ([]*entity.User, error)
 	Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error)
-	Register(ctx context.Context, req *pb.UserRegisterRequest) (string, error)
+	Register(ctx context.Context, req *pb.UserRegisterRequest) (*entity.OtpMailReq, error)
 	CreateRole(ctx context.Context, role *entity.Role) error
 	GetRole(ctx context.Context) ([]entity.Role, error)
 	VerifyOTP(ctx context.Context, otp int, redisKey string) (user *entity.User, err error)
-	ResendOTP(ctx context.Context, email string) (otp int, err error)
+	ResendOTP(ctx context.Context, email string) (*entity.OtpMailReq, error)
 	ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*entity.User, error)
 }

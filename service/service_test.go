@@ -8,7 +8,6 @@ import (
 	"github.com/Mitra-Apps/be-user-service/config/tools/redis"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository/mock"
-	utilPb "github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
 
 	"go.uber.org/mock/gomock"
 )
@@ -19,7 +18,6 @@ func TestNew(t *testing.T) {
 		roleRepo       repository.Role
 		hashing        tools.BcryptInterface
 		redis          redis.RedisInterface
-		utilService    utilPb.MailServiceClient
 		auth           Authentication
 	}
 	ctrl := gomock.NewController(t)
@@ -44,7 +42,7 @@ func TestNew(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := New(tt.args.userRepository, tt.args.roleRepo, tt.args.hashing, tt.args.redis, tt.args.utilService, tt.args.auth); !reflect.DeepEqual(got, tt.want) {
+			if got := New(tt.args.userRepository, tt.args.roleRepo, tt.args.hashing, tt.args.redis, tt.args.auth); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("New() = %v, want %v", got, tt.want)
 			}
 		})

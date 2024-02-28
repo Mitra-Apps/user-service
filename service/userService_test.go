@@ -668,34 +668,6 @@ func TestService_VerifyOTP(t *testing.T) {
 	}
 }
 
-func TestService_ResendOTP(t *testing.T) {
-	type args struct {
-		ctx   context.Context
-		email string
-	}
-	tests := []struct {
-		name    string
-		s       *Service
-		args    args
-		wantOtp int
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotOtp, err := tt.s.ResendOTP(tt.args.ctx, tt.args.email)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Service.ResendOTP() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotOtp != tt.wantOtp {
-				t.Errorf("Service.ResendOTP() = %v, want %v", gotOtp, tt.wantOtp)
-			}
-		})
-	}
-}
-
 func TestService_ChangePassword(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockUser := mock.NewMockUser(ctrl)
@@ -884,6 +856,34 @@ func Test_verifyOtpFromRedis(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := verifyOtpFromRedis(tt.args.s, tt.args.otp, tt.args.redisKey); (err != nil) != tt.wantErr {
 				t.Errorf("verifyOtpFromRedis() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestService_ResendOTP(t *testing.T) {
+	type args struct {
+		ctx   context.Context
+		email string
+	}
+	tests := []struct {
+		name    string
+		s       *Service
+		args    args
+		want    *entity.OtpMailReq
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.s.ResendOTP(tt.args.ctx, tt.args.email)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Service.ResendOTP() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Service.ResendOTP() = %v, want %v", got, tt.want)
 			}
 		})
 	}
