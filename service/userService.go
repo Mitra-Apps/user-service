@@ -285,6 +285,7 @@ func (s *Service) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequ
 		return nil, util.NewError(codes.Internal, codes.Unknown.String(), err.Error())
 	}
 	user.Password = string(hashedPassword)
+	user.WrongPasswordCounter = 0
 	user.IsVerified = true
 	if err = s.userRepository.Save(ctx, user); err != nil {
 		return nil, util.NewError(codes.Internal, codes.Unknown.String(), err.Error())
