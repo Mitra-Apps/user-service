@@ -18,7 +18,6 @@ import (
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
-	utilPb "github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
 	util "github.com/Mitra-Apps/be-utility-service/service"
 )
 
@@ -63,11 +62,11 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*enti
 	return user, nil
 }
 
-func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (string, error) {
+func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (*entity.OtpMailReq, error) {
 	//hashing password
 	hashedPassword, err := s.hashing.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	user := &entity.User{
@@ -84,7 +83,7 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 		ErrorCode = codes.Internal
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 		ErrorMessage = err.Error()
-		return "", util.NewError(codes.Internal, codes.Internal.String(), err.Error())
+		return nil, util.NewError(codes.Internal, codes.Internal.String(), err.Error())
 	}
 
 	if data != nil {
@@ -98,14 +97,14 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 			ErrorCodeDetail = pbErr.ErrorCode_AUTH_REGISTER_USER_VERIFIED.String()
 			ErrorMessage = "Email dan/atau No. Telp sudah terdaftar."
 		}
-		return "", util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	if err := s.userRepository.Create(ctx, user, req.RoleId); err != nil {
 		ErrorCode = codes.Internal
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 		ErrorMessage = err.Error()
-		return "", util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
 	otp := generateRandom4DigitNumber()
@@ -117,27 +116,22 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (st
 	jsonData, err := json.Marshal(redisPayload)
 	if err != nil {
 		fmt.Println("Error marshalling JSON:", err)
-		return "", util.NewError(codes.Internal, codes.Internal.String(), err.Error())
+		return nil, util.NewError(codes.Internal, codes.Internal.String(), err.Error())
 	}
 
 	err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5)
 	if err != nil {
 		log.Print("Error Set Value to Redis")
-		return "", util.NewError(codes.Internal, codes.Internal.String(), err.Error())
+		return nil, util.NewError(codes.Internal, codes.Internal.String(), err.Error())
 	}
 
-	sendOtpReq := &utilPb.OtpMailReq{
+	sendOtpReq := &entity.OtpMailReq{
 		Name:    user.Name,
 		Email:   user.Email,
-		OtpCode: int32(otp),
-	}
-	//send otp to email
-	_, err = s.utilService.SendOtpMail(ctx, sendOtpReq)
-	if err != nil {
-		return "", util.NewError(codes.Internal, codes.Internal.String(), err.Error())
+		OtpCode: otp,
 	}
 
-	return otpString, nil
+	return sendOtpReq, nil
 }
 
 func (s *Service) CreateRole(ctx context.Context, role *entity.Role) error {
@@ -211,8 +205,8 @@ func verifyOtpFromRedis(s *Service, otp int, redisKey string) error {
 	return nil
 }
 
-func (s *Service) ResendOTP(ctx context.Context, email string) (otp int, err error) {
-	otp = generateRandom4DigitNumber()
+func (s *Service) ResendOTP(ctx context.Context, email string) (*entity.OtpMailReq, error) {
+	otp := generateRandom4DigitNumber()
 	otpString := strconv.Itoa(otp)
 	redisPayload := map[string]interface{}{
 		"OTP": otpString,
@@ -221,33 +215,29 @@ func (s *Service) ResendOTP(ctx context.Context, email string) (otp int, err err
 
 	user, err := s.userRepository.GetByEmail(ctx, email)
 	if err != nil {
-		return 0, util.NewError(codes.Internal, codes.Internal.String(), err.Error())
+		return nil, util.NewError(codes.Internal, codes.Internal.String(), err.Error())
 	}
 	// Marshal the JSON data
 	jsonData, err := json.Marshal(redisPayload)
 	if err != nil {
 		fmt.Println("Error marshalling JSON:", err)
-		return 0, util.NewError(codes.Internal, codes.Internal.String(), err.Error())
+		return nil, util.NewError(codes.Internal, codes.Internal.String(), err.Error())
 	}
 	err = s.redis.Set(ctx, redisKey, jsonData, time.Minute*5)
 	if err != nil {
 		ErrorCode = codes.Internal
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 		ErrorMessage = "Set Value Redis Error"
-		return 0, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
 
-	sendOtpReq := &utilPb.OtpMailReq{
+	sendOtpReq := &entity.OtpMailReq{
 		Name:    user.Name,
 		Email:   user.Email,
-		OtpCode: int32(otp),
+		OtpCode: otp,
 	}
-	//send otp to email
-	_, err = s.utilService.SendOtpMail(ctx, sendOtpReq)
-	if err != nil {
-		return 0, util.NewError(codes.Internal, codes.Internal.String(), err.Error())
-	}
-	return otp, nil
+
+	return sendOtpReq, nil
 }
 
 func (s *Service) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*entity.User, error) {

@@ -9,6 +9,7 @@ import (
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	"github.com/Mitra-Apps/be-user-service/service"
+	utilPb "github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -16,15 +17,17 @@ import (
 )
 
 type GrpcRoute struct {
-	service service.ServiceInterface
-	auth    service.Authentication
+	service     service.ServiceInterface
+	auth        service.Authentication
+	utilService utilPb.MailServiceClient
 	pb.UnimplementedUserServiceServer
 }
 
-func New(service service.ServiceInterface, auth service.Authentication) pb.UserServiceServer {
+func New(service service.ServiceInterface, auth service.Authentication, utilService utilPb.MailServiceClient) pb.UserServiceServer {
 	return &GrpcRoute{
-		service: service,
-		auth:    auth,
+		service:     service,
+		auth:        auth,
+		utilService: utilService,
 	}
 }
 
@@ -85,20 +88,26 @@ func (g *GrpcRoute) Register(ctx context.Context, req *pb.UserRegisterRequest) (
 	if err := req.ValidateAll(); err != nil {
 		return nil, err
 	}
-	otp, err := g.service.Register(ctx, req)
+	otpReq, err := g.service.Register(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	otpStruct := map[string]interface{}{
-		"otp": otp,
+
+	sendOtpReq := &utilPb.OtpMailReq{
+		Name:    otpReq.Name,
+		Email:   otpReq.Email,
+		OtpCode: int32(otpReq.OtpCode),
 	}
-	data, err := structpb.NewStruct(otpStruct)
+
+	//send otp to email
+	res, err := g.utilService.SendOtpMail(ctx, sendOtpReq)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, err
 	}
 
 	return &pb.SuccessResponse{
-		Data: data,
+		Code:    res.Code,
+		Message: res.Message,
 	}, nil
 }
 
@@ -185,28 +194,26 @@ func (g *GrpcRoute) VerifyOtp(ctx context.Context, req *pb.VerifyOTPRequest) (*p
 }
 
 func (g *GrpcRoute) ResendOtp(ctx context.Context, req *pb.ResendOTPRequest) (*pb.SuccessResponse, error) {
-	otp, err := g.service.ResendOTP(ctx, req.Email)
+	otpReq, err := g.service.ResendOTP(ctx, req.Email)
 	if err != nil {
 		return nil, err
-	}
-	resendOtpStruct := map[string]interface{}{
-		"otp": otp,
 	}
 
-	data, err := json.Marshal(resendOtpStruct)
-	if err != nil {
-		return nil, err
+	sendOtpReq := &utilPb.OtpMailReq{
+		Name:    otpReq.Name,
+		Email:   otpReq.Email,
+		OtpCode: int32(otpReq.OtpCode),
 	}
-	if err := json.Unmarshal(data, &resendOtpStruct); err != nil {
-		return nil, err
-	}
-	dataStruct, err := structpb.NewStruct(resendOtpStruct)
+
+	//send otp to email
+	res, err := g.utilService.SendOtpMail(ctx, sendOtpReq)
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.SuccessResponse{
-		Data: dataStruct,
+		Code:    res.Code,
+		Message: res.Message,
 	}, nil
 }
 

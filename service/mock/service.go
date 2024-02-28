@@ -116,10 +116,10 @@ func (mr *MockServiceInterfaceMockRecorder) Login(ctx, payload any) *gomock.Call
 }
 
 // Register mocks base method.
-func (m *MockServiceInterface) Register(ctx context.Context, req *user.UserRegisterRequest) (string, error) {
+func (m *MockServiceInterface) Register(ctx context.Context, req *user.UserRegisterRequest) (*entity.OtpMailReq, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Register", ctx, req)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*entity.OtpMailReq)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -131,10 +131,10 @@ func (mr *MockServiceInterfaceMockRecorder) Register(ctx, req any) *gomock.Call 
 }
 
 // ResendOTP mocks base method.
-func (m *MockServiceInterface) ResendOTP(ctx context.Context, email string) (int, error) {
+func (m *MockServiceInterface) ResendOTP(ctx context.Context, email string) (*entity.OtpMailReq, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResendOTP", ctx, email)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(*entity.OtpMailReq)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

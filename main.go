@@ -111,9 +111,9 @@ func main() {
 	roleRepo := userPostgreRepo.NewRoleRepoImpl(db)
 	bcrypt := tools.New(&tools.Bcrypt{})
 	auth := service.NewAuthClient(os.Getenv("JWT_SECRET"))
-	svc := service.New(usrRepo, roleRepo, bcrypt, redis, mailSvcClient, auth)
+	svc := service.New(usrRepo, roleRepo, bcrypt, redis, auth)
 	grpcServer := GrpcNewServer(ctx, []grpc.ServerOption{})
-	route := grpcRoute.New(svc, auth)
+	route := grpcRoute.New(svc, auth, mailSvcClient)
 	pb.RegisterUserServiceServer(grpcServer, route)
 
 	go func() {
