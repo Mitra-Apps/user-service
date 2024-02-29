@@ -102,6 +102,8 @@ func TestGrpcRoute_Login(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockSvc := mock.NewMockServiceInterface(ctrl)
 	mockAuth := mock.NewMockAuthentication(ctrl)
+	mockSvcRecord := mockSvc.EXPECT()
+	mockAuthRecord := mockAuth.EXPECT()
 	mockLogin := func(user *entity.User, err error) func(m *mock.MockServiceInterface) {
 		return func(m *mock.MockServiceInterface) {
 			m.EXPECT().Login(gomock.Any(), gomock.Any()).Return(user, err)
@@ -143,6 +145,7 @@ func TestGrpcRoute_Login(t *testing.T) {
 		args    args
 		want    *pb.SuccessResponse
 		wantErr bool
+		mocks   []*gomock.Call
 	}{
 		{
 			name: "error validation",
@@ -172,6 +175,10 @@ func TestGrpcRoute_Login(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockSvc.EXPECT().Login(gomock.Any(), gomock.Any()).Return(nil, errors.New("any error")),
+				// mockLogin(nil, errors.New("any error"))(mockSvc)
+			},
 		},
 		{
 			name: "error caused by generate access token",
@@ -185,6 +192,12 @@ func TestGrpcRoute_Login(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockSvcRecord.Login(gomock.Any(), gomock.Any()).Return(user, nil),
+				mockAuthRecord.GenerateToken(gomock.Any(), gomock.Any(), gomock.Any()).Return("", errors.New("any errors")),
+				// 	mockLogin(user, nil)(mockSvc)
+				// 	mockGenerateToken("", errors.New("any error"))(mockAuth)
+			},
 		},
 		{
 			name: "error caused by generate refresh token",
@@ -216,11 +229,11 @@ func TestGrpcRoute_Login(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			switch tt.name {
-			case "error caused by login service":
-				mockLogin(nil, errors.New("any error"))(mockSvc)
-			case "error caused by generate access token":
-				mockLogin(user, nil)(mockSvc)
-				mockGenerateToken("", errors.New("any error"))(mockAuth)
+			// case "error caused by login service":
+			// 	mockLogin(nil, errors.New("any error"))(mockSvc)
+			// case "error caused by generate access token":
+			// 	mockLogin(user, nil)(mockSvc)
+			// 	mockGenerateToken("", errors.New("any error"))(mockAuth)
 			case "error caused by generate refresh token":
 				mockLogin(user, nil)(mockSvc)
 				mockGenerateToken(accessToken, nil)(mockAuth)

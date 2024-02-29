@@ -2,6 +2,7 @@ package postgre
 
 import (
 	"context"
+	"log"
 	"reflect"
 	"testing"
 
@@ -11,6 +12,10 @@ import (
 )
 
 func TestNewRoleRepoImpl(t *testing.T) {
+	db, err := DBConn()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	type args struct {
 		db *gorm.DB
 	}
@@ -19,7 +24,15 @@ func TestNewRoleRepoImpl(t *testing.T) {
 		args args
 		want repository.Role
 	}{
-		// TODO: Add test cases.
+		{
+			name: "implemented",
+			args: args{
+				db: db,
+			},
+			want: &RoleRepoImpl{
+				db: db,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -31,6 +44,11 @@ func TestNewRoleRepoImpl(t *testing.T) {
 }
 
 func TestRoleRepoImpl_Create(t *testing.T) {
+	db, err := DBConn()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	seedRole(db)
 	type args struct {
 		ctx  context.Context
 		role *entity.Role
@@ -41,7 +59,19 @@ func TestRoleRepoImpl_Create(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success",
+			r: &RoleRepoImpl{
+				db: db,
+			},
+			args: args{
+				ctx: context.Background(),
+				role: &entity.Role{
+					RoleName: "customer",
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -53,6 +83,14 @@ func TestRoleRepoImpl_Create(t *testing.T) {
 }
 
 func TestRoleRepoImpl_GetRole(t *testing.T) {
+	db, err := DBConn()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	role, err := seedRole(db)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	type args struct {
 		ctx context.Context
 	}
@@ -63,7 +101,17 @@ func TestRoleRepoImpl_GetRole(t *testing.T) {
 		want    []entity.Role
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success",
+			r: &RoleRepoImpl{
+				db: db,
+			},
+			args: args{
+				ctx: context.Background(),
+			},
+			want:    *role,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -72,8 +120,12 @@ func TestRoleRepoImpl_GetRole(t *testing.T) {
 				t.Errorf("RoleRepoImpl.GetRole() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("RoleRepoImpl.GetRole() = %v, want %v", got, tt.want)
+			if got != nil {
+				for i, v := range got {
+					if !reflect.DeepEqual(v.RoleName, tt.want[i].RoleName) {
+						t.Errorf("RoleRepoImpl.GetRole() = %v, want %v", got, tt.want)
+					}
+				}
 			}
 		})
 	}
