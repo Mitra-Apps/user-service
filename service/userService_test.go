@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	mockTools "github.com/Mitra-Apps/be-user-service/config/tools/mock"
-	"github.com/Mitra-Apps/be-user-service/config/tools/redis"
 	mockRedis "github.com/Mitra-Apps/be-user-service/config/tools/redis/mock"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
@@ -18,6 +17,18 @@ import (
 )
 
 func TestService_GetAll(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockUser := mock.NewMockUser(ctrl)
+	mockUserRecord := mockUser.EXPECT()
+
+	users := []*entity.User{
+		{
+			Name: "test1",
+		},
+		{
+			Name: "test2",
+		},
+	}
 	type args struct {
 		ctx context.Context
 	}
@@ -27,8 +38,32 @@ func TestService_GetAll(t *testing.T) {
 		args    args
 		want    []*entity.User
 		wantErr bool
+		mocks   *gomock.Call
 	}{
-		// TODO: Add test cases.
+		{
+			name: "error get all data",
+			s: &Service{
+				userRepository: mockUser,
+			},
+			args: args{
+				ctx: context.Background(),
+			},
+			want:    nil,
+			wantErr: true,
+			mocks:   mockUserRecord.GetAll(gomock.Any()).Return(nil, errors.New("any error")),
+		},
+		{
+			name: "success",
+			s: &Service{
+				userRepository: mockUser,
+			},
+			args: args{
+				ctx: context.Background(),
+			},
+			want:    users,
+			wantErr: false,
+			mocks:   mockUserRecord.GetAll(gomock.Any()).Return(users, nil),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -267,22 +302,8 @@ func TestService_Login(t *testing.T) {
 func TestService_Register(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRepo := mock.NewMockUser(ctrl)
-	mockRegister := func(err error) func(m *mock.MockUser) {
-		return func(m *mock.MockUser) {
-			m.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(err)
-		}
-	}
-	mockGetEmail := func(data *entity.User, err error) func(m *mock.MockUser) {
-		return func(m *mock.MockUser) {
-			m.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(data, err)
-		}
-	}
 	mockHash := mockTools.NewMockBcryptInterface(ctrl)
-	mockHashing := func(hashedPassword []byte, err error) func(m *mockTools.MockBcryptInterface) {
-		return func(m *mockTools.MockBcryptInterface) {
-			m.EXPECT().GenerateFromPassword(gomock.Any(), gomock.Any()).Return(hashedPassword, err)
-		}
-	}
+	redis := mockRedis.NewMockRedisInterface(ctrl)
 
 	req := &pb.UserRegisterRequest{
 		Email:       "mail@mail.com",
@@ -312,6 +333,7 @@ func TestService_Register(t *testing.T) {
 		s       *Service
 		args    args
 		wantErr bool
+		mocks   []*gomock.Call
 	}{
 		{
 			name: "error hashing password",
@@ -323,6 +345,9 @@ func TestService_Register(t *testing.T) {
 				req: req,
 			},
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockHash.EXPECT().GenerateFromPassword(gomock.Any(), gomock.Any()).Return(nil, errors.New("error")),
+			},
 		},
 		{
 			name: "internal error",
@@ -335,6 +360,10 @@ func TestService_Register(t *testing.T) {
 				req: req,
 			},
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockHash.EXPECT().GenerateFromPassword(gomock.Any(), gomock.Any()).Return([]byte{}, nil),
+				mockRepo.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(nil, errors.New("other error")),
+			},
 		},
 		{
 			name: "data exist with inactive status",
@@ -347,6 +376,10 @@ func TestService_Register(t *testing.T) {
 				req: req,
 			},
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockHash.EXPECT().GenerateFromPassword(gomock.Any(), gomock.Any()).Return([]byte{}, nil),
+				mockRepo.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(dataInactive, nil),
+			},
 		},
 		{
 			name: "data exist with active status",
@@ -359,6 +392,10 @@ func TestService_Register(t *testing.T) {
 				req: req,
 			},
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockHash.EXPECT().GenerateFromPassword(gomock.Any(), gomock.Any()).Return([]byte{}, nil),
+				mockRepo.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(dataActive, nil),
+			},
 		},
 		{
 			name: "error register from create in repository layer",
@@ -371,44 +408,52 @@ func TestService_Register(t *testing.T) {
 				req: req,
 			},
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockHash.EXPECT().GenerateFromPassword(gomock.Any(), gomock.Any()).Return([]byte{}, nil),
+				mockRepo.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(nil, errors.New("record not found")),
+				mockRepo.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("error")),
+			},
 		},
 		{
 			name: "success register user error in redis",
 			s: &Service{
 				userRepository: mockRepo,
 				hashing:        mockHash,
-				redis:          redis.Connection(),
+				redis:          redis,
 			},
 			args: args{
 				ctx: context.Background(),
 				req: req,
 			},
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockHash.EXPECT().GenerateFromPassword(gomock.Any(), gomock.Any()).Return([]byte{}, nil),
+				mockRepo.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(nil, errors.New("record not found")),
+				mockRepo.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil),
+				redis.EXPECT().Set(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("any error")),
+			},
+		},
+		{
+			name: "success",
+			s: &Service{
+				userRepository: mockRepo,
+				hashing:        mockHash,
+				redis:          redis,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: req,
+			},
+			wantErr: false,
+			mocks: []*gomock.Call{
+				mockHash.EXPECT().GenerateFromPassword(gomock.Any(), gomock.Any()).Return([]byte{}, nil),
+				mockRepo.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(nil, errors.New("record not found")),
+				mockRepo.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil),
+				redis.EXPECT().Set(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil),
+			},
 		},
 	}
 	for _, tt := range tests {
-		switch tt.name {
-		case "error hashing password":
-			mockHashing(nil, errors.New("error"))(mockHash)
-		case "internal error":
-			mockHashing([]byte{}, nil)(mockHash)
-			mockGetEmail(nil, errors.New("other error"))(mockRepo)
-		case "data exist with inactive status":
-			mockHashing([]byte{}, nil)(mockHash)
-			mockGetEmail(dataInactive, nil)(mockRepo)
-		case "data exist with active status":
-			mockHashing([]byte{}, nil)(mockHash)
-			mockGetEmail(dataActive, nil)(mockRepo)
-		case "error register from create in repository layer":
-			mockHashing([]byte{}, nil)(mockHash)
-			mockGetEmail(nil, errors.New("record not found"))(mockRepo)
-			mockRegister(errors.New("error"))(mockRepo)
-		case "success register user error in redis":
-			mockHashing([]byte{}, nil)(mockHash)
-			mockGetEmail(nil, errors.New("record not found"))(mockRepo)
-			mockRegister(nil)(mockRepo)
-		}
-
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := tt.s.Register(tt.args.ctx, tt.args.req)
 			if err != nil != tt.wantErr {
@@ -784,6 +829,7 @@ func TestService_ChangePassword(t *testing.T) {
 			m.EXPECT().GenerateFromPassword(gomock.Any(), gomock.Any()).Return(hashedPassword, err)
 		}
 	}
+
 	req := &pb.ChangePasswordRequest{
 		Email:    "test@mail.com",
 		Password: "password",
@@ -948,6 +994,16 @@ func Test_verifyOtpFromRedis(t *testing.T) {
 }
 
 func TestService_ResendOTP(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockUser := mock.NewMockUser(ctrl)
+	mockUserRecord := mockUser.EXPECT()
+	redis := mockRedis.NewMockRedisInterface(ctrl)
+	redisRecord := redis.EXPECT()
+	email := "test@mail.com"
+	user := &entity.User{
+		Name:  "test",
+		Email: email,
+	}
 	type args struct {
 		ctx   context.Context
 		email string
@@ -958,8 +1014,60 @@ func TestService_ResendOTP(t *testing.T) {
 		args    args
 		want    *entity.OtpMailReq
 		wantErr bool
+		mocks   []*gomock.Call
 	}{
-		// TODO: Add test cases.
+		{
+			name: "error get by email repo",
+			s: &Service{
+				userRepository: mockUser,
+			},
+			args: args{
+				ctx:   context.Background(),
+				email: email,
+			},
+			want:    nil,
+			wantErr: true,
+			mocks: []*gomock.Call{
+				mockUserRecord.GetByEmail(gomock.Any(), gomock.Any()).Return(nil, errors.New("any error")),
+			},
+		},
+		{
+			name: "error set key value in redis",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+			},
+			args: args{
+				ctx:   context.Background(),
+				email: email,
+			},
+			want:    nil,
+			wantErr: true,
+			mocks: []*gomock.Call{
+				mockUserRecord.GetByEmail(gomock.Any(), gomock.Any()).Return(user, nil),
+				redisRecord.Set(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("any errror")),
+			},
+		},
+		{
+			name: "success",
+			s: &Service{
+				userRepository: mockUser,
+				redis:          redis,
+			},
+			args: args{
+				ctx:   context.Background(),
+				email: email,
+			},
+			want: &entity.OtpMailReq{
+				Name:  user.Name,
+				Email: user.Email,
+			},
+			wantErr: false,
+			mocks: []*gomock.Call{
+				mockUserRecord.GetByEmail(gomock.Any(), gomock.Any()).Return(user, nil),
+				redisRecord.Set(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -968,8 +1076,13 @@ func TestService_ResendOTP(t *testing.T) {
 				t.Errorf("Service.ResendOTP() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Service.ResendOTP() = %v, want %v", got, tt.want)
+			if got != nil {
+				if !reflect.DeepEqual(got.Name, tt.want.Name) {
+					t.Errorf("Service.ResendOTP() = %v, want %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.Email, tt.want.Email) {
+					t.Errorf("Service.ResendOTP() = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}

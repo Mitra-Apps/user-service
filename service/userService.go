@@ -174,7 +174,7 @@ func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (user
 	user, err = s.userRepository.GetByEmail(ctx, email)
 	if err != nil {
 		ErrorCode = codes.Internal
-		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+		ErrorCodeDetail = pbErr.ErrorCode_RECORD_NOT_FOUND.String()
 		ErrorMessage = "Verify User Error"
 		return nil, util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
 	}
@@ -236,7 +236,7 @@ func (s *Service) ResendOTP(ctx context.Context, email string) (*entity.OtpMailR
 
 	user, err := s.userRepository.GetByEmail(ctx, email)
 	if err != nil {
-		return nil, util.NewError(codes.Internal, codes.Internal.String(), err.Error())
+		return nil, util.NewError(codes.Internal, pbErr.ErrorCode_RECORD_NOT_FOUND.String(), err.Error())
 	}
 	// Marshal the JSON data
 	jsonData, err := json.Marshal(redisPayload)
