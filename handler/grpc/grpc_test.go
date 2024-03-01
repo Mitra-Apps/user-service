@@ -19,7 +19,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"gorm.io/gorm"
@@ -71,6 +73,15 @@ func TestNew(t *testing.T) {
 }
 
 func TestGrpcRoute_GetUsers(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockSvc := mock.NewMockServiceInterface(ctrl)
+	mockSvcRec := mockSvc.EXPECT()
+	users := []*entity.User{
+		{
+			Name: "test",
+		},
+	}
+
 	type args struct {
 		ctx context.Context
 		req *pb.GetUsersRequest
@@ -81,8 +92,41 @@ func TestGrpcRoute_GetUsers(t *testing.T) {
 		args    args
 		want    *pb.GetUsersResponse
 		wantErr bool
+		mock    *gomock.Call
 	}{
-		// TODO: Add test cases.
+		{
+			name: "error get all users from repo",
+			g: &GrpcRoute{
+				service: mockSvc,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &pb.GetUsersRequest{},
+			},
+			want:    nil,
+			wantErr: true,
+			mock:    mockSvcRec.GetAll(gomock.Any()).Return(nil, errors.New("any error")),
+		},
+		{
+			name: "success",
+			g: &GrpcRoute{
+				service: mockSvc,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &pb.GetUsersRequest{},
+			},
+			want: &pb.GetUsersResponse{
+				Users: []*pb.User{
+					{
+						Id:   uuid.Nil.String(),
+						Name: "test",
+					},
+				},
+			},
+			wantErr: false,
+			mock:    mockSvcRec.GetAll(gomock.Any()).Return(users, nil),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -258,16 +302,15 @@ func TestGrpcRoute_Login(t *testing.T) {
 func TestGrpcRoute_Register(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockSvc := mock.NewMockServiceInterface(ctrl)
-	mockRegister := func(otpReq *entity.OtpMailReq, err error) func(m *mock.MockServiceInterface) {
-		return func(m *mock.MockServiceInterface) {
-			m.EXPECT().Register(gomock.Any(), gomock.Any()).Return(otpReq, err)
-		}
+	mockSvcRec := mockSvc.EXPECT()
+	utilityGrpcConn, err := grpc.DialContext(context.Background(), os.Getenv("GRPC_UTILITY_HOST"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatal("Cannot connect to utility grpc server ", err)
 	}
-	// otpReq := &entity.OtpMailReq{
-	// 	Name:    "test",
-	// 	Email:   "test@mail.com",
-	// 	OtpCode: 1234,
-	// }
+	defer func() {
+		log.Println("Closing connection ...")
+		utilityGrpcConn.Close()
+	}()
 
 	type args struct {
 		ctx context.Context
@@ -279,6 +322,7 @@ func TestGrpcRoute_Register(t *testing.T) {
 		args    args
 		want    *pb.SuccessResponse
 		wantErr bool
+		mocks   []*gomock.Call
 	}{
 		{
 			name: "test error validating user",
@@ -317,38 +361,36 @@ func TestGrpcRoute_Register(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockSvcRec.Register(gomock.Any(), gomock.Any()).Return(nil, errors.New("any error")),
+			},
 		},
-		// {
-		// 	name: "test success register user",
-		// 	g: &GrpcRoute{
-		// 		service: mockSvc,
-		// 	},
-		// 	args: args{
-		// 		ctx: context.Background(),
-		// 		req: &pb.UserRegisterRequest{
-		// 			Email:       "test@mail.com",
-		// 			Password:    "password",
-		// 			Name:        "test",
-		// 			PhoneNumber: "0123456789",
-		// 			Address:     "address",
-		// 			RoleId:      []string{"1", "2"},
-		// 		},
-		// 	},
-		// 	want: &pb.SuccessResponse{
-		// 		Code:    int32(codes.OK),
-		// 		Message: "sending otp to email",
-		// 	},
-		// 	wantErr: false,
-		// },
+		{
+			name: "error send otp",
+			g: &GrpcRoute{
+				service:     mockSvc,
+				utilService: utilPb.NewMailServiceClient(utilityGrpcConn),
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &pb.UserRegisterRequest{
+					Email:       "test@mail.com",
+					Password:    "password",
+					Name:        "test",
+					PhoneNumber: "0123456789",
+					Address:     "address",
+					RoleId:      []string{"1", "2"},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+			mocks: []*gomock.Call{
+				mockSvcRec.Register(gomock.Any(), gomock.Any()).Return(&entity.OtpMailReq{}, nil),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			switch tt.name {
-			case "test fail register user from service layer":
-				mockRegister(nil, errors.New("error"))(mockSvc)
-				// case "test success register user":
-				// 	mockRegister(otpReq, nil)(mockSvc)
-			}
 			got, err := tt.g.Register(tt.args.ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GrpcRoute.Register() error = %v, wantErr %v", err, tt.wantErr)
@@ -767,6 +809,17 @@ func TestGrpcRoute_VerifyOtp(t *testing.T) {
 }
 
 func TestGrpcRoute_ResendOtp(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockSvc := mock.NewMockServiceInterface(ctrl)
+	mockSvcRec := mockSvc.EXPECT()
+	utilityGrpcConn, err := grpc.DialContext(context.Background(), os.Getenv("GRPC_UTILITY_HOST"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatal("Cannot connect to utility grpc server ", err)
+	}
+	defer func() {
+		log.Println("Closing connection ...")
+		utilityGrpcConn.Close()
+	}()
 	type args struct {
 		ctx context.Context
 		req *pb.ResendOTPRequest
@@ -777,8 +830,39 @@ func TestGrpcRoute_ResendOtp(t *testing.T) {
 		args    args
 		want    *pb.SuccessResponse
 		wantErr bool
+		mock    *gomock.Call
 	}{
-		// TODO: Add test cases.
+		{
+			name: "fail resend otp",
+			g: &GrpcRoute{
+				service: mockSvc,
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &pb.ResendOTPRequest{
+					Email: "test@mail.com",
+				},
+			},
+			want:    nil,
+			wantErr: true,
+			mock:    mockSvcRec.ResendOTP(gomock.Any(), gomock.Any()).Return(nil, errors.New("any error")),
+		},
+		{
+			name: "error send otp mail",
+			g: &GrpcRoute{
+				service:     mockSvc,
+				utilService: utilPb.NewMailServiceClient(utilityGrpcConn),
+			},
+			args: args{
+				ctx: context.Background(),
+				req: &pb.ResendOTPRequest{
+					Email: "test@mail.com",
+				},
+			},
+			want:    nil,
+			wantErr: true,
+			mock:    mockSvcRec.ResendOTP(gomock.Any(), gomock.Any()).Return(&entity.OtpMailReq{}, nil),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
