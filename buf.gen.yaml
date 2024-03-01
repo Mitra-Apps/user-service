@@ -21,4 +21,4 @@ plugins:
     opt: paths=source_relative
   - plugin: buf.build/community/google-gnostic-openapi:v0.7.0
     out: docs
-    opt: paths=source_relative
+    opt: paths=source_relative 

@@ -8,7 +8,6 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 import "validate/validate.proto";
-import "google/protobuf/any.proto";
 import "google/protobuf/struct.proto";
 
 message User {
@@ -20,8 +19,9 @@ message User {
     string avatar_image_id = 6;
     string access_token = 7;
     bool is_active = 8;
-    string name = 9;
-    string address = 10;
+    bool is_verified = 9;
+    string name = 10;
+    string address = 11;
 }
 
 message Role {
@@ -37,12 +37,8 @@ message ListRole {
 }
 
 message UserLoginRequest {
-    string username = 1;
-    string password = 2;
-}
-
-message UserLoginResponse{
-    string jwt = 1;
+    string email = 1 [(validate.rules).string.email = true];
+    string password = 2 [(validate.rules).string = {min_len: 6; max_len: 8}];
 }
 
 message UserRegisterRequest {
@@ -54,12 +50,10 @@ message UserRegisterRequest {
     repeated string role_id = 6;
 }
 
-message UserRegisterResponse {
-    string otp = 1;
-}
-
 message SuccessResponse {
-    google.protobuf.Any data = 1;
+    int32 code = 1;
+    string message = 2;
+    google.protobuf.Struct data = 3;
 }
 
 message GetUsersRequest {}
@@ -68,19 +62,39 @@ message GetUsersResponse {
     repeated User users = 1;
 }
 
+message VerifyOTPRequest {
+    string email = 1;
+    int32 otp_code = 2;
+}
+
+message ResendOTPRequest {
+    string email = 1;
+}
+
+message ResendOTPResponse {
+    int32 otp_code = 2;
+}
+
+message ChangePasswordRequest {
+    string email = 1 [(validate.rules).string.email = true];
+    string password = 2 [(validate.rules).string = {min_len: 6; max_len: 8}];
+    int32 otp_code = 3;
+}
+
+
 service UserService {
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {
         option (google.api.http) = {
             get: "/api/v1/users"
         };
     }
-    rpc Login(UserLoginRequest) returns (UserLoginResponse) {
+    rpc Login(UserLoginRequest) returns (SuccessResponse) {
         option (google.api.http) = {
             post: "/api/v1/users/login"
             body:"*"
         };
     }
-    rpc Register(UserRegisterRequest) returns (UserRegisterResponse) {
+    rpc Register(UserRegisterRequest) returns (SuccessResponse) {
         option (google.api.http) = {
             post: "/api/v1/users/register"
             body: "*"
@@ -95,6 +109,29 @@ service UserService {
     rpc GetRole(google.protobuf.Empty) returns (SuccessResponse) {
         option (google.api.http) = {
             get: "/api/v1/users/getrole"
+        };
+    }
+    rpc VerifyOtp(VerifyOTPRequest) returns (SuccessResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/users/verify-token"
+            body: "*"
+        };
+    }
+    rpc ResendOtp(ResendOTPRequest) returns (SuccessResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/users/resend-otp"
+            body: "*"
+        };
+    }
+    rpc GetOwnData(google.protobuf.Empty) returns (SuccessResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/users/getdata"
+        };
+    }
+    rpc ChangePassword(ChangePasswordRequest) returns (SuccessResponse) {
+         option (google.api.http) = {
+            post: "/api/v1/users/change-password"
+            body: "*"
         };
     }
 }

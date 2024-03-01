@@ -72,6 +72,8 @@ func (m *User) validate(all bool) error {
 
 	// no validation rules for IsActive
 
+	// no validation rules for IsVerified
+
 	// no validation rules for Name
 
 	// no validation rules for Address
@@ -443,15 +445,84 @@ func (m *UserLoginRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Username
+	if err := m._validateEmail(m.GetEmail()); err != nil {
+		err = UserLoginRequestValidationError{
+			field:  "Email",
+			reason: "value must be a valid email address",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Password
+	if l := utf8.RuneCountInString(m.GetPassword()); l < 6 || l > 8 {
+		err := UserLoginRequestValidationError{
+			field:  "Password",
+			reason: "value length must be between 6 and 8 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return UserLoginRequestMultiError(errors)
 	}
 
 	return nil
+}
+
+func (m *UserLoginRequest) _validateHostname(host string) error {
+	s := strings.ToLower(strings.TrimSuffix(host, "."))
+
+	if len(host) > 253 {
+		return errors.New("hostname cannot exceed 253 characters")
+	}
+
+	for _, part := range strings.Split(s, ".") {
+		if l := len(part); l == 0 || l > 63 {
+			return errors.New("hostname part must be non-empty and cannot exceed 63 characters")
+		}
+
+		if part[0] == '-' {
+			return errors.New("hostname parts cannot begin with hyphens")
+		}
+
+		if part[len(part)-1] == '-' {
+			return errors.New("hostname parts cannot end with hyphens")
+		}
+
+		for _, r := range part {
+			if (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-' {
+				return fmt.Errorf("hostname parts can only contain alphanumeric characters or hyphens, got %q", string(r))
+			}
+		}
+	}
+
+	return nil
+}
+
+func (m *UserLoginRequest) _validateEmail(addr string) error {
+	a, err := mail.ParseAddress(addr)
+	if err != nil {
+		return err
+	}
+	addr = a.Address
+
+	if len(addr) > 254 {
+		return errors.New("email addresses cannot exceed 254 characters")
+	}
+
+	parts := strings.SplitN(addr, "@", 2)
+
+	if len(parts[0]) > 64 {
+		return errors.New("email address local phrase cannot exceed 64 characters")
+	}
+
+	return m._validateHostname(parts[1])
 }
 
 // UserLoginRequestMultiError is an error wrapping multiple validation errors
@@ -524,110 +595,6 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = UserLoginRequestValidationError{}
-
-// Validate checks the field values on UserLoginResponse with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// first error encountered is returned, or nil if there are no violations.
-func (m *UserLoginResponse) Validate() error {
-	return m.validate(false)
-}
-
-// ValidateAll checks the field values on UserLoginResponse with the rules
-// defined in the proto definition for this message. If any rules are
-// violated, the result is a list of violation errors wrapped in
-// UserLoginResponseMultiError, or nil if none found.
-func (m *UserLoginResponse) ValidateAll() error {
-	return m.validate(true)
-}
-
-func (m *UserLoginResponse) validate(all bool) error {
-	if m == nil {
-		return nil
-	}
-
-	var errors []error
-
-	// no validation rules for Jwt
-
-	if len(errors) > 0 {
-		return UserLoginResponseMultiError(errors)
-	}
-
-	return nil
-}
-
-// UserLoginResponseMultiError is an error wrapping multiple validation errors
-// returned by UserLoginResponse.ValidateAll() if the designated constraints
-// aren't met.
-type UserLoginResponseMultiError []error
-
-// Error returns a concatenation of all the error messages it wraps.
-func (m UserLoginResponseMultiError) Error() string {
-	var msgs []string
-	for _, err := range m {
-		msgs = append(msgs, err.Error())
-	}
-	return strings.Join(msgs, "; ")
-}
-
-// AllErrors returns a list of validation violation errors.
-func (m UserLoginResponseMultiError) AllErrors() []error { return m }
-
-// UserLoginResponseValidationError is the validation error returned by
-// UserLoginResponse.Validate if the designated constraints aren't met.
-type UserLoginResponseValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e UserLoginResponseValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e UserLoginResponseValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e UserLoginResponseValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e UserLoginResponseValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e UserLoginResponseValidationError) ErrorName() string {
-	return "UserLoginResponseValidationError"
-}
-
-// Error satisfies the builtin error interface
-func (e UserLoginResponseValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sUserLoginResponse.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = UserLoginResponseValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = UserLoginResponseValidationError{}
 
 // Validate checks the field values on UserRegisterRequest with the rules
 // defined in the proto definition for this message. If any rules are
@@ -828,110 +795,6 @@ var _ interface {
 	ErrorName() string
 } = UserRegisterRequestValidationError{}
 
-// Validate checks the field values on UserRegisterResponse with the rules
-// defined in the proto definition for this message. If any rules are
-// violated, the first error encountered is returned, or nil if there are no violations.
-func (m *UserRegisterResponse) Validate() error {
-	return m.validate(false)
-}
-
-// ValidateAll checks the field values on UserRegisterResponse with the rules
-// defined in the proto definition for this message. If any rules are
-// violated, the result is a list of violation errors wrapped in
-// UserRegisterResponseMultiError, or nil if none found.
-func (m *UserRegisterResponse) ValidateAll() error {
-	return m.validate(true)
-}
-
-func (m *UserRegisterResponse) validate(all bool) error {
-	if m == nil {
-		return nil
-	}
-
-	var errors []error
-
-	// no validation rules for Otp
-
-	if len(errors) > 0 {
-		return UserRegisterResponseMultiError(errors)
-	}
-
-	return nil
-}
-
-// UserRegisterResponseMultiError is an error wrapping multiple validation
-// errors returned by UserRegisterResponse.ValidateAll() if the designated
-// constraints aren't met.
-type UserRegisterResponseMultiError []error
-
-// Error returns a concatenation of all the error messages it wraps.
-func (m UserRegisterResponseMultiError) Error() string {
-	var msgs []string
-	for _, err := range m {
-		msgs = append(msgs, err.Error())
-	}
-	return strings.Join(msgs, "; ")
-}
-
-// AllErrors returns a list of validation violation errors.
-func (m UserRegisterResponseMultiError) AllErrors() []error { return m }
-
-// UserRegisterResponseValidationError is the validation error returned by
-// UserRegisterResponse.Validate if the designated constraints aren't met.
-type UserRegisterResponseValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e UserRegisterResponseValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e UserRegisterResponseValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e UserRegisterResponseValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e UserRegisterResponseValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e UserRegisterResponseValidationError) ErrorName() string {
-	return "UserRegisterResponseValidationError"
-}
-
-// Error satisfies the builtin error interface
-func (e UserRegisterResponseValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sUserRegisterResponse.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = UserRegisterResponseValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = UserRegisterResponseValidationError{}
-
 // Validate checks the field values on SuccessResponse with the rules defined
 // in the proto definition for this message. If any rules are violated, the
 // first error encountered is returned, or nil if there are no violations.
@@ -953,6 +816,10 @@ func (m *SuccessResponse) validate(all bool) error {
 	}
 
 	var errors []error
+
+	// no validation rules for Code
+
+	// no validation rules for Message
 
 	if all {
 		switch v := interface{}(m.GetData()).(type) {
@@ -1294,3 +1161,490 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetUsersResponseValidationError{}
+
+// Validate checks the field values on VerifyOTPRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *VerifyOTPRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on VerifyOTPRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// VerifyOTPRequestMultiError, or nil if none found.
+func (m *VerifyOTPRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *VerifyOTPRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Email
+
+	// no validation rules for OtpCode
+
+	if len(errors) > 0 {
+		return VerifyOTPRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// VerifyOTPRequestMultiError is an error wrapping multiple validation errors
+// returned by VerifyOTPRequest.ValidateAll() if the designated constraints
+// aren't met.
+type VerifyOTPRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m VerifyOTPRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m VerifyOTPRequestMultiError) AllErrors() []error { return m }
+
+// VerifyOTPRequestValidationError is the validation error returned by
+// VerifyOTPRequest.Validate if the designated constraints aren't met.
+type VerifyOTPRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e VerifyOTPRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e VerifyOTPRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e VerifyOTPRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e VerifyOTPRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e VerifyOTPRequestValidationError) ErrorName() string { return "VerifyOTPRequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e VerifyOTPRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sVerifyOTPRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = VerifyOTPRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = VerifyOTPRequestValidationError{}
+
+// Validate checks the field values on ResendOTPRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *ResendOTPRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ResendOTPRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ResendOTPRequestMultiError, or nil if none found.
+func (m *ResendOTPRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ResendOTPRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Email
+
+	if len(errors) > 0 {
+		return ResendOTPRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ResendOTPRequestMultiError is an error wrapping multiple validation errors
+// returned by ResendOTPRequest.ValidateAll() if the designated constraints
+// aren't met.
+type ResendOTPRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ResendOTPRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ResendOTPRequestMultiError) AllErrors() []error { return m }
+
+// ResendOTPRequestValidationError is the validation error returned by
+// ResendOTPRequest.Validate if the designated constraints aren't met.
+type ResendOTPRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ResendOTPRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ResendOTPRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ResendOTPRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ResendOTPRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ResendOTPRequestValidationError) ErrorName() string { return "ResendOTPRequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ResendOTPRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sResendOTPRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ResendOTPRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ResendOTPRequestValidationError{}
+
+// Validate checks the field values on ResendOTPResponse with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *ResendOTPResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ResendOTPResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ResendOTPResponseMultiError, or nil if none found.
+func (m *ResendOTPResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ResendOTPResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for OtpCode
+
+	if len(errors) > 0 {
+		return ResendOTPResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ResendOTPResponseMultiError is an error wrapping multiple validation errors
+// returned by ResendOTPResponse.ValidateAll() if the designated constraints
+// aren't met.
+type ResendOTPResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ResendOTPResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ResendOTPResponseMultiError) AllErrors() []error { return m }
+
+// ResendOTPResponseValidationError is the validation error returned by
+// ResendOTPResponse.Validate if the designated constraints aren't met.
+type ResendOTPResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ResendOTPResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ResendOTPResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ResendOTPResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ResendOTPResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ResendOTPResponseValidationError) ErrorName() string {
+	return "ResendOTPResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ResendOTPResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sResendOTPResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ResendOTPResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ResendOTPResponseValidationError{}
+
+// Validate checks the field values on ChangePasswordRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ChangePasswordRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ChangePasswordRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ChangePasswordRequestMultiError, or nil if none found.
+func (m *ChangePasswordRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ChangePasswordRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if err := m._validateEmail(m.GetEmail()); err != nil {
+		err = ChangePasswordRequestValidationError{
+			field:  "Email",
+			reason: "value must be a valid email address",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if l := utf8.RuneCountInString(m.GetPassword()); l < 6 || l > 8 {
+		err := ChangePasswordRequestValidationError{
+			field:  "Password",
+			reason: "value length must be between 6 and 8 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for OtpCode
+
+	if len(errors) > 0 {
+		return ChangePasswordRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *ChangePasswordRequest) _validateHostname(host string) error {
+	s := strings.ToLower(strings.TrimSuffix(host, "."))
+
+	if len(host) > 253 {
+		return errors.New("hostname cannot exceed 253 characters")
+	}
+
+	for _, part := range strings.Split(s, ".") {
+		if l := len(part); l == 0 || l > 63 {
+			return errors.New("hostname part must be non-empty and cannot exceed 63 characters")
+		}
+
+		if part[0] == '-' {
+			return errors.New("hostname parts cannot begin with hyphens")
+		}
+
+		if part[len(part)-1] == '-' {
+			return errors.New("hostname parts cannot end with hyphens")
+		}
+
+		for _, r := range part {
+			if (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-' {
+				return fmt.Errorf("hostname parts can only contain alphanumeric characters or hyphens, got %q", string(r))
+			}
+		}
+	}
+
+	return nil
+}
+
+func (m *ChangePasswordRequest) _validateEmail(addr string) error {
+	a, err := mail.ParseAddress(addr)
+	if err != nil {
+		return err
+	}
+	addr = a.Address
+
+	if len(addr) > 254 {
+		return errors.New("email addresses cannot exceed 254 characters")
+	}
+
+	parts := strings.SplitN(addr, "@", 2)
+
+	if len(parts[0]) > 64 {
+		return errors.New("email address local phrase cannot exceed 64 characters")
+	}
+
+	return m._validateHostname(parts[1])
+}
+
+// ChangePasswordRequestMultiError is an error wrapping multiple validation
+// errors returned by ChangePasswordRequest.ValidateAll() if the designated
+// constraints aren't met.
+type ChangePasswordRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ChangePasswordRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ChangePasswordRequestMultiError) AllErrors() []error { return m }
+
+// ChangePasswordRequestValidationError is the validation error returned by
+// ChangePasswordRequest.Validate if the designated constraints aren't met.
+type ChangePasswordRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ChangePasswordRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ChangePasswordRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ChangePasswordRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ChangePasswordRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ChangePasswordRequestValidationError) ErrorName() string {
+	return "ChangePasswordRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ChangePasswordRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sChangePasswordRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ChangePasswordRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ChangePasswordRequestValidationError{}

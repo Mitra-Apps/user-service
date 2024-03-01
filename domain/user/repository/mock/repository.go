@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	entity "github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -84,6 +85,50 @@ func (mr *MockUserMockRecorder) GetByEmail(ctx, email any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByEmail", reflect.TypeOf((*MockUser)(nil).GetByEmail), ctx, email)
 }
 
+// GetByID mocks base method.
+func (m *MockUser) GetByID(ctx context.Context, ID uuid.UUID) (*entity.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByID", ctx, ID)
+	ret0, _ := ret[0].(*entity.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByID indicates an expected call of GetByID.
+func (mr *MockUserMockRecorder) GetByID(ctx, ID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockUser)(nil).GetByID), ctx, ID)
+}
+
+// Save mocks base method.
+func (m *MockUser) Save(ctx context.Context, user *entity.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Save", ctx, user)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Save indicates an expected call of Save.
+func (mr *MockUserMockRecorder) Save(ctx, user any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockUser)(nil).Save), ctx, user)
+}
+
+// VerifyUserByEmail mocks base method.
+func (m *MockUser) VerifyUserByEmail(ctx context.Context, email string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyUserByEmail", ctx, email)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VerifyUserByEmail indicates an expected call of VerifyUserByEmail.
+func (mr *MockUserMockRecorder) VerifyUserByEmail(ctx, email any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyUserByEmail", reflect.TypeOf((*MockUser)(nil).VerifyUserByEmail), ctx, email)
+}
+
 // MockRole is a mock of Role interface.
 type MockRole struct {
 	ctrl     *gomock.Controller
@@ -119,4 +164,19 @@ func (m *MockRole) Create(ctx context.Context, role *entity.Role) error {
 func (mr *MockRoleMockRecorder) Create(ctx, role any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockRole)(nil).Create), ctx, role)
+}
+
+// GetRole mocks base method.
+func (m *MockRole) GetRole(ctx context.Context) ([]entity.Role, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRole", ctx)
+	ret0, _ := ret[0].([]entity.Role)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRole indicates an expected call of GetRole.
+func (mr *MockRoleMockRecorder) GetRole(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRole", reflect.TypeOf((*MockRole)(nil).GetRole), ctx)
 }

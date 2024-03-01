@@ -8,22 +8,23 @@ import (
 )
 
 type User struct {
-	Id            uuid.UUID     `gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
-	Username      string        `gorm:"type:varchar(255);not null;unique"`
-	Password      string        `gorm:"type:varchar(255);not null"`
-	Email         string        `gorm:"type:varchar(255);not null;unique"`
-	PhoneNumber   string        `gorm:"type:varchar(50);not null;unique"`
-	AvatarImageId uuid.NullUUID `gorm:"type:varchar(255);null"`
-	AccessToken   *string       `gorm:"type:varchar(255);null"`
-	IsActive      bool          `gorm:"type:bool;not null;default:TRUE"`
-	IsVerified    bool          `gorm:"type:bool;not null;default:FALSE"`
-	CreatedAt     time.Time     `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
-	CreatedBy     uuid.UUID     `gorm:"type:uuid;not null"`
-	UpdatedAt     *time.Time    `gorm:"type:timestamptz;null"`
-	UpdatedBy     uuid.NullUUID `gorm:"type:uuid;null"`
-	Name          string        `gorm:"type:varchar(255);not null"`
-	Roles         []Role        `gorm:"many2many:user_roles;"`
-	Address       string        `gorm:"type:varchar(255);null"`
+	Id                   uuid.UUID     `gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
+	Username             string        `gorm:"type:varchar(255);not null;unique"`
+	Password             string        `gorm:"type:varchar(255);not null"`
+	Email                string        `gorm:"type:varchar(255);not null;unique"`
+	PhoneNumber          string        `gorm:"type:varchar(50);not null;unique"`
+	AvatarImageId        uuid.NullUUID `gorm:"type:varchar(255);null"`
+	AccessToken          *string       `gorm:"type:varchar(255);null"`
+	IsActive             bool          `gorm:"type:bool;not null;default:TRUE"`
+	CreatedAt            time.Time     `gorm:"type:timestamptz;not null;default:CURRENT_TIMESTAMP"`
+	CreatedBy            uuid.UUID     `gorm:"type:uuid;not null"`
+	UpdatedAt            time.Time     `gorm:"type:timestamptz;null;default:CURRENT_TIMESTAMP"`
+	UpdatedBy            uuid.NullUUID `gorm:"type:uuid;null"`
+	Name                 string        `gorm:"type:varchar(255);not null"`
+	Roles                []Role        `gorm:"many2many:user_roles;"`
+	Address              string        `gorm:"type:varchar(255);null"`
+	IsVerified           bool          `gorm:"type:bool;not null;default:FALSE"`
+	WrongPasswordCounter uint
 }
 
 func (u *User) ToProto() *pb.User {
@@ -38,6 +39,7 @@ func (u *User) ToProto() *pb.User {
 		PhoneNumber:   u.PhoneNumber,
 		Password:      u.Password,
 		IsActive:      u.IsActive,
+		IsVerified:    u.IsVerified,
 		AvatarImageId: avatarImageId,
 		Name:          u.Name,
 		Address:       u.Address,
@@ -45,6 +47,17 @@ func (u *User) ToProto() *pb.User {
 }
 
 type LoginRequest struct {
-	Username string
+	Email    string
 	Password string
+}
+
+type LoginResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+type OtpMailReq struct {
+	Name    string
+	Email   string
+	OtpCode int
 }

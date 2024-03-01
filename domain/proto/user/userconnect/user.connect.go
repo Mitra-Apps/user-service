@@ -44,25 +44,42 @@ const (
 	UserServiceCreateRoleProcedure = "/proto.UserService/CreateRole"
 	// UserServiceGetRoleProcedure is the fully-qualified name of the UserService's GetRole RPC.
 	UserServiceGetRoleProcedure = "/proto.UserService/GetRole"
+	// UserServiceVerifyOtpProcedure is the fully-qualified name of the UserService's VerifyOtp RPC.
+	UserServiceVerifyOtpProcedure = "/proto.UserService/VerifyOtp"
+	// UserServiceResendOtpProcedure is the fully-qualified name of the UserService's ResendOtp RPC.
+	UserServiceResendOtpProcedure = "/proto.UserService/ResendOtp"
+	// UserServiceGetOwnDataProcedure is the fully-qualified name of the UserService's GetOwnData RPC.
+	UserServiceGetOwnDataProcedure = "/proto.UserService/GetOwnData"
+	// UserServiceChangePasswordProcedure is the fully-qualified name of the UserService's
+	// ChangePassword RPC.
+	UserServiceChangePasswordProcedure = "/proto.UserService/ChangePassword"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	userServiceServiceDescriptor          = user.File_proto_user_user_proto.Services().ByName("UserService")
-	userServiceGetUsersMethodDescriptor   = userServiceServiceDescriptor.Methods().ByName("GetUsers")
-	userServiceLoginMethodDescriptor      = userServiceServiceDescriptor.Methods().ByName("Login")
-	userServiceRegisterMethodDescriptor   = userServiceServiceDescriptor.Methods().ByName("Register")
-	userServiceCreateRoleMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("CreateRole")
-	userServiceGetRoleMethodDescriptor    = userServiceServiceDescriptor.Methods().ByName("GetRole")
+	userServiceServiceDescriptor              = user.File_proto_user_user_proto.Services().ByName("UserService")
+	userServiceGetUsersMethodDescriptor       = userServiceServiceDescriptor.Methods().ByName("GetUsers")
+	userServiceLoginMethodDescriptor          = userServiceServiceDescriptor.Methods().ByName("Login")
+	userServiceRegisterMethodDescriptor       = userServiceServiceDescriptor.Methods().ByName("Register")
+	userServiceCreateRoleMethodDescriptor     = userServiceServiceDescriptor.Methods().ByName("CreateRole")
+	userServiceGetRoleMethodDescriptor        = userServiceServiceDescriptor.Methods().ByName("GetRole")
+	userServiceVerifyOtpMethodDescriptor      = userServiceServiceDescriptor.Methods().ByName("VerifyOtp")
+	userServiceResendOtpMethodDescriptor      = userServiceServiceDescriptor.Methods().ByName("ResendOtp")
+	userServiceGetOwnDataMethodDescriptor     = userServiceServiceDescriptor.Methods().ByName("GetOwnData")
+	userServiceChangePasswordMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("ChangePassword")
 )
 
 // UserServiceClient is a client for the proto.UserService service.
 type UserServiceClient interface {
 	GetUsers(context.Context, *connect.Request[user.GetUsersRequest]) (*connect.Response[user.GetUsersResponse], error)
-	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error)
-	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.UserRegisterResponse], error)
+	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.SuccessResponse], error)
+	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error)
 	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 	GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	VerifyOtp(context.Context, *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error)
+	ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error)
+	GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error)
 }
 
 // NewUserServiceClient constructs a client for the proto.UserService service. By default, it uses
@@ -81,13 +98,13 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceGetUsersMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		login: connect.NewClient[user.UserLoginRequest, user.UserLoginResponse](
+		login: connect.NewClient[user.UserLoginRequest, user.SuccessResponse](
 			httpClient,
 			baseURL+UserServiceLoginProcedure,
 			connect.WithSchema(userServiceLoginMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		register: connect.NewClient[user.UserRegisterRequest, user.UserRegisterResponse](
+		register: connect.NewClient[user.UserRegisterRequest, user.SuccessResponse](
 			httpClient,
 			baseURL+UserServiceRegisterProcedure,
 			connect.WithSchema(userServiceRegisterMethodDescriptor),
@@ -105,16 +122,44 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceGetRoleMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		verifyOtp: connect.NewClient[user.VerifyOTPRequest, user.SuccessResponse](
+			httpClient,
+			baseURL+UserServiceVerifyOtpProcedure,
+			connect.WithSchema(userServiceVerifyOtpMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		resendOtp: connect.NewClient[user.ResendOTPRequest, user.SuccessResponse](
+			httpClient,
+			baseURL+UserServiceResendOtpProcedure,
+			connect.WithSchema(userServiceResendOtpMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		getOwnData: connect.NewClient[emptypb.Empty, user.SuccessResponse](
+			httpClient,
+			baseURL+UserServiceGetOwnDataProcedure,
+			connect.WithSchema(userServiceGetOwnDataMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		changePassword: connect.NewClient[user.ChangePasswordRequest, user.SuccessResponse](
+			httpClient,
+			baseURL+UserServiceChangePasswordProcedure,
+			connect.WithSchema(userServiceChangePasswordMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // userServiceClient implements UserServiceClient.
 type userServiceClient struct {
-	getUsers   *connect.Client[user.GetUsersRequest, user.GetUsersResponse]
-	login      *connect.Client[user.UserLoginRequest, user.UserLoginResponse]
-	register   *connect.Client[user.UserRegisterRequest, user.UserRegisterResponse]
-	createRole *connect.Client[user.Role, user.SuccessResponse]
-	getRole    *connect.Client[emptypb.Empty, user.SuccessResponse]
+	getUsers       *connect.Client[user.GetUsersRequest, user.GetUsersResponse]
+	login          *connect.Client[user.UserLoginRequest, user.SuccessResponse]
+	register       *connect.Client[user.UserRegisterRequest, user.SuccessResponse]
+	createRole     *connect.Client[user.Role, user.SuccessResponse]
+	getRole        *connect.Client[emptypb.Empty, user.SuccessResponse]
+	verifyOtp      *connect.Client[user.VerifyOTPRequest, user.SuccessResponse]
+	resendOtp      *connect.Client[user.ResendOTPRequest, user.SuccessResponse]
+	getOwnData     *connect.Client[emptypb.Empty, user.SuccessResponse]
+	changePassword *connect.Client[user.ChangePasswordRequest, user.SuccessResponse]
 }
 
 // GetUsers calls proto.UserService.GetUsers.
@@ -123,12 +168,12 @@ func (c *userServiceClient) GetUsers(ctx context.Context, req *connect.Request[u
 }
 
 // Login calls proto.UserService.Login.
-func (c *userServiceClient) Login(ctx context.Context, req *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error) {
+func (c *userServiceClient) Login(ctx context.Context, req *connect.Request[user.UserLoginRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return c.login.CallUnary(ctx, req)
 }
 
 // Register calls proto.UserService.Register.
-func (c *userServiceClient) Register(ctx context.Context, req *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.UserRegisterResponse], error) {
+func (c *userServiceClient) Register(ctx context.Context, req *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return c.register.CallUnary(ctx, req)
 }
 
@@ -142,13 +187,37 @@ func (c *userServiceClient) GetRole(ctx context.Context, req *connect.Request[em
 	return c.getRole.CallUnary(ctx, req)
 }
 
+// VerifyOtp calls proto.UserService.VerifyOtp.
+func (c *userServiceClient) VerifyOtp(ctx context.Context, req *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return c.verifyOtp.CallUnary(ctx, req)
+}
+
+// ResendOtp calls proto.UserService.ResendOtp.
+func (c *userServiceClient) ResendOtp(ctx context.Context, req *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return c.resendOtp.CallUnary(ctx, req)
+}
+
+// GetOwnData calls proto.UserService.GetOwnData.
+func (c *userServiceClient) GetOwnData(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
+	return c.getOwnData.CallUnary(ctx, req)
+}
+
+// ChangePassword calls proto.UserService.ChangePassword.
+func (c *userServiceClient) ChangePassword(ctx context.Context, req *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return c.changePassword.CallUnary(ctx, req)
+}
+
 // UserServiceHandler is an implementation of the proto.UserService service.
 type UserServiceHandler interface {
 	GetUsers(context.Context, *connect.Request[user.GetUsersRequest]) (*connect.Response[user.GetUsersResponse], error)
-	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error)
-	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.UserRegisterResponse], error)
+	Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.SuccessResponse], error)
+	Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error)
 	CreateRole(context.Context, *connect.Request[user.Role]) (*connect.Response[user.SuccessResponse], error)
 	GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	VerifyOtp(context.Context, *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error)
+	ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error)
+	GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error)
 }
 
 // NewUserServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -187,6 +256,30 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(userServiceGetRoleMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	userServiceVerifyOtpHandler := connect.NewUnaryHandler(
+		UserServiceVerifyOtpProcedure,
+		svc.VerifyOtp,
+		connect.WithSchema(userServiceVerifyOtpMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceResendOtpHandler := connect.NewUnaryHandler(
+		UserServiceResendOtpProcedure,
+		svc.ResendOtp,
+		connect.WithSchema(userServiceResendOtpMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceGetOwnDataHandler := connect.NewUnaryHandler(
+		UserServiceGetOwnDataProcedure,
+		svc.GetOwnData,
+		connect.WithSchema(userServiceGetOwnDataMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceChangePasswordHandler := connect.NewUnaryHandler(
+		UserServiceChangePasswordProcedure,
+		svc.ChangePassword,
+		connect.WithSchema(userServiceChangePasswordMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/proto.UserService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case UserServiceGetUsersProcedure:
@@ -199,6 +292,14 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 			userServiceCreateRoleHandler.ServeHTTP(w, r)
 		case UserServiceGetRoleProcedure:
 			userServiceGetRoleHandler.ServeHTTP(w, r)
+		case UserServiceVerifyOtpProcedure:
+			userServiceVerifyOtpHandler.ServeHTTP(w, r)
+		case UserServiceResendOtpProcedure:
+			userServiceResendOtpHandler.ServeHTTP(w, r)
+		case UserServiceGetOwnDataProcedure:
+			userServiceGetOwnDataHandler.ServeHTTP(w, r)
+		case UserServiceChangePasswordProcedure:
+			userServiceChangePasswordHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -212,11 +313,11 @@ func (UnimplementedUserServiceHandler) GetUsers(context.Context, *connect.Reques
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.GetUsers is not implemented"))
 }
 
-func (UnimplementedUserServiceHandler) Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.UserLoginResponse], error) {
+func (UnimplementedUserServiceHandler) Login(context.Context, *connect.Request[user.UserLoginRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.Login is not implemented"))
 }
 
-func (UnimplementedUserServiceHandler) Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.UserRegisterResponse], error) {
+func (UnimplementedUserServiceHandler) Register(context.Context, *connect.Request[user.UserRegisterRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.Register is not implemented"))
 }
 
@@ -226,4 +327,20 @@ func (UnimplementedUserServiceHandler) CreateRole(context.Context, *connect.Requ
 
 func (UnimplementedUserServiceHandler) GetRole(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.GetRole is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) VerifyOtp(context.Context, *connect.Request[user.VerifyOTPRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.VerifyOtp is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.ResendOtp is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.GetOwnData is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.ChangePassword is not implemented"))
 }

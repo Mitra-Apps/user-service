@@ -41,6 +41,21 @@ func (m *MockServiceInterface) EXPECT() *MockServiceInterfaceMockRecorder {
 	return m.recorder
 }
 
+// ChangePassword mocks base method.
+func (m *MockServiceInterface) ChangePassword(ctx context.Context, req *user.ChangePasswordRequest) (*entity.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ChangePassword", ctx, req)
+	ret0, _ := ret[0].(*entity.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ChangePassword indicates an expected call of ChangePassword.
+func (mr *MockServiceInterfaceMockRecorder) ChangePassword(ctx, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePassword", reflect.TypeOf((*MockServiceInterface)(nil).ChangePassword), ctx, req)
+}
+
 // CreateRole mocks base method.
 func (m *MockServiceInterface) CreateRole(ctx context.Context, role *entity.Role) error {
 	m.ctrl.T.Helper()
@@ -86,10 +101,10 @@ func (mr *MockServiceInterfaceMockRecorder) GetRole(ctx any) *gomock.Call {
 }
 
 // Login mocks base method.
-func (m *MockServiceInterface) Login(ctx context.Context, payload entity.LoginRequest) (string, error) {
+func (m *MockServiceInterface) Login(ctx context.Context, payload entity.LoginRequest) (*entity.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Login", ctx, payload)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*entity.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -101,10 +116,10 @@ func (mr *MockServiceInterfaceMockRecorder) Login(ctx, payload any) *gomock.Call
 }
 
 // Register mocks base method.
-func (m *MockServiceInterface) Register(ctx context.Context, req *user.UserRegisterRequest) (string, error) {
+func (m *MockServiceInterface) Register(ctx context.Context, req *user.UserRegisterRequest) (*entity.OtpMailReq, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Register", ctx, req)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*entity.OtpMailReq)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -113,4 +128,34 @@ func (m *MockServiceInterface) Register(ctx context.Context, req *user.UserRegis
 func (mr *MockServiceInterfaceMockRecorder) Register(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockServiceInterface)(nil).Register), ctx, req)
+}
+
+// ResendOTP mocks base method.
+func (m *MockServiceInterface) ResendOTP(ctx context.Context, email string) (*entity.OtpMailReq, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResendOTP", ctx, email)
+	ret0, _ := ret[0].(*entity.OtpMailReq)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResendOTP indicates an expected call of ResendOTP.
+func (mr *MockServiceInterfaceMockRecorder) ResendOTP(ctx, email any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResendOTP", reflect.TypeOf((*MockServiceInterface)(nil).ResendOTP), ctx, email)
+}
+
+// VerifyOTP mocks base method.
+func (m *MockServiceInterface) VerifyOTP(ctx context.Context, otp int, redisKey string) (*entity.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyOTP", ctx, otp, redisKey)
+	ret0, _ := ret[0].(*entity.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VerifyOTP indicates an expected call of VerifyOTP.
+func (mr *MockServiceInterfaceMockRecorder) VerifyOTP(ctx, otp, redisKey any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyOTP", reflect.TypeOf((*MockServiceInterface)(nil).VerifyOTP), ctx, otp, redisKey)
 }

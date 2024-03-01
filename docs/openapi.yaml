@@ -24,6 +24,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/v1/users/change-password:
+        post:
+            tags:
+                - UserService
+            operationId: UserService_ChangePassword
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangePasswordRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/v1/users/createrole:
         post:
             tags:
@@ -35,6 +59,24 @@ paths:
                         schema:
                             $ref: '#/components/schemas/Role'
                 required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/v1/users/getdata:
+        get:
+            tags:
+                - UserService
+            operationId: UserService_GetOwnData
             responses:
                 "200":
                     description: OK
@@ -83,7 +125,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/UserLoginResponse'
+                                $ref: '#/components/schemas/SuccessResponse'
                 default:
                     description: Default error response
                     content:
@@ -107,7 +149,55 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/UserRegisterResponse'
+                                $ref: '#/components/schemas/SuccessResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/v1/users/resend-otp:
+        post:
+            tags:
+                - UserService
+            operationId: UserService_ResendOtp
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ResendOTPRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/v1/users/verify-token:
+        post:
+            tags:
+                - UserService
+            operationId: UserService_VerifyOtp
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/VerifyOTPRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuccessResponse'
                 default:
                     description: Default error response
                     content:
@@ -116,6 +206,16 @@ paths:
                                 $ref: '#/components/schemas/Status'
 components:
     schemas:
+        ChangePasswordRequest:
+            type: object
+            properties:
+                email:
+                    type: string
+                password:
+                    type: string
+                otpCode:
+                    type: integer
+                    format: int32
         GetUsersResponse:
             type: object
             properties:
@@ -131,6 +231,11 @@ components:
                     description: The type of the serialized message.
             additionalProperties: true
             description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
+        ResendOTPRequest:
+            type: object
+            properties:
+                email:
+                    type: string
         Role:
             type: object
             properties:
@@ -163,8 +268,13 @@ components:
         SuccessResponse:
             type: object
             properties:
+                code:
+                    type: integer
+                    format: int32
+                message:
+                    type: string
                 data:
-                    $ref: '#/components/schemas/GoogleProtobufAny'
+                    type: object
         User:
             type: object
             properties:
@@ -184,6 +294,8 @@ components:
                     type: string
                 isActive:
                     type: boolean
+                isVerified:
+                    type: boolean
                 name:
                     type: string
                 address:
@@ -191,14 +303,9 @@ components:
         UserLoginRequest:
             type: object
             properties:
-                username:
+                email:
                     type: string
                 password:
-                    type: string
-        UserLoginResponse:
-            type: object
-            properties:
-                jwt:
                     type: string
         UserRegisterRequest:
             type: object
@@ -217,10 +324,13 @@ components:
                     type: array
                     items:
                         type: string
-        UserRegisterResponse:
+        VerifyOTPRequest:
             type: object
             properties:
-                otp:
+                email:
                     type: string
+                otpCode:
+                    type: integer
+                    format: int32
 tags:
     - name: UserService

@@ -20,11 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	UserService_GetUsers_FullMethodName   = "/proto.UserService/GetUsers"
-	UserService_Login_FullMethodName      = "/proto.UserService/Login"
-	UserService_Register_FullMethodName   = "/proto.UserService/Register"
-	UserService_CreateRole_FullMethodName = "/proto.UserService/CreateRole"
-	UserService_GetRole_FullMethodName    = "/proto.UserService/GetRole"
+	UserService_GetUsers_FullMethodName       = "/proto.UserService/GetUsers"
+	UserService_Login_FullMethodName          = "/proto.UserService/Login"
+	UserService_Register_FullMethodName       = "/proto.UserService/Register"
+	UserService_CreateRole_FullMethodName     = "/proto.UserService/CreateRole"
+	UserService_GetRole_FullMethodName        = "/proto.UserService/GetRole"
+	UserService_VerifyOtp_FullMethodName      = "/proto.UserService/VerifyOtp"
+	UserService_ResendOtp_FullMethodName      = "/proto.UserService/ResendOtp"
+	UserService_GetOwnData_FullMethodName     = "/proto.UserService/GetOwnData"
+	UserService_ChangePassword_FullMethodName = "/proto.UserService/ChangePassword"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -32,10 +36,14 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserServiceClient interface {
 	GetUsers(ctx context.Context, in *GetUsersRequest, opts ...grpc.CallOption) (*GetUsersResponse, error)
-	Login(ctx context.Context, in *UserLoginRequest, opts ...grpc.CallOption) (*UserLoginResponse, error)
-	Register(ctx context.Context, in *UserRegisterRequest, opts ...grpc.CallOption) (*UserRegisterResponse, error)
+	Login(ctx context.Context, in *UserLoginRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	Register(ctx context.Context, in *UserRegisterRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	CreateRole(ctx context.Context, in *Role, opts ...grpc.CallOption) (*SuccessResponse, error)
 	GetRole(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
+	VerifyOtp(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	ResendOtp(ctx context.Context, in *ResendOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	GetOwnData(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 }
 
 type userServiceClient struct {
@@ -55,8 +63,8 @@ func (c *userServiceClient) GetUsers(ctx context.Context, in *GetUsersRequest, o
 	return out, nil
 }
 
-func (c *userServiceClient) Login(ctx context.Context, in *UserLoginRequest, opts ...grpc.CallOption) (*UserLoginResponse, error) {
-	out := new(UserLoginResponse)
+func (c *userServiceClient) Login(ctx context.Context, in *UserLoginRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
 	err := c.cc.Invoke(ctx, UserService_Login_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -64,8 +72,8 @@ func (c *userServiceClient) Login(ctx context.Context, in *UserLoginRequest, opt
 	return out, nil
 }
 
-func (c *userServiceClient) Register(ctx context.Context, in *UserRegisterRequest, opts ...grpc.CallOption) (*UserRegisterResponse, error) {
-	out := new(UserRegisterResponse)
+func (c *userServiceClient) Register(ctx context.Context, in *UserRegisterRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
 	err := c.cc.Invoke(ctx, UserService_Register_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -91,15 +99,55 @@ func (c *userServiceClient) GetRole(ctx context.Context, in *emptypb.Empty, opts
 	return out, nil
 }
 
+func (c *userServiceClient) VerifyOtp(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_VerifyOtp_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ResendOtp(ctx context.Context, in *ResendOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_ResendOtp_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetOwnData(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_GetOwnData_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_ChangePassword_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
 type UserServiceServer interface {
 	GetUsers(context.Context, *GetUsersRequest) (*GetUsersResponse, error)
-	Login(context.Context, *UserLoginRequest) (*UserLoginResponse, error)
-	Register(context.Context, *UserRegisterRequest) (*UserRegisterResponse, error)
+	Login(context.Context, *UserLoginRequest) (*SuccessResponse, error)
+	Register(context.Context, *UserRegisterRequest) (*SuccessResponse, error)
 	CreateRole(context.Context, *Role) (*SuccessResponse, error)
 	GetRole(context.Context, *emptypb.Empty) (*SuccessResponse, error)
+	VerifyOtp(context.Context, *VerifyOTPRequest) (*SuccessResponse, error)
+	ResendOtp(context.Context, *ResendOTPRequest) (*SuccessResponse, error)
+	GetOwnData(context.Context, *emptypb.Empty) (*SuccessResponse, error)
+	ChangePassword(context.Context, *ChangePasswordRequest) (*SuccessResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -110,10 +158,10 @@ type UnimplementedUserServiceServer struct {
 func (UnimplementedUserServiceServer) GetUsers(context.Context, *GetUsersRequest) (*GetUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUsers not implemented")
 }
-func (UnimplementedUserServiceServer) Login(context.Context, *UserLoginRequest) (*UserLoginResponse, error) {
+func (UnimplementedUserServiceServer) Login(context.Context, *UserLoginRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedUserServiceServer) Register(context.Context, *UserRegisterRequest) (*UserRegisterResponse, error) {
+func (UnimplementedUserServiceServer) Register(context.Context, *UserRegisterRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
 func (UnimplementedUserServiceServer) CreateRole(context.Context, *Role) (*SuccessResponse, error) {
@@ -121,6 +169,18 @@ func (UnimplementedUserServiceServer) CreateRole(context.Context, *Role) (*Succe
 }
 func (UnimplementedUserServiceServer) GetRole(context.Context, *emptypb.Empty) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRole not implemented")
+}
+func (UnimplementedUserServiceServer) VerifyOtp(context.Context, *VerifyOTPRequest) (*SuccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyOtp not implemented")
+}
+func (UnimplementedUserServiceServer) ResendOtp(context.Context, *ResendOTPRequest) (*SuccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResendOtp not implemented")
+}
+func (UnimplementedUserServiceServer) GetOwnData(context.Context, *emptypb.Empty) (*SuccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOwnData not implemented")
+}
+func (UnimplementedUserServiceServer) ChangePassword(context.Context, *ChangePasswordRequest) (*SuccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -225,6 +285,78 @@ func _UserService_GetRole_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_VerifyOtp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).VerifyOtp(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_VerifyOtp_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).VerifyOtp(ctx, req.(*VerifyOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_ResendOtp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResendOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ResendOtp(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ResendOtp_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ResendOtp(ctx, req.(*ResendOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetOwnData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetOwnData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetOwnData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetOwnData(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ChangePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ChangePassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ChangePassword(ctx, req.(*ChangePasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -251,6 +383,22 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRole",
 			Handler:    _UserService_GetRole_Handler,
+		},
+		{
+			MethodName: "VerifyOtp",
+			Handler:    _UserService_VerifyOtp_Handler,
+		},
+		{
+			MethodName: "ResendOtp",
+			Handler:    _UserService_ResendOtp_Handler,
+		},
+		{
+			MethodName: "GetOwnData",
+			Handler:    _UserService_GetOwnData_Handler,
+		},
+		{
+			MethodName: "ChangePassword",
+			Handler:    _UserService_ChangePassword_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
