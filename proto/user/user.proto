@@ -81,6 +81,10 @@ message ChangePasswordRequest {
     int32 otp_code = 3;
 }
 
+message LogoutRequest {
+    string email = 1 [(validate.rules).string.email = true];
+}
+
 
 service UserService {
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {
@@ -131,6 +135,12 @@ service UserService {
     rpc ChangePassword(ChangePasswordRequest) returns (SuccessResponse) {
          option (google.api.http) = {
             post: "/api/v1/users/change-password"
+            body: "*"
+        };
+    }
+    rpc Logout(LogoutRequest) returns (SuccessResponse) {
+         option (google.api.http) = {
+            post: "/api/v1/users/logout"
             body: "*"
         };
     }

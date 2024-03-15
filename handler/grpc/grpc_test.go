@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/Mitra-Apps/be-user-service/config/postgre"
@@ -18,6 +21,8 @@ import (
 	utilPb "github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
+	"github.com/labstack/echo"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -1020,4 +1025,49 @@ func TestGrpcRoute_ChangePassword(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLogout(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockSvc := mock.NewMockServiceInterface(mockCtrl)
+	reqBody := &pb.LogoutRequest{
+		Email: "agrhaganteng@gmail.com",
+	}
+
+	server := &GrpcRoute{
+		service: mockSvc,
+	}
+
+	t.Run("Should return 200", func(t *testing.T) {
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/users/logout", strings.NewReader(string(body)))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		payload := &pb.LogoutRequest{
+			Email: "agrhaganteng@gmail.com",
+		}
+		c := context.Background()
+		mockSvc.EXPECT().
+			Logout(gomock.Any(), gomock.Any()).
+			Return(nil)
+		_, err := server.Logout(c, payload)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, rec.Code)
+	})
+
+	t.Run("Should return error validate proto", func(t *testing.T) {
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/users/logout", strings.NewReader(string(body)))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		payload := &pb.LogoutRequest{
+			Email: "a",
+		}
+		c := context.Background()
+
+		_, err := server.Logout(c, payload)
+		require.Error(t, err)
+		require.Equal(t, http.StatusOK, rec.Code)
+	})
+
 }

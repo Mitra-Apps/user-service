@@ -293,6 +293,28 @@ func (s *Service) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequ
 	return user, nil
 }
 
+func (s *Service) Logout(ctx context.Context, req *pb.LogoutRequest) error {
+	user, err := s.userRepository.GetByEmail(ctx, req.Email)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			ErrorCode = codes.NotFound
+			ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_NOT_FOUND.String()
+			ErrorMessage = "Email belum terdaftar, mohon registrasi"
+		} else {
+			ErrorCode = codes.Internal
+			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
+			ErrorMessage = err.Error()
+		}
+		return util.NewError(ErrorCode, ErrorCodeDetail, ErrorMessage)
+	}
+	user.AccessToken = ""
+	user.RefreshToken = ""
+	if err = s.userRepository.Save(ctx, user); err != nil {
+		return util.NewError(codes.Internal, codes.Unknown.String(), err.Error())
+	}
+	return nil
+}
+
 func generateRandom4DigitNumber() int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(9000) + 1000 // Ensure a 4-digit number

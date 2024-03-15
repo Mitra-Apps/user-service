@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
@@ -245,6 +246,24 @@ func (g *GrpcRoute) ChangePassword(ctx context.Context, req *pb.ChangePasswordRe
 		Code:    int32(codes.OK),
 		Message: "Sandi berhasil diubah!",
 		Data:    data,
+	}
+	return res, nil
+}
+
+func (g *GrpcRoute) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.SuccessResponse, error) {
+	if err := req.ValidateAll(); err != nil {
+		return nil, err
+	}
+	go func() {
+		err := g.service.Logout(ctx, req)
+		if err != nil {
+			log.Print("Logout Error")
+		}
+	}()
+
+	res := &pb.SuccessResponse{
+		Code:    int32(codes.OK),
+		Message: "Anda Berhasil Logout!",
 	}
 	return res, nil
 }
