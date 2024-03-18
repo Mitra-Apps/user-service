@@ -50,4 +50,5 @@ type ServiceInterface interface {
 	VerifyOTP(ctx context.Context, otp int, redisKey string) (user *entity.User, err error)
 	ResendOTP(ctx context.Context, email string) (*entity.OtpMailReq, error)
 	ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*entity.User, error)
+	Logout(ctx context.Context, req *pb.LogoutRequest) error
 }

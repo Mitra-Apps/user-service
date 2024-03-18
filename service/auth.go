@@ -94,7 +94,6 @@ func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (*J
 	// assert jwt.MapClaims type
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		fmt.Println("error 1")
 		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errInvalidToken.Error())
 	}
 
