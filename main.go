@@ -83,8 +83,7 @@ func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 func main() {
 	ctx := context.Background()
 
-	godotenv.Load("config.env")
-
+	godotenv.Load()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("GRPC_PORT")))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
