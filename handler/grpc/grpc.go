@@ -255,6 +255,7 @@ func (g *GrpcRoute) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.Succ
 		return nil, err
 	}
 	go func() {
+		ctx = context.Background()
 		err := g.service.Logout(ctx, req)
 		if err != nil {
 			log.Print("Logout Error")
