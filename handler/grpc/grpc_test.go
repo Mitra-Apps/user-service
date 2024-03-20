@@ -45,7 +45,7 @@ func TestNew(t *testing.T) {
 	type args struct {
 		service     service.ServiceInterface
 		auth        service.Authentication
-		utilService utilPb.MailServiceClient
+		utilService utilPb.UtilServiceClient
 	}
 	ctrl := gomock.NewController(t)
 	mockSvc := mock.NewMockServiceInterface(ctrl)
@@ -374,7 +374,7 @@ func TestGrpcRoute_Register(t *testing.T) {
 			name: "error send otp",
 			g: &GrpcRoute{
 				service:     mockSvc,
-				utilService: utilPb.NewMailServiceClient(utilityGrpcConn),
+				utilService: utilPb.NewUtilServiceClient(utilityGrpcConn),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -856,7 +856,7 @@ func TestGrpcRoute_ResendOtp(t *testing.T) {
 			name: "error send otp mail",
 			g: &GrpcRoute{
 				service:     mockSvc,
-				utilService: utilPb.NewMailServiceClient(utilityGrpcConn),
+				utilService: utilPb.NewUtilServiceClient(utilityGrpcConn),
 			},
 			args: args{
 				ctx: context.Background(),

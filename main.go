@@ -97,7 +97,7 @@ func main() {
 		log.Println("Closing connection ...")
 		utilityGrpcConn.Close()
 	}()
-	mailSvcClient := utilPb.NewMailServiceClient(utilityGrpcConn)
+	mailSvcClient := utilPb.NewUtilServiceClient(utilityGrpcConn)
 
 	db := postgre.Connection()
 	user := &entity.User{}
