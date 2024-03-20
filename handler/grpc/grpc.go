@@ -20,11 +20,11 @@ import (
 type GrpcRoute struct {
 	service     service.ServiceInterface
 	auth        service.Authentication
-	utilService utilPb.MailServiceClient
+	utilService utilPb.UtilServiceClient
 	pb.UnimplementedUserServiceServer
 }
 
-func New(service service.ServiceInterface, auth service.Authentication, utilService utilPb.MailServiceClient) pb.UserServiceServer {
+func New(service service.ServiceInterface, auth service.Authentication, utilService utilPb.UtilServiceClient) pb.UserServiceServer {
 	return &GrpcRoute{
 		service:     service,
 		auth:        auth,
