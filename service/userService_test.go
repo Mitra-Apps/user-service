@@ -1096,32 +1096,32 @@ func TestService_Logout(t *testing.T) {
 	s := &Service{
 		userRepository: mockUser,
 	}
-	logoutRequest := pb.LogoutRequest{}
+	userId := uuid.New()
 	user := &entity.User{}
 
 	t.Run("Should return no error", func(t *testing.T) {
 		mockUser.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, nil)
 		mockUser.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
-		err := s.Logout(ctx, &logoutRequest)
+		err := s.Logout(ctx, userId)
 		require.NoError(t, err)
 	})
 
 	t.Run("Should return error when email not found", func(t *testing.T) {
 		mockUser.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, errors.New("not found"))
-		err := s.Logout(ctx, &logoutRequest)
+		err := s.Logout(ctx, userId)
 		require.Error(t, err)
 	})
 
 	t.Run("Should return error when find email error", func(t *testing.T) {
 		mockUser.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, errors.New("failed"))
-		err := s.Logout(ctx, &logoutRequest)
+		err := s.Logout(ctx, userId)
 		require.Error(t, err)
 	})
 
 	t.Run("Should return error when saving error", func(t *testing.T) {
 		mockUser.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, nil)
 		mockUser.EXPECT().Save(gomock.Any(), gomock.Any()).Return(errors.New("failed"))
-		err := s.Logout(ctx, &logoutRequest)
+		err := s.Logout(ctx, userId)
 		require.Error(t, err)
 	})
 

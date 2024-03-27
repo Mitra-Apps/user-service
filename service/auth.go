@@ -115,10 +115,13 @@ func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (*J
 	if err != nil {
 		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
 	}
+
 	var roles []string
-	claimRoles := claims["roles"].([]interface{})
-	for _, v := range claimRoles {
-		roles = append(roles, v.(string))
+	if claims["roles"] != nil {
+		claimRoles := claims["roles"].([]interface{})
+		for _, v := range claimRoles {
+			roles = append(roles, v.(string))
+		}
 	}
 
 	res := &JwtCustomClaim{

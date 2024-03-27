@@ -1030,10 +1030,7 @@ func TestGrpcRoute_ChangePassword(t *testing.T) {
 func TestLogout(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	mockSvc := mock.NewMockServiceInterface(mockCtrl)
-	reqBody := &pb.LogoutRequest{
-		Email: "agrhaganteng@gmail.com",
-	}
-
+	reqBody := &emptypb.Empty{}
 	server := &GrpcRoute{
 		service: mockSvc,
 	}
@@ -1043,31 +1040,10 @@ func TestLogout(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/users/logout", strings.NewReader(string(body)))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
-		payload := &pb.LogoutRequest{
-			Email: "agrhaganteng@gmail.com",
-		}
+		payload := &emptypb.Empty{}
 		c := context.Background()
-		mockSvc.EXPECT().
-			Logout(gomock.Any(), gomock.Any()).
-			Return(nil)
 		_, err := server.Logout(c, payload)
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, rec.Code)
 	})
-
-	t.Run("Should return error validate proto", func(t *testing.T) {
-		body, _ := json.Marshal(reqBody)
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/users/logout", strings.NewReader(string(body)))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		rec := httptest.NewRecorder()
-		payload := &pb.LogoutRequest{
-			Email: "a",
-		}
-		c := context.Background()
-
-		_, err := server.Logout(c, payload)
-		require.Error(t, err)
-		require.Equal(t, http.StatusOK, rec.Code)
-	})
-
 }
