@@ -19,6 +19,7 @@ import (
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	util "github.com/Mitra-Apps/be-utility-service/service"
+	"github.com/google/uuid"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
@@ -293,13 +294,14 @@ func (s *Service) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequ
 	return user, nil
 }
 
-func (s *Service) Logout(ctx context.Context, req *pb.LogoutRequest) error {
-	user, err := s.userRepository.GetByEmail(ctx, req.Email)
+func (s *Service) Logout(ctx context.Context, id uuid.UUID) error {
+
+	user, err := s.userRepository.GetByID(ctx, id)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			ErrorCode = codes.NotFound
 			ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_NOT_FOUND.String()
-			ErrorMessage = "Email belum terdaftar, mohon registrasi"
+			ErrorMessage = "Id Tidak Ditemukan"
 		} else {
 			ErrorCode = codes.Internal
 			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()

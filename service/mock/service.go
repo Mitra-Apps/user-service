@@ -15,6 +15,7 @@ import (
 
 	user "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	entity "github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -116,17 +117,17 @@ func (mr *MockServiceInterfaceMockRecorder) Login(ctx, payload any) *gomock.Call
 }
 
 // Logout mocks base method.
-func (m *MockServiceInterface) Logout(ctx context.Context, req *user.LogoutRequest) error {
+func (m *MockServiceInterface) Logout(ctx context.Context, id uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Logout", ctx, req)
+	ret := m.ctrl.Call(m, "Logout", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Logout indicates an expected call of Logout.
-func (mr *MockServiceInterfaceMockRecorder) Logout(ctx, req any) *gomock.Call {
+func (mr *MockServiceInterfaceMockRecorder) Logout(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logout", reflect.TypeOf((*MockServiceInterface)(nil).Logout), ctx, req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logout", reflect.TypeOf((*MockServiceInterface)(nil).Logout), ctx, id)
 }
 
 // Register mocks base method.

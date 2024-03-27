@@ -83,7 +83,7 @@ type UserServiceClient interface {
 	ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error)
 	GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error)
-	Logout(context.Context, *connect.Request[user.LogoutRequest]) (*connect.Response[user.SuccessResponse], error)
+	Logout(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 }
 
 // NewUserServiceClient constructs a client for the proto.UserService service. By default, it uses
@@ -150,7 +150,7 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceChangePasswordMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		logout: connect.NewClient[user.LogoutRequest, user.SuccessResponse](
+		logout: connect.NewClient[emptypb.Empty, user.SuccessResponse](
 			httpClient,
 			baseURL+UserServiceLogoutProcedure,
 			connect.WithSchema(userServiceLogoutMethodDescriptor),
@@ -170,7 +170,7 @@ type userServiceClient struct {
 	resendOtp      *connect.Client[user.ResendOTPRequest, user.SuccessResponse]
 	getOwnData     *connect.Client[emptypb.Empty, user.SuccessResponse]
 	changePassword *connect.Client[user.ChangePasswordRequest, user.SuccessResponse]
-	logout         *connect.Client[user.LogoutRequest, user.SuccessResponse]
+	logout         *connect.Client[emptypb.Empty, user.SuccessResponse]
 }
 
 // GetUsers calls proto.UserService.GetUsers.
@@ -219,7 +219,7 @@ func (c *userServiceClient) ChangePassword(ctx context.Context, req *connect.Req
 }
 
 // Logout calls proto.UserService.Logout.
-func (c *userServiceClient) Logout(ctx context.Context, req *connect.Request[user.LogoutRequest]) (*connect.Response[user.SuccessResponse], error) {
+func (c *userServiceClient) Logout(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
 	return c.logout.CallUnary(ctx, req)
 }
 
@@ -234,7 +234,7 @@ type UserServiceHandler interface {
 	ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error)
 	GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error)
-	Logout(context.Context, *connect.Request[user.LogoutRequest]) (*connect.Response[user.SuccessResponse], error)
+	Logout(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 }
 
 // NewUserServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -370,6 +370,6 @@ func (UnimplementedUserServiceHandler) ChangePassword(context.Context, *connect.
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.ChangePassword is not implemented"))
 }
 
-func (UnimplementedUserServiceHandler) Logout(context.Context, *connect.Request[user.LogoutRequest]) (*connect.Response[user.SuccessResponse], error) {
+func (UnimplementedUserServiceHandler) Logout(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.Logout is not implemented"))
 }

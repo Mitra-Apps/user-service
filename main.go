@@ -45,6 +45,8 @@ func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 		// Middleware logic for specific route
 	case "/proto.UserService/GetOwnData":
 		// Middleware logic for specific route
+	case "/proto.UserService/Logout":
+		// Middleware logic for specific route
 	default:
 		addMiddleware = false
 	}
