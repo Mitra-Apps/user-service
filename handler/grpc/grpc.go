@@ -253,9 +253,10 @@ func (g *GrpcRoute) ChangePassword(ctx context.Context, req *pb.ChangePasswordRe
 func (g *GrpcRoute) Logout(ctx context.Context, req *emptypb.Empty) (*pb.SuccessResponse, error) {
 	// Retrieve metadata from the context
 	fmt.Println("get role handler", middleware.GetUserIDValue(ctx))
+	id := middleware.GetUserIDValue(ctx)
 	go func() {
 		ctx = context.Background()
-		err := g.service.Logout(ctx, middleware.GetUserIDValue(ctx))
+		err := g.service.Logout(ctx, id)
 		if err != nil {
 			log.Print("Logout Error")
 		}
