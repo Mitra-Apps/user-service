@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"log"
 
+	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	"github.com/Mitra-Apps/be-user-service/service"
 	utilPb "github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
+	util "github.com/Mitra-Apps/be-utility-service/service"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -61,11 +63,11 @@ func (g *GrpcRoute) Login(ctx context.Context, req *pb.UserLoginRequest) (*pb.Su
 		return nil, err
 	}
 
-	accessToken, err := g.auth.GenerateToken(ctx, user, 60)
+	accessToken, err := g.auth.GenerateToken(ctx, user)
 	if err != nil {
 		return nil, err
 	}
-	refreshToken, err := g.auth.GenerateToken(ctx, user, 43200)
+	refreshToken, err := g.auth.GenerateToken(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -170,11 +172,11 @@ func (g *GrpcRoute) VerifyOtp(ctx context.Context, req *pb.VerifyOTPRequest) (*p
 	if err != nil {
 		return nil, err
 	}
-	accessToken, err := g.auth.GenerateToken(ctx, user, 60)
+	accessToken, err := g.auth.GenerateToken(ctx, user)
 	if err != nil {
 		return nil, err
 	}
-	refreshToken, err := g.auth.GenerateToken(ctx, user, 43200)
+	refreshToken, err := g.auth.GenerateToken(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -226,11 +228,11 @@ func (g *GrpcRoute) ChangePassword(ctx context.Context, req *pb.ChangePasswordRe
 	if err != nil {
 		return nil, err
 	}
-	accessToken, err := g.auth.GenerateToken(ctx, user, 60)
+	accessToken, err := g.auth.GenerateToken(ctx, user)
 	if err != nil {
 		return nil, err
 	}
-	refreshToken, err := g.auth.GenerateToken(ctx, user, 43200)
+	refreshToken, err := g.auth.GenerateToken(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -267,4 +269,37 @@ func (g *GrpcRoute) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.Succ
 		Message: "Anda Berhasil Logout!",
 	}
 	return res, nil
+}
+
+func (g *GrpcRoute) RefreshToken(ctx context.Context, req *pb.TokenRequest) (*pb.SuccessResponse, error) {
+	_, err := g.auth.ValidateToken(ctx, req.RefreshToken)
+	if err != nil {
+		switch err.Error() {
+		case "token expired error":
+			return nil, util.NewError(
+				codes.Unauthenticated,
+				pbErr.ErrorCode_AUTH_REFRESH_TOKEN_EXPIRED.String(),
+				"Refresh token expired",
+			)
+		default:
+			return nil, err
+		}
+	}
+	token := map[string]interface{}{
+		"access_token":  "new access token",
+		"refresh_token": "new refresh token",
+	}
+	data, err := structpb.NewStruct(token)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.SuccessResponse{
+		Code: int32(codes.OK),
+		Data: data,
+	}, nil
+}
+
+func (g *GrpcRoute) SetEnvVariable(ctx context.Context, req *pb.EnvRequest) (*pb.SuccessResponse, error) {
+
+	return nil, nil
 }

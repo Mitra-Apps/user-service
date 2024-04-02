@@ -3,18 +3,18 @@ package service
 import (
 	"context"
 
-	"github.com/Mitra-Apps/be-user-service/config/tools"
-	"github.com/Mitra-Apps/be-user-service/config/tools/redis"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
+	"github.com/Mitra-Apps/be-user-service/external"
+	"github.com/Mitra-Apps/be-user-service/external/redis"
 	"google.golang.org/grpc/codes"
 )
 
 type Service struct {
 	userRepository repository.User
 	roleRepo       repository.Role
-	hashing        tools.BcryptInterface
+	hashing        external.BcryptInterface
 	redis          redis.RedisInterface
 	auth           Authentication
 }
@@ -28,7 +28,7 @@ var (
 func New(
 	userRepository repository.User,
 	roleRepo repository.Role,
-	hashing tools.BcryptInterface,
+	hashing external.BcryptInterface,
 	redis redis.RedisInterface,
 	auth Authentication) *Service {
 	return &Service{

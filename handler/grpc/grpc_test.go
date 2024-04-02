@@ -160,7 +160,7 @@ func TestGrpcRoute_Login(t *testing.T) {
 	}
 	mockGenerateToken := func(token string, err error) func(m *mock.MockAuthentication) {
 		return func(m *mock.MockAuthentication) {
-			m.EXPECT().GenerateToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(token, err)
+			m.EXPECT().GenerateToken(gomock.Any(), gomock.Any()).Return(token, err)
 		}
 	}
 	req := &pb.UserLoginRequest{
@@ -243,7 +243,7 @@ func TestGrpcRoute_Login(t *testing.T) {
 			wantErr: true,
 			mocks: []*gomock.Call{
 				mockSvcRecord.Login(gomock.Any(), gomock.Any()).Return(user, nil),
-				mockAuthRecord.GenerateToken(gomock.Any(), gomock.Any(), gomock.Any()).Return("", errors.New("any errors")),
+				mockAuthRecord.GenerateToken(gomock.Any(), gomock.Any()).Return("", errors.New("any errors")),
 				// 	mockLogin(user, nil)(mockSvc)
 				// 	mockGenerateToken("", errors.New("any error"))(mockAuth)
 			},
@@ -695,7 +695,7 @@ func TestGrpcRoute_VerifyOtp(t *testing.T) {
 	}
 	mockGenerateToken := func(token string, err error) func(m *mock.MockAuthentication) {
 		return func(m *mock.MockAuthentication) {
-			m.EXPECT().GenerateToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(token, err)
+			m.EXPECT().GenerateToken(gomock.Any(), gomock.Any()).Return(token, err)
 		}
 	}
 
@@ -894,7 +894,7 @@ func TestGrpcRoute_ChangePassword(t *testing.T) {
 	mockAuth := mock.NewMockAuthentication(ctrl)
 	mockGenerateToken := func(token string, err error) func(m *mock.MockAuthentication) {
 		return func(m *mock.MockAuthentication) {
-			m.EXPECT().GenerateToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(token, err)
+			m.EXPECT().GenerateToken(gomock.Any(), gomock.Any()).Return(token, err)
 		}
 	}
 	req := &pb.ChangePasswordRequest{
@@ -1070,4 +1070,183 @@ func TestLogout(t *testing.T) {
 		require.Equal(t, http.StatusOK, rec.Code)
 	})
 
+}
+
+func TestGrpcRoute_Logout(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		req *pb.LogoutRequest
+	}
+	tests := []struct {
+		name    string
+		g       *GrpcRoute
+		args    args
+		want    *pb.SuccessResponse
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.g.Logout(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GrpcRoute.Logout() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GrpcRoute.Logout() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGrpcRoute_RefreshToken(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockSvc := mock.NewMockServiceInterface(ctrl)
+	mockAuth := mock.NewMockAuthentication(ctrl)
+	mockAuthRec := mockAuth.EXPECT()
+	// mockSvcRec := mockSvc.EXPECT()
+	ctx := context.Background()
+	token := map[string]interface{}{
+		"access_token":  "new access token",
+		"refresh_token": "new refresh token",
+	}
+	data, _ := structpb.NewStruct(token)
+
+	type args struct {
+		ctx context.Context
+		req *pb.TokenRequest
+	}
+	tests := []struct {
+		name    string
+		g       *GrpcRoute
+		args    args
+		want    *pb.SuccessResponse
+		wantErr bool
+		mocks   []*gomock.Call
+	}{
+		{
+			name: "Expired refresh token",
+			g: &GrpcRoute{
+				auth:    mockAuth,
+				service: mockSvc,
+			},
+			args: args{
+				ctx: ctx,
+				req: &pb.TokenRequest{},
+			},
+			want:    nil,
+			wantErr: true,
+			mocks: []*gomock.Call{
+				mockAuthRec.ValidateToken(ctx, gomock.Any()).Return(nil, errors.New("token expired error")),
+			},
+		},
+		{
+			name: "error validate token",
+			g: &GrpcRoute{
+				auth:    mockAuth,
+				service: mockSvc,
+			},
+			args: args{
+				ctx: ctx,
+				req: &pb.TokenRequest{},
+			},
+			want:    nil,
+			wantErr: true,
+			mocks: []*gomock.Call{
+				mockAuthRec.ValidateToken(ctx, gomock.Any()).Return(nil, errors.New("other error")),
+			},
+		},
+		{
+			name: "success",
+			g: &GrpcRoute{
+				auth:    mockAuth,
+				service: mockSvc,
+			},
+			args: args{
+				ctx: ctx,
+				req: &pb.TokenRequest{
+					RefreshToken: "old token",
+				},
+			},
+			want: &pb.SuccessResponse{
+				Code:    int32(codes.OK),
+				Message: "",
+				Data:    data,
+			},
+			wantErr: false,
+			mocks: []*gomock.Call{
+				mockAuthRec.ValidateToken(ctx, gomock.Any()).Return(&service.JwtCustomClaim{}, nil),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.g.RefreshToken(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GrpcRoute.RefreshToken() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GrpcRoute.RefreshToken() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGrpcRoute_SetEnvVariable(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockSvc := mock.NewMockServiceInterface(ctrl)
+	// mockSvcRec := mockSvc.EXPECT()
+	utilityGrpcConn, err := grpc.DialContext(context.Background(), os.Getenv("GRPC_UTILITY_HOST"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatal("Cannot connect to utility grpc server ", err)
+	}
+	defer func() {
+		log.Println("Closing connection ...")
+		utilityGrpcConn.Close()
+	}()
+	ctx := context.Background()
+	req := &pb.EnvRequest{
+		Variable: "var",
+		Value:    "val",
+	}
+	type args struct {
+		ctx context.Context
+		req *pb.EnvRequest
+	}
+	tests := []struct {
+		name    string
+		g       *GrpcRoute
+		args    args
+		want    *pb.SuccessResponse
+		wantErr bool
+		mocks   *gomock.Call
+	}{
+		{
+			name: "error set variable",
+			g: &GrpcRoute{
+				service:     mockSvc,
+				utilService: utilPb.NewUtilServiceClient(utilityGrpcConn),
+			},
+			args: args{
+				ctx: ctx,
+				req: req,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.g.SetEnvVariable(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GrpcRoute.SetEnvVariable() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GrpcRoute.SetEnvVariable() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

@@ -30,6 +30,8 @@ const (
 	UserService_GetOwnData_FullMethodName     = "/proto.UserService/GetOwnData"
 	UserService_ChangePassword_FullMethodName = "/proto.UserService/ChangePassword"
 	UserService_Logout_FullMethodName         = "/proto.UserService/Logout"
+	UserService_RefreshToken_FullMethodName   = "/proto.UserService/RefreshToken"
+	UserService_SetEnvVariable_FullMethodName = "/proto.UserService/SetEnvVariable"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -46,6 +48,8 @@ type UserServiceClient interface {
 	GetOwnData(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
 	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	RefreshToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	SetEnvVariable(ctx context.Context, in *EnvRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 }
 
 type userServiceClient struct {
@@ -146,6 +150,24 @@ func (c *userServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts 
 	return out, nil
 }
 
+func (c *userServiceClient) RefreshToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_RefreshToken_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) SetEnvVariable(ctx context.Context, in *EnvRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_SetEnvVariable_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -160,6 +182,8 @@ type UserServiceServer interface {
 	GetOwnData(context.Context, *emptypb.Empty) (*SuccessResponse, error)
 	ChangePassword(context.Context, *ChangePasswordRequest) (*SuccessResponse, error)
 	Logout(context.Context, *LogoutRequest) (*SuccessResponse, error)
+	RefreshToken(context.Context, *TokenRequest) (*SuccessResponse, error)
+	SetEnvVariable(context.Context, *EnvRequest) (*SuccessResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -196,6 +220,12 @@ func (UnimplementedUserServiceServer) ChangePassword(context.Context, *ChangePas
 }
 func (UnimplementedUserServiceServer) Logout(context.Context, *LogoutRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
+}
+func (UnimplementedUserServiceServer) RefreshToken(context.Context, *TokenRequest) (*SuccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
+}
+func (UnimplementedUserServiceServer) SetEnvVariable(context.Context, *EnvRequest) (*SuccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetEnvVariable not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -390,6 +420,42 @@ func _UserService_Logout_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).RefreshToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_RefreshToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).RefreshToken(ctx, req.(*TokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_SetEnvVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnvRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).SetEnvVariable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_SetEnvVariable_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).SetEnvVariable(ctx, req.(*EnvRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -436,6 +502,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Logout",
 			Handler:    _UserService_Logout_Handler,
+		},
+		{
+			MethodName: "RefreshToken",
+			Handler:    _UserService_RefreshToken_Handler,
+		},
+		{
+			MethodName: "SetEnvVariable",
+			Handler:    _UserService_SetEnvVariable_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

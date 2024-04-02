@@ -6,11 +6,11 @@ import (
 	"reflect"
 	"testing"
 
-	mockTools "github.com/Mitra-Apps/be-user-service/config/tools/mock"
-	mockRedis "github.com/Mitra-Apps/be-user-service/config/tools/redis/mock"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository/mock"
+	mockTools "github.com/Mitra-Apps/be-user-service/external/mock"
+	mockRedis "github.com/Mitra-Apps/be-user-service/external/redis/mock"
 	r "github.com/go-redis/redis"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"

@@ -9,11 +9,10 @@ import (
 	"os"
 
 	"github.com/Mitra-Apps/be-user-service/config/postgre"
-	"github.com/Mitra-Apps/be-user-service/config/tools"
-	"github.com/Mitra-Apps/be-user-service/config/tools/redis"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
-	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	userPostgreRepo "github.com/Mitra-Apps/be-user-service/domain/user/repository/postgre"
+	"github.com/Mitra-Apps/be-user-service/external"
+	"github.com/Mitra-Apps/be-user-service/external/redis"
 	grpcRoute "github.com/Mitra-Apps/be-user-service/handler/grpc"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	"github.com/Mitra-Apps/be-user-service/service"
@@ -100,15 +99,11 @@ func main() {
 	mailSvcClient := utilPb.NewUtilServiceClient(utilityGrpcConn)
 
 	db := postgre.Connection()
-	user := &entity.User{}
-	err = db.Where("name = '1'").First(user).Error
-	fmt.Println("not found", err)
 
-	fmt.Println(user)
 	redis := redis.Connection()
 	usrRepo := userPostgreRepo.NewUserRepoImpl(db)
 	roleRepo := userPostgreRepo.NewRoleRepoImpl(db)
-	bcrypt := tools.New(&tools.Bcrypt{})
+	bcrypt := external.New(&external.Bcrypt{})
 	auth := service.NewAuthClient(os.Getenv("JWT_SECRET"))
 	svc := service.New(usrRepo, roleRepo, bcrypt, redis, auth)
 	grpcServer := GrpcNewServer(ctx, []grpc.ServerOption{})

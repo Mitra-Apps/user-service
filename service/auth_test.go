@@ -30,35 +30,6 @@ func TestNewAuthClient(t *testing.T) {
 	}
 }
 
-func Test_authClient_GenerateToken(t *testing.T) {
-	type args struct {
-		ctx           context.Context
-		user          *entity.User
-		expiredMinute int
-	}
-	tests := []struct {
-		name      string
-		c         *authClient
-		args      args
-		wantToken string
-		wantErr   bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotToken, err := tt.c.GenerateToken(tt.args.ctx, tt.args.user, tt.args.expiredMinute)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("authClient.GenerateToken() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotToken != tt.wantToken {
-				t.Errorf("authClient.GenerateToken() = %v, want %v", gotToken, tt.wantToken)
-			}
-		})
-	}
-}
-
 func Test_authClient_ValidateToken(t *testing.T) {
 	auth := NewAuthClient("secret")
 	user := &entity.User{
@@ -75,7 +46,7 @@ func Test_authClient_ValidateToken(t *testing.T) {
 			},
 		},
 	}
-	token, err := auth.GenerateToken(context.Background(), user, 60)
+	token, err := auth.GenerateToken(context.Background(), user)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -97,7 +68,7 @@ func Test_authClient_ValidateToken(t *testing.T) {
 			},
 			args: args{
 				ctx:          context.Background(),
-				requestToken: token,
+				requestToken: token.AccessToken,
 			},
 			want: &JwtCustomClaim{
 				Roles: []string{

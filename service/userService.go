@@ -13,10 +13,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 
-	"github.com/Mitra-Apps/be-user-service/config/tools"
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/Mitra-Apps/be-user-service/config"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	util "github.com/Mitra-Apps/be-utility-service/service"
 )
@@ -133,7 +133,7 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (*e
 	redisPayload := map[string]interface{}{
 		"OTP": otpString,
 	}
-	redisKey := tools.OtpRedisPrefix + req.Email
+	redisKey := config.OtpRedisPrefix + req.Email
 	jsonData, err := json.Marshal(redisPayload)
 	if err != nil {
 		fmt.Println("Error marshalling JSON:", err)
@@ -170,7 +170,8 @@ func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
 
 func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (user *entity.User, err error) {
 
-	email := strings.Replace(redisKey, tools.OtpRedisPrefix, "", -1)
+	email := strings.Replace(redisKey, config
+.OtpRedisPrefix, "", -1)
 	user, err = s.userRepository.GetByEmail(ctx, email)
 	if err != nil {
 		ErrorCode = codes.Internal
@@ -232,7 +233,7 @@ func (s *Service) ResendOTP(ctx context.Context, email string) (*entity.OtpMailR
 	redisPayload := map[string]interface{}{
 		"OTP": otpString,
 	}
-	redisKey := tools.OtpRedisPrefix + email
+	redisKey := config.OtpRedisPrefix + email
 
 	user, err := s.userRepository.GetByEmail(ctx, email)
 	if err != nil {

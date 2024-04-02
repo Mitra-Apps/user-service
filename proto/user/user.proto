@@ -85,6 +85,15 @@ message LogoutRequest {
     string email = 1 [(validate.rules).string.email = true];
 }
 
+message TokenRequest {
+    string refresh_token = 1;
+}
+
+message EnvRequest {
+    string variable = 1;
+    string value = 2;
+}
+
 
 service UserService {
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {
@@ -141,6 +150,18 @@ service UserService {
     rpc Logout(LogoutRequest) returns (SuccessResponse) {
          option (google.api.http) = {
             post: "/api/v1/users/logout"
+            body: "*"
+        };
+    }
+    rpc RefreshToken(TokenRequest) returns (SuccessResponse) {
+         option (google.api.http) = {
+            post: "/api/v1/users/refresh-token"
+            body: "*"
+        };
+    }
+    rpc SetEnvVariable(EnvRequest) returns (SuccessResponse) {
+         option (google.api.http) = {
+            post: "/api/v1/config/set-variable"
             body: "*"
         };
     }
