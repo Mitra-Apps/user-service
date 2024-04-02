@@ -5,10 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
+	"time"
 
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/Mitra-Apps/be-user-service/external/redis"
+	utilityservice "github.com/Mitra-Apps/be-user-service/external/utility_service"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	"github.com/Mitra-Apps/be-user-service/service"
 	utilPb "github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
@@ -22,15 +26,17 @@ import (
 type GrpcRoute struct {
 	service     service.ServiceInterface
 	auth        service.Authentication
-	utilService utilPb.UtilServiceClient
+	utilService utilityservice.ServiceInterface
+	redis       redis.RedisInterface
 	pb.UnimplementedUserServiceServer
 }
 
-func New(service service.ServiceInterface, auth service.Authentication, utilService utilPb.UtilServiceClient) pb.UserServiceServer {
+func New(service service.ServiceInterface, auth service.Authentication, utilService utilityservice.ServiceInterface, redis redis.RedisInterface) pb.UserServiceServer {
 	return &GrpcRoute{
 		service:     service,
 		auth:        auth,
 		utilService: utilService,
+		redis:       redis,
 	}
 }
 
@@ -63,23 +69,27 @@ func (g *GrpcRoute) Login(ctx context.Context, req *pb.UserLoginRequest) (*pb.Su
 		return nil, err
 	}
 
-	accessToken, err := g.auth.GenerateToken(ctx, user)
-	if err != nil {
-		return nil, err
-	}
-	refreshToken, err := g.auth.GenerateToken(ctx, user)
-	if err != nil {
-		return nil, err
+	if user.AccessToken == "" {
+		genToken, err := g.auth.GenerateToken(ctx, user)
+		if err != nil {
+			return nil, err
+		}
+		user.AccessToken = genToken.AccessToken
+		user.RefreshToken = genToken.RefreshToken
 	}
 
 	token := map[string]interface{}{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+		"access_token":  user.AccessToken,
+		"refresh_token": user.RefreshToken,
 	}
 
 	data, err := structpb.NewStruct(token)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	if err := g.service.Save(ctx, user); err != nil {
+		return nil, err
 	}
 
 	return &pb.SuccessResponse{
@@ -144,18 +154,15 @@ func (g *GrpcRoute) GetRole(ctx context.Context, req *emptypb.Empty) (*pb.Succes
 
 	data, err := json.Marshal(rolesStruct)
 	if err != nil {
-		fmt.Println("error 3", err.Error())
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	if err := json.Unmarshal(data, &rolesStruct); err != nil {
-		fmt.Println("error 4", err.Error())
 		return nil, err
 	}
 
 	dataStruct, err := structpb.NewStruct(rolesStruct)
 	if err != nil {
-		fmt.Println("error 5", err.Error())
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
@@ -172,18 +179,14 @@ func (g *GrpcRoute) VerifyOtp(ctx context.Context, req *pb.VerifyOTPRequest) (*p
 	if err != nil {
 		return nil, err
 	}
-	accessToken, err := g.auth.GenerateToken(ctx, user)
-	if err != nil {
-		return nil, err
-	}
-	refreshToken, err := g.auth.GenerateToken(ctx, user)
+	genToken, err := g.auth.GenerateToken(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 
 	token := map[string]interface{}{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+		"access_token":  genToken.AccessToken,
+		"refresh_token": genToken.RefreshToken,
 	}
 
 	data, err := structpb.NewStruct(token)
@@ -228,17 +231,14 @@ func (g *GrpcRoute) ChangePassword(ctx context.Context, req *pb.ChangePasswordRe
 	if err != nil {
 		return nil, err
 	}
-	accessToken, err := g.auth.GenerateToken(ctx, user)
+	genToken, err := g.auth.GenerateToken(ctx, user)
 	if err != nil {
 		return nil, err
 	}
-	refreshToken, err := g.auth.GenerateToken(ctx, user)
-	if err != nil {
-		return nil, err
-	}
+
 	token := map[string]interface{}{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+		"access_token":  genToken.AccessToken,
+		"refresh_token": genToken.RefreshToken,
 	}
 	data, err := structpb.NewStruct(token)
 	if err != nil {
@@ -252,18 +252,21 @@ func (g *GrpcRoute) ChangePassword(ctx context.Context, req *pb.ChangePasswordRe
 	return res, nil
 }
 
-func (g *GrpcRoute) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.SuccessResponse, error) {
-	if err := req.ValidateAll(); err != nil {
-		return nil, err
-	}
+func (g *GrpcRoute) Logout(ctx context.Context, req *emptypb.Empty) (*pb.SuccessResponse, error) {
+
+	var wg sync.WaitGroup
+	// Retrieve metadata from the context
+	id := middleware.GetUserIDValue(ctx)
+	wg.Add(1)
 	go func() {
-		ctx = context.Background()
-		err := g.service.Logout(ctx, req)
+		defer wg.Done()
+		err := g.service.Logout(ctx, id)
 		if err != nil {
 			log.Print("Logout Error")
 		}
 	}()
 
+	wg.Wait()
 	res := &pb.SuccessResponse{
 		Code:    int32(codes.OK),
 		Message: "Anda Berhasil Logout!",
@@ -271,11 +274,18 @@ func (g *GrpcRoute) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.Succ
 	return res, nil
 }
 
-func (g *GrpcRoute) RefreshToken(ctx context.Context, req *pb.TokenRequest) (*pb.SuccessResponse, error) {
-	_, err := g.auth.ValidateToken(ctx, req.RefreshToken)
+func (g *GrpcRoute) RefreshToken(ctx context.Context, req *emptypb.Empty) (*pb.SuccessResponse, error) {
+	// Validate and parse the JWT token
+	refreshToken, err := middleware.GetToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+	userId := middleware.GetUserIDValue(ctx)
+	_, err = g.auth.ValidateToken(ctx, refreshToken)
 	if err != nil {
 		switch err.Error() {
 		case "token expired error":
+			g.service.Logout(ctx, userId)
 			return nil, util.NewError(
 				codes.Unauthenticated,
 				pbErr.ErrorCode_AUTH_REFRESH_TOKEN_EXPIRED.String(),
@@ -285,21 +295,53 @@ func (g *GrpcRoute) RefreshToken(ctx context.Context, req *pb.TokenRequest) (*pb
 			return nil, err
 		}
 	}
+	user, err := g.service.GetByID(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	genToken, err := g.auth.GenerateToken(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	user.AccessToken = genToken.AccessToken
+	user.RefreshToken = genToken.RefreshToken
+	if err = g.service.Save(ctx, user); err != nil {
+		return nil, err
+	}
+
 	token := map[string]interface{}{
-		"access_token":  "new access token",
-		"refresh_token": "new refresh token",
+		"access_token":  genToken.AccessToken,
+		"refresh_token": genToken.RefreshToken,
 	}
 	data, err := structpb.NewStruct(token)
 	if err != nil {
 		return nil, err
 	}
 	return &pb.SuccessResponse{
-		Code: int32(codes.OK),
-		Data: data,
+		Code:    int32(codes.OK),
+		Message: "success",
+		Data:    data,
 	}, nil
 }
 
 func (g *GrpcRoute) SetEnvVariable(ctx context.Context, req *pb.EnvRequest) (*pb.SuccessResponse, error) {
+	envSet := &utilPb.UpsertEnvVariableReq{
+		Variable: req.Variable,
+		Value:    req.Value,
+	}
+	if _, err := g.utilService.UpsertEnvVariable(ctx, envSet); err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	err := g.redis.Set(ctx, req.Variable, req.Value, time.Hour*720)
+	if err != nil {
+		log.Print("Error Set Value to Redis")
+		return nil, util.NewError(codes.Internal, codes.Internal.String(), err.Error())
+	}
+
+	return &pb.SuccessResponse{
+		Code:    int32(codes.OK),
+		Message: "success",
+	}, nil
 }

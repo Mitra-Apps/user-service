@@ -163,9 +163,7 @@ paths:
             operationId: UserService_Logout
             requestBody:
                 content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/LogoutRequest'
+                    application/json: {}
                 required: true
             responses:
                 "200":
@@ -181,16 +179,10 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Status'
     /api/v1/users/refresh-token:
-        post:
+        get:
             tags:
                 - UserService
             operationId: UserService_RefreshToken
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/TokenRequest'
-                required: true
             responses:
                 "200":
                     description: OK
@@ -310,11 +302,6 @@ components:
                     description: The type of the serialized message.
             additionalProperties: true
             description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
-        LogoutRequest:
-            type: object
-            properties:
-                email:
-                    type: string
         ResendOTPRequest:
             type: object
             properties:
@@ -359,11 +346,6 @@ components:
                     type: string
                 data:
                     type: object
-        TokenRequest:
-            type: object
-            properties:
-                refreshToken:
-                    type: string
         User:
             type: object
             properties:

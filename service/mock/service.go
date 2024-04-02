@@ -15,6 +15,7 @@ import (
 
 	user "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	entity "github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -85,6 +86,21 @@ func (mr *MockServiceInterfaceMockRecorder) GetAll(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockServiceInterface)(nil).GetAll), ctx)
 }
 
+// GetByID mocks base method.
+func (m *MockServiceInterface) GetByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByID", ctx, id)
+	ret0, _ := ret[0].(*entity.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByID indicates an expected call of GetByID.
+func (mr *MockServiceInterfaceMockRecorder) GetByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockServiceInterface)(nil).GetByID), ctx, id)
+}
+
 // GetRole mocks base method.
 func (m *MockServiceInterface) GetRole(ctx context.Context) ([]entity.Role, error) {
 	m.ctrl.T.Helper()
@@ -116,17 +132,17 @@ func (mr *MockServiceInterfaceMockRecorder) Login(ctx, payload any) *gomock.Call
 }
 
 // Logout mocks base method.
-func (m *MockServiceInterface) Logout(ctx context.Context, req *user.LogoutRequest) error {
+func (m *MockServiceInterface) Logout(ctx context.Context, id uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Logout", ctx, req)
+	ret := m.ctrl.Call(m, "Logout", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Logout indicates an expected call of Logout.
-func (mr *MockServiceInterfaceMockRecorder) Logout(ctx, req any) *gomock.Call {
+func (mr *MockServiceInterfaceMockRecorder) Logout(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logout", reflect.TypeOf((*MockServiceInterface)(nil).Logout), ctx, req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logout", reflect.TypeOf((*MockServiceInterface)(nil).Logout), ctx, id)
 }
 
 // Register mocks base method.
@@ -157,6 +173,20 @@ func (m *MockServiceInterface) ResendOTP(ctx context.Context, email string) (*en
 func (mr *MockServiceInterfaceMockRecorder) ResendOTP(ctx, email any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResendOTP", reflect.TypeOf((*MockServiceInterface)(nil).ResendOTP), ctx, email)
+}
+
+// Save mocks base method.
+func (m *MockServiceInterface) Save(ctx context.Context, user *entity.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Save", ctx, user)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Save indicates an expected call of Save.
+func (mr *MockServiceInterfaceMockRecorder) Save(ctx, user any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockServiceInterface)(nil).Save), ctx, user)
 }
 
 // VerifyOTP mocks base method.

@@ -7,17 +7,19 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/Mitra-Apps/be-user-service/config/postgre"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	userPostgreRepo "github.com/Mitra-Apps/be-user-service/domain/user/repository/postgre"
 	"github.com/Mitra-Apps/be-user-service/external"
 	"github.com/Mitra-Apps/be-user-service/external/redis"
+	utilityservice "github.com/Mitra-Apps/be-user-service/external/utility_service"
 	grpcRoute "github.com/Mitra-Apps/be-user-service/handler/grpc"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	"github.com/Mitra-Apps/be-user-service/service"
 	util "github.com/Mitra-Apps/be-utility-service/config/tools"
-	utilPb "github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
+	"github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
 	"github.com/google/uuid"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/joho/godotenv"
@@ -44,6 +46,8 @@ func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 		// Middleware logic for specific route
 	case "/proto.UserService/GetOwnData":
 		// Middleware logic for specific route
+	case "/proto.UserService/Logout":
+		// Middleware logic for specific route
 	default:
 		addMiddleware = false
 	}
@@ -54,10 +58,13 @@ func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 			return nil, err
 		}
 
-		auth := service.NewAuthClient(os.Getenv("JWT_SECRET"))
+		redis := redis.Connection()
+		auth := service.NewAuthClient(os.Getenv("JWT_SECRET"), redis)
 		claims, err := auth.ValidateToken(ctx, token)
 		if err != nil {
-			return nil, err
+			if err.Error() != "token expired error" || claims.Issuer == service.AccessToken {
+				return nil, err
+			}
 		}
 
 		//claim our user id input in subject from token
@@ -88,26 +95,35 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	utilityGrpcConn, err := grpc.DialContext(ctx, os.Getenv("GRPC_UTILITY_HOST"), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatal("Cannot connect to utility grpc server ", err)
-	}
-	defer func() {
-		log.Println("Closing connection ...")
-		utilityGrpcConn.Close()
-	}()
-	mailSvcClient := utilPb.NewUtilServiceClient(utilityGrpcConn)
-
 	db := postgre.Connection()
 
 	redis := redis.Connection()
+	utilSvc := utilityservice.NewClient(ctx)
+	//setup access token exp time
+	accessTokenExpTimeVal, err := utilSvc.GetEnvVariable(ctx, &utility.GetEnvVariableReq{Variable: service.AccessTokenExpTime})
+	if err != nil {
+		accessTokenExpTimeVal = &utility.GetEnvVariableRes{
+			Value: "60",
+		}
+	}
+	redis.Set(ctx, service.AccessTokenExpTime, accessTokenExpTimeVal.Value, time.Hour*time.Duration(720))
+
+	// setup refresh token exp time
+	refreshTokenExpTimeVal, err := utilSvc.GetEnvVariable(ctx, &utility.GetEnvVariableReq{Variable: service.RefreshTokenExpTime})
+	if err != nil {
+		refreshTokenExpTimeVal = &utility.GetEnvVariableRes{
+			Value: "43200",
+		}
+	}
+	redis.Set(ctx, service.RefreshTokenExpTime, refreshTokenExpTimeVal.Value, time.Hour*time.Duration(720))
+
 	usrRepo := userPostgreRepo.NewUserRepoImpl(db)
 	roleRepo := userPostgreRepo.NewRoleRepoImpl(db)
 	bcrypt := external.New(&external.Bcrypt{})
-	auth := service.NewAuthClient(os.Getenv("JWT_SECRET"))
+	auth := service.NewAuthClient(os.Getenv("JWT_SECRET"), redis)
 	svc := service.New(usrRepo, roleRepo, bcrypt, redis, auth)
 	grpcServer := GrpcNewServer(ctx, []grpc.ServerOption{})
-	route := grpcRoute.New(svc, auth, mailSvcClient)
+	route := grpcRoute.New(svc, auth, utilSvc, redis)
 	pb.RegisterUserServiceServer(grpcServer, route)
 
 	go func() {

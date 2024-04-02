@@ -147,16 +147,15 @@ service UserService {
             body: "*"
         };
     }
-    rpc Logout(LogoutRequest) returns (SuccessResponse) {
+    rpc Logout(google.protobuf.Empty) returns (SuccessResponse) {
          option (google.api.http) = {
             post: "/api/v1/users/logout"
             body: "*"
         };
-    }
-    rpc RefreshToken(TokenRequest) returns (SuccessResponse) {
+    }    
+    rpc RefreshToken(google.protobuf.Empty) returns (SuccessResponse) {
          option (google.api.http) = {
-            post: "/api/v1/users/refresh-token"
-            body: "*"
+            get: "/api/v1/users/refresh-token"
         };
     }
     rpc SetEnvVariable(EnvRequest) returns (SuccessResponse) {

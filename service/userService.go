@@ -13,12 +13,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 
-	"github.com/Mitra-Apps/be-user-service/config"
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	util "github.com/Mitra-Apps/be-utility-service/service"
+	"github.com/google/uuid"
 )
 
 func (s *Service) GetAll(ctx context.Context) ([]*entity.User, error) {
@@ -33,7 +33,7 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*enti
 
 	user, err := s.userRepository.GetByEmail(ctx, payload.Email)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(err.Error(), ErrNotFound) {
 			ErrorCode = codes.NotFound
 			ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_NOT_FOUND.String()
 			ErrorMessage = "Email belum terdaftar, mohon registrasi"
@@ -76,10 +76,6 @@ func (s *Service) Login(ctx context.Context, payload entity.LoginRequest) (*enti
 	}
 
 	user.WrongPasswordCounter = 0
-	if err = s.userRepository.Save(ctx, user); err != nil {
-		return nil, util.NewError(codes.Internal, codes.Unknown.String(), err.Error())
-	}
-
 	return user, nil
 }
 
@@ -100,7 +96,7 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (*e
 	}
 
 	data, err := s.userRepository.GetByEmail(ctx, req.Email)
-	if err != nil && !strings.Contains(err.Error(), "not found") {
+	if err != nil && !strings.Contains(err.Error(), ErrNotFound) {
 		ErrorCode = codes.Internal
 		ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
 		ErrorMessage = err.Error()
@@ -133,7 +129,7 @@ func (s *Service) Register(ctx context.Context, req *pb.UserRegisterRequest) (*e
 	redisPayload := map[string]interface{}{
 		"OTP": otpString,
 	}
-	redisKey := config.OtpRedisPrefix + req.Email
+	redisKey := OtpRedisPrefix + req.Email
 	jsonData, err := json.Marshal(redisPayload)
 	if err != nil {
 		fmt.Println("Error marshalling JSON:", err)
@@ -170,7 +166,7 @@ func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
 
 func (s *Service) VerifyOTP(ctx context.Context, otp int, redisKey string) (user *entity.User, err error) {
 
-	email := strings.Replace(redisKey, config.OtpRedisPrefix, "", -1)
+	email := strings.Replace(redisKey, OtpRedisPrefix, "", -1)
 	user, err = s.userRepository.GetByEmail(ctx, email)
 	if err != nil {
 		ErrorCode = codes.Internal
@@ -232,7 +228,7 @@ func (s *Service) ResendOTP(ctx context.Context, email string) (*entity.OtpMailR
 	redisPayload := map[string]interface{}{
 		"OTP": otpString,
 	}
-	redisKey := config.OtpRedisPrefix + email
+	redisKey := OtpRedisPrefix + email
 
 	user, err := s.userRepository.GetByEmail(ctx, email)
 	if err != nil {
@@ -264,7 +260,7 @@ func (s *Service) ResendOTP(ctx context.Context, email string) (*entity.OtpMailR
 func (s *Service) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*entity.User, error) {
 	user, err := s.userRepository.GetByEmail(ctx, req.Email)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(err.Error(), ErrNotFound) {
 			ErrorCode = codes.NotFound
 			ErrorCodeDetail = pbErr.ErrorCode_RECORD_NOT_FOUND.String()
 			ErrorMessage = "Email belum terdaftar, mohon registrasi"
@@ -293,13 +289,14 @@ func (s *Service) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequ
 	return user, nil
 }
 
-func (s *Service) Logout(ctx context.Context, req *pb.LogoutRequest) error {
-	user, err := s.userRepository.GetByEmail(ctx, req.Email)
+func (s *Service) Logout(ctx context.Context, id uuid.UUID) error {
+
+	user, err := s.userRepository.GetByID(ctx, id)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(err.Error(), ErrNotFound) {
 			ErrorCode = codes.NotFound
 			ErrorCodeDetail = pbErr.ErrorCode_AUTH_LOGIN_NOT_FOUND.String()
-			ErrorMessage = "Email belum terdaftar, mohon registrasi"
+			ErrorMessage = "Id Tidak Ditemukan"
 		} else {
 			ErrorCode = codes.Internal
 			ErrorCodeDetail = pbErr.ErrorCode_UNKNOWN.String()
@@ -313,6 +310,14 @@ func (s *Service) Logout(ctx context.Context, req *pb.LogoutRequest) error {
 		return util.NewError(codes.Internal, codes.Unknown.String(), err.Error())
 	}
 	return nil
+}
+
+func (s *Service) Save(ctx context.Context, user *entity.User) error {
+	return s.userRepository.Save(ctx, user)
+}
+
+func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
+	return s.userRepository.GetByID(ctx, id)
 }
 
 func generateRandom4DigitNumber() int {

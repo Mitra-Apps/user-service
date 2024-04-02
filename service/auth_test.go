@@ -6,13 +6,17 @@ import (
 	"testing"
 
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/Mitra-Apps/be-user-service/external/redis"
+	mockRedis "github.com/Mitra-Apps/be-user-service/external/redis/mock"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNewAuthClient(t *testing.T) {
 	type args struct {
 		secret string
+		redis  redis.RedisInterface
 	}
 	tests := []struct {
 		name string
@@ -23,7 +27,7 @@ func TestNewAuthClient(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewAuthClient(tt.args.secret); !reflect.DeepEqual(got, tt.want) {
+			if got := NewAuthClient(tt.args.secret, tt.args.redis); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewAuthClient() = %v, want %v", got, tt.want)
 			}
 		})
@@ -31,7 +35,9 @@ func TestNewAuthClient(t *testing.T) {
 }
 
 func Test_authClient_ValidateToken(t *testing.T) {
-	auth := NewAuthClient("secret")
+	ctrl := gomock.NewController(t)
+	redis := mockRedis.NewMockRedisInterface(ctrl)
+	auth := NewAuthClient("secret", redis)
 	user := &entity.User{
 		Id: uuid.MustParse("b70a2a5e-bbd2-4000-96c0-aaa533b8236f"),
 		Roles: []entity.Role{
@@ -46,6 +52,8 @@ func Test_authClient_ValidateToken(t *testing.T) {
 			},
 		},
 	}
+	redis.EXPECT().GetStringKey(gomock.Any(), gomock.Any()).Return("60", nil)
+	redis.EXPECT().GetStringKey(gomock.Any(), gomock.Any()).Return("43200", nil)
 	token, err := auth.GenerateToken(context.Background(), user)
 	if err != nil {
 		panic(err.Error())
@@ -65,6 +73,7 @@ func Test_authClient_ValidateToken(t *testing.T) {
 			name: "success",
 			c: &authClient{
 				secret: "secret",
+				redis:  redis,
 			},
 			args: args{
 				ctx:          context.Background(),

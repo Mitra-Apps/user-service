@@ -91,8 +91,8 @@ type UserServiceClient interface {
 	ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error)
 	GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error)
-	Logout(context.Context, *connect.Request[user.LogoutRequest]) (*connect.Response[user.SuccessResponse], error)
-	RefreshToken(context.Context, *connect.Request[user.TokenRequest]) (*connect.Response[user.SuccessResponse], error)
+	Logout(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	SetEnvVariable(context.Context, *connect.Request[user.EnvRequest]) (*connect.Response[user.SuccessResponse], error)
 }
 
@@ -160,13 +160,13 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceChangePasswordMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		logout: connect.NewClient[user.LogoutRequest, user.SuccessResponse](
+		logout: connect.NewClient[emptypb.Empty, user.SuccessResponse](
 			httpClient,
 			baseURL+UserServiceLogoutProcedure,
 			connect.WithSchema(userServiceLogoutMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		refreshToken: connect.NewClient[user.TokenRequest, user.SuccessResponse](
+		refreshToken: connect.NewClient[emptypb.Empty, user.SuccessResponse](
 			httpClient,
 			baseURL+UserServiceRefreshTokenProcedure,
 			connect.WithSchema(userServiceRefreshTokenMethodDescriptor),
@@ -192,8 +192,8 @@ type userServiceClient struct {
 	resendOtp      *connect.Client[user.ResendOTPRequest, user.SuccessResponse]
 	getOwnData     *connect.Client[emptypb.Empty, user.SuccessResponse]
 	changePassword *connect.Client[user.ChangePasswordRequest, user.SuccessResponse]
-	logout         *connect.Client[user.LogoutRequest, user.SuccessResponse]
-	refreshToken   *connect.Client[user.TokenRequest, user.SuccessResponse]
+	logout         *connect.Client[emptypb.Empty, user.SuccessResponse]
+	refreshToken   *connect.Client[emptypb.Empty, user.SuccessResponse]
 	setEnvVariable *connect.Client[user.EnvRequest, user.SuccessResponse]
 }
 
@@ -243,12 +243,12 @@ func (c *userServiceClient) ChangePassword(ctx context.Context, req *connect.Req
 }
 
 // Logout calls proto.UserService.Logout.
-func (c *userServiceClient) Logout(ctx context.Context, req *connect.Request[user.LogoutRequest]) (*connect.Response[user.SuccessResponse], error) {
+func (c *userServiceClient) Logout(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
 	return c.logout.CallUnary(ctx, req)
 }
 
 // RefreshToken calls proto.UserService.RefreshToken.
-func (c *userServiceClient) RefreshToken(ctx context.Context, req *connect.Request[user.TokenRequest]) (*connect.Response[user.SuccessResponse], error) {
+func (c *userServiceClient) RefreshToken(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
 	return c.refreshToken.CallUnary(ctx, req)
 }
 
@@ -268,8 +268,8 @@ type UserServiceHandler interface {
 	ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error)
 	GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error)
-	Logout(context.Context, *connect.Request[user.LogoutRequest]) (*connect.Response[user.SuccessResponse], error)
-	RefreshToken(context.Context, *connect.Request[user.TokenRequest]) (*connect.Response[user.SuccessResponse], error)
+	Logout(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	SetEnvVariable(context.Context, *connect.Request[user.EnvRequest]) (*connect.Response[user.SuccessResponse], error)
 }
 
@@ -422,11 +422,11 @@ func (UnimplementedUserServiceHandler) ChangePassword(context.Context, *connect.
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.ChangePassword is not implemented"))
 }
 
-func (UnimplementedUserServiceHandler) Logout(context.Context, *connect.Request[user.LogoutRequest]) (*connect.Response[user.SuccessResponse], error) {
+func (UnimplementedUserServiceHandler) Logout(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.Logout is not implemented"))
 }
 
-func (UnimplementedUserServiceHandler) RefreshToken(context.Context, *connect.Request[user.TokenRequest]) (*connect.Response[user.SuccessResponse], error) {
+func (UnimplementedUserServiceHandler) RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.RefreshToken is not implemented"))
 }
 

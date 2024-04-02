@@ -83,22 +83,11 @@ func TestService_GetAll(t *testing.T) {
 func TestService_Login(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRepo := mock.NewMockUser(ctrl)
-	mockLogin := func(user *entity.User, err error) func(m *mock.MockUser) {
-		return func(m *mock.MockUser) {
-			m.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, err)
-		}
-	}
-	mockSaveUser := func(err error) func(m *mock.MockUser) {
-		return func(m *mock.MockUser) {
-			m.EXPECT().Save(gomock.Any(), gomock.Any()).Return(err)
-		}
-	}
+	mockRepoRec := mockRepo.EXPECT()
+
 	mockHash := mockTools.NewMockBcryptInterface(ctrl)
-	mockCompareHash := func(err error) func(m *mockTools.MockBcryptInterface) {
-		return func(m *mockTools.MockBcryptInterface) {
-			m.EXPECT().CompareHashAndPassword(gomock.Any(), gomock.Any()).Return(err)
-		}
-	}
+	mockHashRec := mockHash.EXPECT()
+
 	userId := uuid.New()
 	loginRequest := &entity.LoginRequest{
 		Email:    "test@email.com",
@@ -138,6 +127,7 @@ func TestService_Login(t *testing.T) {
 		args    args
 		want    *entity.User
 		wantErr bool
+		mocks   []*gomock.Call
 	}{
 		{
 			name: "error record not found",
@@ -150,6 +140,9 @@ func TestService_Login(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockRepoRec.GetByEmail(gomock.Any(), gomock.Any()).Return(nil, errors.New("record not found")),
+			},
 		},
 		{
 			name: "unexpected error",
@@ -162,6 +155,9 @@ func TestService_Login(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockRepoRec.GetByEmail(gomock.Any(), gomock.Any()).Return(nil, errors.New("other error")),
+			},
 		},
 		{
 			name: "error unverified account",
@@ -175,6 +171,10 @@ func TestService_Login(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockRepoRec.GetByEmail(gomock.Any(), gomock.Any()).Return(unverifiedUser, nil),
+				mockHashRec.CompareHashAndPassword(gomock.Any(), gomock.Any()).Return(nil),
+			},
 		},
 		{
 			name: "error password incorrect",
@@ -188,6 +188,11 @@ func TestService_Login(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockRepoRec.GetByEmail(gomock.Any(), gomock.Any()).Return(unverifiedUser, nil),
+				mockHashRec.CompareHashAndPassword(gomock.Any(), gomock.Any()).Return(errors.New("any error")),
+				mockRepoRec.Save(gomock.Any(), gomock.Any()).Return(nil),
+			},
 		},
 		{
 			name: "error password incorrect 3x",
@@ -201,6 +206,9 @@ func TestService_Login(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockRepoRec.GetByEmail(gomock.Any(), gomock.Any()).Return(verifiedUserWrongPass3x, nil),
+			},
 		},
 		{
 			name: "error password incorrect 3x after wrong pass login",
@@ -214,6 +222,11 @@ func TestService_Login(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
+			mocks: []*gomock.Call{
+				mockRepoRec.GetByEmail(gomock.Any(), gomock.Any()).Return(verifiedUserWrongPass2x, nil),
+				mockHashRec.CompareHashAndPassword(gomock.Any(), gomock.Any()).Return(errors.New("any error")),
+				mockRepoRec.Save(gomock.Any(), gomock.Any()).Return(nil),
+			},
 		},
 		{
 			name: "error saving wrong password counter",
@@ -227,19 +240,11 @@ func TestService_Login(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
-		},
-		{
-			name: "error saving wrong password counter back to 0",
-			s: &Service{
-				userRepository: mockRepo,
-				hashing:        mockHash,
+			mocks: []*gomock.Call{
+				mockRepoRec.GetByEmail(gomock.Any(), gomock.Any()).Return(unverifiedUser, nil),
+				mockHashRec.CompareHashAndPassword(gomock.Any(), gomock.Any()).Return(errors.New("any error")),
+				mockRepoRec.Save(gomock.Any(), gomock.Any()).Return(errors.New("any error")),
 			},
-			args: args{
-				ctx:     context.Background(),
-				payload: *loginRequest,
-			},
-			want:    nil,
-			wantErr: true,
 		},
 		{
 			name: "success",
@@ -253,41 +258,14 @@ func TestService_Login(t *testing.T) {
 			},
 			want:    verifiedUser,
 			wantErr: false,
+			mocks: []*gomock.Call{
+				mockRepoRec.GetByEmail(gomock.Any(), gomock.Any()).Return(verifiedUser, nil),
+				mockHashRec.CompareHashAndPassword(gomock.Any(), gomock.Any()).Return(nil),
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			switch tt.name {
-			case "error record not found":
-				mockLogin(nil, errors.New("record not found"))(mockRepo)
-			case "unexpected error":
-				mockLogin(nil, errors.New("other error"))(mockRepo)
-			case "error password incorrect":
-				mockLogin(unverifiedUser, nil)(mockRepo)
-				mockCompareHash(errors.New("any error"))(mockHash)
-				mockSaveUser(nil)(mockRepo)
-			case "error unverified account":
-				mockLogin(unverifiedUser, nil)(mockRepo)
-				mockCompareHash(nil)(mockHash)
-			case "error password incorrect 3x":
-				mockLogin(verifiedUserWrongPass3x, nil)(mockRepo)
-			case "error saving wrong password counter":
-				mockLogin(unverifiedUser, nil)(mockRepo)
-				mockCompareHash(errors.New("any error"))(mockHash)
-				mockSaveUser(errors.New("any error"))(mockRepo)
-			case "error password incorrect 3x after wrong pass login":
-				mockLogin(verifiedUserWrongPass2x, nil)(mockRepo)
-				mockCompareHash(errors.New("any error"))(mockHash)
-				mockSaveUser(nil)(mockRepo)
-			case "error saving wrong password counter back to 0":
-				mockLogin(verifiedUser, nil)(mockRepo)
-				mockCompareHash(nil)(mockHash)
-				mockSaveUser(errors.New("any error"))(mockRepo)
-			case "success":
-				mockLogin(verifiedUser, nil)(mockRepo)
-				mockCompareHash(nil)(mockHash)
-				mockSaveUser(nil)(mockRepo)
-			}
 			got, err := tt.s.Login(tt.args.ctx, tt.args.payload)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Service.Login() error = %v, wantErr %v", err, tt.wantErr)
@@ -1096,32 +1074,32 @@ func TestService_Logout(t *testing.T) {
 	s := &Service{
 		userRepository: mockUser,
 	}
-	logoutRequest := pb.LogoutRequest{}
+	userId := uuid.New()
 	user := &entity.User{}
 
 	t.Run("Should return no error", func(t *testing.T) {
-		mockUser.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, nil)
+		mockUser.EXPECT().GetByID(gomock.Any(), gomock.Any()).Return(user, nil)
 		mockUser.EXPECT().Save(gomock.Any(), gomock.Any()).Return(nil)
-		err := s.Logout(ctx, &logoutRequest)
+		err := s.Logout(ctx, userId)
 		require.NoError(t, err)
 	})
 
 	t.Run("Should return error when email not found", func(t *testing.T) {
-		mockUser.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, errors.New("not found"))
-		err := s.Logout(ctx, &logoutRequest)
+		mockUser.EXPECT().GetByID(gomock.Any(), gomock.Any()).Return(user, errors.New("not found"))
+		err := s.Logout(ctx, userId)
 		require.Error(t, err)
 	})
 
 	t.Run("Should return error when find email error", func(t *testing.T) {
-		mockUser.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, errors.New("failed"))
-		err := s.Logout(ctx, &logoutRequest)
+		mockUser.EXPECT().GetByID(gomock.Any(), gomock.Any()).Return(user, errors.New("failed"))
+		err := s.Logout(ctx, userId)
 		require.Error(t, err)
 	})
 
 	t.Run("Should return error when saving error", func(t *testing.T) {
-		mockUser.EXPECT().GetByEmail(gomock.Any(), gomock.Any()).Return(user, nil)
+		mockUser.EXPECT().GetByID(gomock.Any(), gomock.Any()).Return(user, nil)
 		mockUser.EXPECT().Save(gomock.Any(), gomock.Any()).Return(errors.New("failed"))
-		err := s.Logout(ctx, &logoutRequest)
+		err := s.Logout(ctx, userId)
 		require.Error(t, err)
 	})
 

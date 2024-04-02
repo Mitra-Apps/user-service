@@ -47,8 +47,8 @@ type UserServiceClient interface {
 	ResendOtp(ctx context.Context, in *ResendOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	GetOwnData(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
 	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
-	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
-	RefreshToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
+	RefreshToken(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
 	SetEnvVariable(ctx context.Context, in *EnvRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 }
 
@@ -141,7 +141,7 @@ func (c *userServiceClient) ChangePassword(ctx context.Context, in *ChangePasswo
 	return out, nil
 }
 
-func (c *userServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+func (c *userServiceClient) Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error) {
 	out := new(SuccessResponse)
 	err := c.cc.Invoke(ctx, UserService_Logout_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -150,7 +150,7 @@ func (c *userServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts 
 	return out, nil
 }
 
-func (c *userServiceClient) RefreshToken(ctx context.Context, in *TokenRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
+func (c *userServiceClient) RefreshToken(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error) {
 	out := new(SuccessResponse)
 	err := c.cc.Invoke(ctx, UserService_RefreshToken_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -181,8 +181,8 @@ type UserServiceServer interface {
 	ResendOtp(context.Context, *ResendOTPRequest) (*SuccessResponse, error)
 	GetOwnData(context.Context, *emptypb.Empty) (*SuccessResponse, error)
 	ChangePassword(context.Context, *ChangePasswordRequest) (*SuccessResponse, error)
-	Logout(context.Context, *LogoutRequest) (*SuccessResponse, error)
-	RefreshToken(context.Context, *TokenRequest) (*SuccessResponse, error)
+	Logout(context.Context, *emptypb.Empty) (*SuccessResponse, error)
+	RefreshToken(context.Context, *emptypb.Empty) (*SuccessResponse, error)
 	SetEnvVariable(context.Context, *EnvRequest) (*SuccessResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
@@ -218,10 +218,10 @@ func (UnimplementedUserServiceServer) GetOwnData(context.Context, *emptypb.Empty
 func (UnimplementedUserServiceServer) ChangePassword(context.Context, *ChangePasswordRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
 }
-func (UnimplementedUserServiceServer) Logout(context.Context, *LogoutRequest) (*SuccessResponse, error) {
+func (UnimplementedUserServiceServer) Logout(context.Context, *emptypb.Empty) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
 }
-func (UnimplementedUserServiceServer) RefreshToken(context.Context, *TokenRequest) (*SuccessResponse, error) {
+func (UnimplementedUserServiceServer) RefreshToken(context.Context, *emptypb.Empty) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
 }
 func (UnimplementedUserServiceServer) SetEnvVariable(context.Context, *EnvRequest) (*SuccessResponse, error) {
@@ -403,7 +403,7 @@ func _UserService_ChangePassword_Handler(srv interface{}, ctx context.Context, d
 }
 
 func _UserService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LogoutRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -415,13 +415,13 @@ func _UserService_Logout_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: UserService_Logout_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).Logout(ctx, req.(*LogoutRequest))
+		return srv.(UserServiceServer).Logout(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _UserService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TokenRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -433,7 +433,7 @@ func _UserService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: UserService_RefreshToken_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).RefreshToken(ctx, req.(*TokenRequest))
+		return srv.(UserServiceServer).RefreshToken(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
