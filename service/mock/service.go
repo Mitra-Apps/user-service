@@ -86,6 +86,21 @@ func (mr *MockServiceInterfaceMockRecorder) GetAll(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockServiceInterface)(nil).GetAll), ctx)
 }
 
+// GetByID mocks base method.
+func (m *MockServiceInterface) GetByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByID", ctx, id)
+	ret0, _ := ret[0].(*entity.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByID indicates an expected call of GetByID.
+func (mr *MockServiceInterfaceMockRecorder) GetByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockServiceInterface)(nil).GetByID), ctx, id)
+}
+
 // GetRole mocks base method.
 func (m *MockServiceInterface) GetRole(ctx context.Context) ([]entity.Role, error) {
 	m.ctrl.T.Helper()
@@ -158,6 +173,20 @@ func (m *MockServiceInterface) ResendOTP(ctx context.Context, email string) (*en
 func (mr *MockServiceInterfaceMockRecorder) ResendOTP(ctx, email any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResendOTP", reflect.TypeOf((*MockServiceInterface)(nil).ResendOTP), ctx, email)
+}
+
+// Save mocks base method.
+func (m *MockServiceInterface) Save(ctx context.Context, user *entity.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Save", ctx, user)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Save indicates an expected call of Save.
+func (mr *MockServiceInterfaceMockRecorder) Save(ctx, user any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockServiceInterface)(nil).Save), ctx, user)
 }
 
 // VerifyOTP mocks base method.

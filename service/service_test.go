@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Mitra-Apps/be-user-service/config/tools"
-	"github.com/Mitra-Apps/be-user-service/config/tools/redis"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository/mock"
+	"github.com/Mitra-Apps/be-user-service/external"
+	"github.com/Mitra-Apps/be-user-service/external/redis"
 
 	"go.uber.org/mock/gomock"
 )
@@ -16,7 +16,7 @@ func TestNew(t *testing.T) {
 	type args struct {
 		userRepository repository.User
 		roleRepo       repository.Role
-		hashing        tools.BcryptInterface
+		hashing        external.BcryptInterface
 		redis          redis.RedisInterface
 		auth           Authentication
 	}

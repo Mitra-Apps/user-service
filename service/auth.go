@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/Mitra-Apps/be-user-service/external/redis"
 	util "github.com/Mitra-Apps/be-utility-service/service"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -27,26 +29,28 @@ type JwtCustomClaim struct {
 
 type authClient struct {
 	secret string
+	redis  redis.RedisInterface
 }
 
 //go:generate mockgen -source=auth.go -destination=mock/auth.go -package=mock
 type Authentication interface {
-	GenerateToken(ctx context.Context, user *entity.User, expiredMinute int) (token string, err error)
+	GenerateToken(ctx context.Context, user *entity.User) (*entity.Token, error)
 	ValidateToken(ctx context.Context, requestToken string) (*JwtCustomClaim, error)
 }
 
 // Authentication client constructor
-func NewAuthClient(secret string) *authClient {
+func NewAuthClient(secret string, redis redis.RedisInterface) *authClient {
 	return &authClient{
 		secret: secret,
+		redis:  redis,
 	}
 }
 
 // CreateAccessToken will create access token that will be used for user authentication.
 // access token will be needed in API that needs user to be authorized
-func (c *authClient) GenerateToken(ctx context.Context, user *entity.User, expiredMinute int) (token string, err error) {
+func (c *authClient) GenerateToken(ctx context.Context, user *entity.User) (*entity.Token, error) {
 	if user.Id == uuid.Nil {
-		return "", errUserIDRequired
+		return nil, errUserIDRequired
 	}
 
 	var roles []string
@@ -55,26 +59,61 @@ func (c *authClient) GenerateToken(ctx context.Context, user *entity.User, expir
 	}
 
 	currentTime := time.Now().UTC()
-	//set token with criteria below and input userID into subject
-	//this will be needed to check which user is this token for
-	registeredClaims := jwt.RegisteredClaims{
+
+	//get access token exp time env var from redis
+	redisAccessTokenValue, err := c.redis.GetStringKey(ctx, AccessTokenExpTime)
+	if err != nil {
+		redisAccessTokenValue = "60"
+	}
+	accessTokenExpTime, err := strconv.Atoi(redisAccessTokenValue)
+	if err != nil {
+		return nil, util.NewError(codes.Internal, codes.Unknown.String(), err.Error())
+	}
+
+	//get access token exp time env var from redis
+	redisRefreshTokenValue, err := c.redis.GetStringKey(ctx, RefreshTokenExpTime)
+	if err != nil {
+		redisRefreshTokenValue = "43200"
+	}
+	refreshTokenExpTime, err := strconv.Atoi(redisRefreshTokenValue)
+	if err != nil {
+		return nil, util.NewError(codes.Internal, codes.Unknown.String(), err.Error())
+	}
+
+	accessTokenClaims := jwt.RegisteredClaims{
 		Subject:   user.Id.String(),
-		ExpiresAt: jwt.NewNumericDate(currentTime.Add(time.Minute * time.Duration(expiredMinute))),
+		ExpiresAt: jwt.NewNumericDate(currentTime.Add(time.Minute * time.Duration(accessTokenExpTime))),
 		IssuedAt:  jwt.NewNumericDate(currentTime),
+		Issuer:    AccessToken,
+	}
+
+	refreshTokenClaims := jwt.RegisteredClaims{
+		Subject:   user.Id.String(),
+		ExpiresAt: jwt.NewNumericDate(currentTime.Add(time.Minute * time.Duration(refreshTokenExpTime))),
+		IssuedAt:  jwt.NewNumericDate(currentTime),
+		Issuer:    RefreshToken,
 	}
 
 	claims := &JwtCustomClaim{
 		Roles:            roles,
-		RegisteredClaims: registeredClaims,
+		RegisteredClaims: accessTokenClaims,
 	}
 
-	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	at := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims)
 
-	token, err = t.SignedString([]byte(c.secret))
+	accessToken, err := at.SignedString([]byte(c.secret))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return token, err
+	refreshToken, err := rt.SignedString([]byte(c.secret))
+	if err != nil {
+		return nil, err
+	}
+	return &entity.Token{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, err
 }
 
 // ValidateTokens will validate whether the token is valid
@@ -103,14 +142,26 @@ func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (*J
 		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
 	}
 
-	if expTime.Before(currentTime) {
-		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errTokenExpired.Error())
-	}
-
 	sub, err := claims.GetSubject()
 	if err != nil {
 		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
 	}
+
+	issuer, err := claims.GetIssuer()
+	if err != nil {
+		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
+	}
+
+	if expTime.Before(currentTime) {
+		return &JwtCustomClaim{
+			RegisteredClaims: jwt.RegisteredClaims{
+				Subject:   sub,
+				ExpiresAt: expTime,
+				Issuer:    issuer,
+			},
+		}, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errTokenExpired.Error())
+	}
+
 	iat, err := claims.GetIssuedAt()
 	if err != nil {
 		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
@@ -130,6 +181,7 @@ func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (*J
 			Subject:   sub,
 			ExpiresAt: expTime,
 			IssuedAt:  iat,
+			Issuer:    issuer,
 		},
 	}
 

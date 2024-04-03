@@ -1648,3 +1648,369 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ChangePasswordRequestValidationError{}
+
+// Validate checks the field values on LogoutRequest with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *LogoutRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on LogoutRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in LogoutRequestMultiError, or
+// nil if none found.
+func (m *LogoutRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *LogoutRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if err := m._validateEmail(m.GetEmail()); err != nil {
+		err = LogoutRequestValidationError{
+			field:  "Email",
+			reason: "value must be a valid email address",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return LogoutRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *LogoutRequest) _validateHostname(host string) error {
+	s := strings.ToLower(strings.TrimSuffix(host, "."))
+
+	if len(host) > 253 {
+		return errors.New("hostname cannot exceed 253 characters")
+	}
+
+	for _, part := range strings.Split(s, ".") {
+		if l := len(part); l == 0 || l > 63 {
+			return errors.New("hostname part must be non-empty and cannot exceed 63 characters")
+		}
+
+		if part[0] == '-' {
+			return errors.New("hostname parts cannot begin with hyphens")
+		}
+
+		if part[len(part)-1] == '-' {
+			return errors.New("hostname parts cannot end with hyphens")
+		}
+
+		for _, r := range part {
+			if (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-' {
+				return fmt.Errorf("hostname parts can only contain alphanumeric characters or hyphens, got %q", string(r))
+			}
+		}
+	}
+
+	return nil
+}
+
+func (m *LogoutRequest) _validateEmail(addr string) error {
+	a, err := mail.ParseAddress(addr)
+	if err != nil {
+		return err
+	}
+	addr = a.Address
+
+	if len(addr) > 254 {
+		return errors.New("email addresses cannot exceed 254 characters")
+	}
+
+	parts := strings.SplitN(addr, "@", 2)
+
+	if len(parts[0]) > 64 {
+		return errors.New("email address local phrase cannot exceed 64 characters")
+	}
+
+	return m._validateHostname(parts[1])
+}
+
+// LogoutRequestMultiError is an error wrapping multiple validation errors
+// returned by LogoutRequest.ValidateAll() if the designated constraints
+// aren't met.
+type LogoutRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m LogoutRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m LogoutRequestMultiError) AllErrors() []error { return m }
+
+// LogoutRequestValidationError is the validation error returned by
+// LogoutRequest.Validate if the designated constraints aren't met.
+type LogoutRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e LogoutRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e LogoutRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e LogoutRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e LogoutRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e LogoutRequestValidationError) ErrorName() string { return "LogoutRequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e LogoutRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sLogoutRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = LogoutRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = LogoutRequestValidationError{}
+
+// Validate checks the field values on TokenRequest with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *TokenRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on TokenRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in TokenRequestMultiError, or
+// nil if none found.
+func (m *TokenRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *TokenRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for RefreshToken
+
+	if len(errors) > 0 {
+		return TokenRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// TokenRequestMultiError is an error wrapping multiple validation errors
+// returned by TokenRequest.ValidateAll() if the designated constraints aren't met.
+type TokenRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m TokenRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m TokenRequestMultiError) AllErrors() []error { return m }
+
+// TokenRequestValidationError is the validation error returned by
+// TokenRequest.Validate if the designated constraints aren't met.
+type TokenRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e TokenRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e TokenRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e TokenRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e TokenRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e TokenRequestValidationError) ErrorName() string { return "TokenRequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e TokenRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sTokenRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = TokenRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = TokenRequestValidationError{}
+
+// Validate checks the field values on EnvRequest with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *EnvRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on EnvRequest with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in EnvRequestMultiError, or
+// nil if none found.
+func (m *EnvRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *EnvRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Variable
+
+	// no validation rules for Value
+
+	if len(errors) > 0 {
+		return EnvRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// EnvRequestMultiError is an error wrapping multiple validation errors
+// returned by EnvRequest.ValidateAll() if the designated constraints aren't met.
+type EnvRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m EnvRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m EnvRequestMultiError) AllErrors() []error { return m }
+
+// EnvRequestValidationError is the validation error returned by
+// EnvRequest.Validate if the designated constraints aren't met.
+type EnvRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e EnvRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e EnvRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e EnvRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e EnvRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e EnvRequestValidationError) ErrorName() string { return "EnvRequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e EnvRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sEnvRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = EnvRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = EnvRequestValidationError{}

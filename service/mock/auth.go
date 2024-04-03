@@ -42,18 +42,18 @@ func (m *MockAuthentication) EXPECT() *MockAuthenticationMockRecorder {
 }
 
 // GenerateToken mocks base method.
-func (m *MockAuthentication) GenerateToken(ctx context.Context, user *entity.User, expiredMinute int) (string, error) {
+func (m *MockAuthentication) GenerateToken(ctx context.Context, user *entity.User) (*entity.Token, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenerateToken", ctx, user, expiredMinute)
-	ret0, _ := ret[0].(string)
+	ret := m.ctrl.Call(m, "GenerateToken", ctx, user)
+	ret0, _ := ret[0].(*entity.Token)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GenerateToken indicates an expected call of GenerateToken.
-func (mr *MockAuthenticationMockRecorder) GenerateToken(ctx, user, expiredMinute any) *gomock.Call {
+func (mr *MockAuthenticationMockRecorder) GenerateToken(ctx, user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateToken", reflect.TypeOf((*MockAuthentication)(nil).GenerateToken), ctx, user, expiredMinute)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateToken", reflect.TypeOf((*MockAuthentication)(nil).GenerateToken), ctx, user)
 }
 
 // ValidateToken mocks base method.

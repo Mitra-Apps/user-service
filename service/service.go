@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
-	"github.com/Mitra-Apps/be-user-service/config/tools"
-	"github.com/Mitra-Apps/be-user-service/config/tools/redis"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
+	"github.com/Mitra-Apps/be-user-service/external"
+	"github.com/Mitra-Apps/be-user-service/external/redis"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 )
@@ -15,7 +15,7 @@ import (
 type Service struct {
 	userRepository repository.User
 	roleRepo       repository.Role
-	hashing        tools.BcryptInterface
+	hashing        external.BcryptInterface
 	redis          redis.RedisInterface
 	auth           Authentication
 }
@@ -29,7 +29,7 @@ var (
 func New(
 	userRepository repository.User,
 	roleRepo repository.Role,
-	hashing tools.BcryptInterface,
+	hashing external.BcryptInterface,
 	redis redis.RedisInterface,
 	auth Authentication) *Service {
 	return &Service{
@@ -52,4 +52,6 @@ type ServiceInterface interface {
 	ResendOTP(ctx context.Context, email string) (*entity.OtpMailReq, error)
 	ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*entity.User, error)
 	Logout(ctx context.Context, id uuid.UUID) error
+	Save(ctx context.Context, user *entity.User) error
+	GetByID(ctx context.Context, id uuid.UUID) (*entity.User, error)
 }

@@ -81,6 +81,20 @@ message ChangePasswordRequest {
     int32 otp_code = 3;
 }
 
+message LogoutRequest {
+    string email = 1 [(validate.rules).string.email = true];
+}
+
+message TokenRequest {
+    string refresh_token = 1;
+}
+
+message EnvRequest {
+    string variable = 1;
+    string value = 2;
+}
+
+
 service UserService {
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {
         option (google.api.http) = {
@@ -136,6 +150,17 @@ service UserService {
     rpc Logout(google.protobuf.Empty) returns (SuccessResponse) {
          option (google.api.http) = {
             post: "/api/v1/users/logout"
+            body: "*"
+        };
+    }    
+    rpc RefreshToken(google.protobuf.Empty) returns (SuccessResponse) {
+         option (google.api.http) = {
+            get: "/api/v1/users/refresh-token"
+        };
+    }
+    rpc SetEnvVariable(EnvRequest) returns (SuccessResponse) {
+         option (google.api.http) = {
+            post: "/api/v1/config/set-variable"
             body: "*"
         };
     }
