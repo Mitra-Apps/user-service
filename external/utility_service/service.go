@@ -3,6 +3,7 @@ package utilityservice
 import (
 	"context"
 	"log"
+	"os"
 
 	pb "github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
 	"google.golang.org/grpc"
@@ -22,7 +23,7 @@ type ServiceInterface interface {
 }
 
 func NewClient(ctx context.Context) *serviceClient {
-	utilityGrpcConn, err := grpc.DialContext(ctx, "localhost:7300", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	utilityGrpcConn, err := grpc.DialContext(ctx, os.Getenv("GRPC_UTILITY_HOST"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal("Cannot connect to utility grpc server ", err)
 	}
