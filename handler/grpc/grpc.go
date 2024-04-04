@@ -331,6 +331,7 @@ func (g *GrpcRoute) SetEnvVariable(ctx context.Context, req *pb.EnvRequest) (*pb
 		Value:    req.Value,
 	}
 	if _, err := g.utilService.UpsertEnvVariable(ctx, envSet); err != nil {
+		log.Print("Error upsert env variable to util service : ", err)
 		return nil, err
 	}
 
