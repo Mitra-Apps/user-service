@@ -10,7 +10,8 @@ import (
 )
 
 type serviceClient struct {
-	client pb.UtilServiceClient
+	client   pb.UtilServiceClient
+	grpcConn *grpc.ClientConn
 }
 
 //go:generate mockgen -source=service.go -destination=mock/service.go -package=mock
@@ -20,7 +21,7 @@ type ServiceInterface interface {
 	GetEnvVariable(ctx context.Context, req *pb.GetEnvVariableReq) (*pb.GetEnvVariableRes, error)
 }
 
-func NewClient(ctx context.Context) ServiceInterface {
+func NewClient(ctx context.Context) *serviceClient {
 	utilityGrpcConn, err := grpc.DialContext(ctx, "localhost:7300", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal("Cannot connect to utility grpc server ", err)
@@ -28,7 +29,16 @@ func NewClient(ctx context.Context) ServiceInterface {
 	client := pb.NewUtilServiceClient(utilityGrpcConn)
 
 	return &serviceClient{
-		client: client,
+		client:   client,
+		grpcConn: utilityGrpcConn,
+	}
+}
+
+// New method to close the grpc connection
+func (s *serviceClient) Close() {
+	log.Println("Closing connection ...")
+	if err := s.grpcConn.Close(); err != nil {
+		log.Printf("Error closing the connection: %v", err)
 	}
 }
 

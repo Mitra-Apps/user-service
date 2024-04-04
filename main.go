@@ -99,6 +99,7 @@ func main() {
 
 	redis := redis.Connection()
 	utilSvc := utilityservice.NewClient(ctx)
+	defer utilSvc.Close()
 	//setup access token exp time
 	accessTokenExpTimeVal, err := utilSvc.GetEnvVariable(ctx, &utility.GetEnvVariableReq{Variable: service.AccessTokenExpTime})
 	if err != nil {
