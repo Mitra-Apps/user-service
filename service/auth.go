@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -121,45 +122,47 @@ func (c *authClient) GenerateToken(ctx context.Context, user *entity.User) (*ent
 // and will return user id if the user is exist in our database
 // otherwise it will return error
 func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (*JwtCustomClaim, error) {
-	token, err := jwt.Parse(requestToken, func(token *jwt.Token) (interface{}, error) {
+	token, _ := jwt.Parse(requestToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			log.Println("error parse jwt")
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(c.secret), nil
 	})
 
-	if err != nil {
-		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), err.Error())
-	}
-	// assert jwt.MapClaims type
 	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
+	if !ok {
+		log.Println("token invalid, fail to claim token")
 		return nil, util.NewError(codes.Unauthenticated, pbErr.ErrorCode_AUTH_JWT_ERR_GET_CLAIMS.String(), errInvalidToken.Error())
 	}
 
 	currentTime := time.Now().UTC()
 	expTime, err := claims.GetExpirationTime()
 	if err != nil {
+		log.Println("error get exp time")
 		return nil, util.NewError(codes.Unauthenticated, pbErr.ErrorCode_AUTH_JWT_ERR_GET_CLAIMS.String(), errClaimingToken.Error())
 	}
 
 	sub, err := claims.GetSubject()
 	if err != nil {
+		log.Println("error get subject")
 		return nil, util.NewError(codes.Unauthenticated, pbErr.ErrorCode_AUTH_JWT_ERR_GET_CLAIMS.String(), errClaimingToken.Error())
 	}
 
 	issuer, err := claims.GetIssuer()
 	if err != nil {
+		log.Println("error get issuer")
 		return nil, util.NewError(codes.Unauthenticated, pbErr.ErrorCode_AUTH_JWT_ERR_GET_CLAIMS.String(), errClaimingToken.Error())
 	}
 
 	iat, err := claims.GetIssuedAt()
 	if err != nil {
+		log.Println("error get issued at")
 		return nil, util.NewError(codes.Unauthenticated, pbErr.ErrorCode_AUTH_JWT_ERR_GET_CLAIMS.String(), errClaimingToken.Error())
 	}
 
 	if expTime.Before(currentTime) {
-		if issuer == RefreshToken {
+		if issuer == AccessToken {
 			ErrorCodeDetail = pbErr.ErrorCode_AUTH_ACCESS_TOKEN_EXPIRED.String()
 		} else {
 			ErrorCodeDetail = pbErr.ErrorCode_AUTH_REFRESH_TOKEN_EXPIRED.String()

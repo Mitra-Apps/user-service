@@ -59,6 +59,7 @@ func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 		// Validate and parse the JWT token
 		token, err := middleware.GetToken(ctx)
 		if err != nil {
+			log.Println("error get token from middleware")
 			return nil, err
 		}
 
