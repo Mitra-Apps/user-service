@@ -65,7 +65,7 @@ func (c *authClient) GenerateToken(ctx context.Context, user *entity.User) (*ent
 	if err != nil {
 		redisAccessTokenValue = "60"
 	}
-	accessTokenExpTime, err := strconv.Atoi(redisAccessTokenValue)
+	accessTokenExpTime, err := strconv.ParseFloat(redisAccessTokenValue, 64)
 	if err != nil {
 		return nil, util.NewError(codes.Internal, codes.Unknown.String(), err.Error())
 	}
@@ -75,7 +75,7 @@ func (c *authClient) GenerateToken(ctx context.Context, user *entity.User) (*ent
 	if err != nil {
 		redisRefreshTokenValue = "43200"
 	}
-	refreshTokenExpTime, err := strconv.Atoi(redisRefreshTokenValue)
+	refreshTokenExpTime, err := strconv.ParseFloat(redisRefreshTokenValue, 64)
 	if err != nil {
 		return nil, util.NewError(codes.Internal, codes.Unknown.String(), err.Error())
 	}
