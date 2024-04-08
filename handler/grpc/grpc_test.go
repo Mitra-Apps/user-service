@@ -1105,37 +1105,6 @@ func TestGrpcRoute_RefreshToken(t *testing.T) {
 		mocks   []*gomock.Call
 	}{
 		{
-			name: "Expired refresh token",
-			g: &GrpcRoute{
-				auth:    mockAuth,
-				service: mockSvc,
-			},
-			args: args{
-				ctx: ctx,
-			},
-			want:    nil,
-			wantErr: true,
-			mocks: []*gomock.Call{
-				mockAuthRec.ValidateToken(ctx, gomock.Any()).Return(nil, errors.New("token expired error")),
-				mockSvcRec.Logout(ctx, gomock.Any()).Return(nil),
-			},
-		},
-		{
-			name: "error validate token",
-			g: &GrpcRoute{
-				auth:    mockAuth,
-				service: mockSvc,
-			},
-			args: args{
-				ctx: ctx,
-			},
-			want:    nil,
-			wantErr: true,
-			mocks: []*gomock.Call{
-				mockAuthRec.ValidateToken(ctx, gomock.Any()).Return(nil, errors.New("other error")),
-			},
-		},
-		{
 			name: "error get user",
 			g: &GrpcRoute{
 				auth:    mockAuth,
@@ -1147,7 +1116,6 @@ func TestGrpcRoute_RefreshToken(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 			mocks: []*gomock.Call{
-				mockAuthRec.ValidateToken(ctx, gomock.Any()).Return(&service.JwtCustomClaim{}, nil),
 				mockSvcRec.GetByID(ctx, gomock.Any()).Return(nil, errors.New("any error")),
 			},
 		},
@@ -1163,7 +1131,6 @@ func TestGrpcRoute_RefreshToken(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 			mocks: []*gomock.Call{
-				mockAuthRec.ValidateToken(ctx, gomock.Any()).Return(&service.JwtCustomClaim{}, nil),
 				mockSvcRec.GetByID(ctx, gomock.Any()).Return(user, nil),
 				mockAuthRec.GenerateToken(ctx, gomock.Any()).Return(nil, errors.New("any error")),
 			},
@@ -1180,7 +1147,6 @@ func TestGrpcRoute_RefreshToken(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 			mocks: []*gomock.Call{
-				mockAuthRec.ValidateToken(ctx, gomock.Any()).Return(&service.JwtCustomClaim{}, nil),
 				mockSvcRec.GetByID(ctx, gomock.Any()).Return(user, nil),
 				mockAuthRec.GenerateToken(ctx, gomock.Any()).Return(genToken, nil),
 				mockSvcRec.Save(ctx, gomock.Any()).Return(errors.New("any error")),
@@ -1202,7 +1168,6 @@ func TestGrpcRoute_RefreshToken(t *testing.T) {
 			},
 			wantErr: false,
 			mocks: []*gomock.Call{
-				mockAuthRec.ValidateToken(ctx, gomock.Any()).Return(&service.JwtCustomClaim{}, nil),
 				mockSvcRec.GetByID(ctx, gomock.Any()).Return(user, nil),
 				mockAuthRec.GenerateToken(ctx, gomock.Any()).Return(genToken, nil),
 				mockSvcRec.Save(ctx, gomock.Any()).Return(nil),

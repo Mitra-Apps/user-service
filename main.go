@@ -40,6 +40,7 @@ func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 	// Check if the method should be included from the middleware
 	log.Print(info.FullMethod)
 	addMiddleware := true
+	isLogout := false
 	// Add the method that will be included for middleware
 	switch info.FullMethod {
 	case "/proto.UserService/GetUsers":
@@ -47,6 +48,9 @@ func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 	case "/proto.UserService/GetOwnData":
 		// Middleware logic for specific route
 	case "/proto.UserService/Logout":
+		// Middleware logic for specific route
+		isLogout = true
+	case "/proto.UserService/RefreshToken":
 		// Middleware logic for specific route
 	default:
 		addMiddleware = false
@@ -61,10 +65,8 @@ func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.Unar
 		redis := redis.Connection()
 		auth := service.NewAuthClient(os.Getenv("JWT_SECRET"), redis)
 		claims, err := auth.ValidateToken(ctx, token)
-		if err != nil {
-			if err.Error() != "token expired error" || claims.Issuer == service.AccessToken {
-				return nil, err
-			}
+		if err != nil && !isLogout {
+			return nil, err
 		}
 
 		//claim our user id input in subject from token

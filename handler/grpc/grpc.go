@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/external/redis"
@@ -275,26 +274,7 @@ func (g *GrpcRoute) Logout(ctx context.Context, req *emptypb.Empty) (*pb.Success
 }
 
 func (g *GrpcRoute) RefreshToken(ctx context.Context, req *emptypb.Empty) (*pb.SuccessResponse, error) {
-	// Validate and parse the JWT token
-	refreshToken, err := middleware.GetToken(ctx)
-	if err != nil {
-		return nil, err
-	}
 	userId := middleware.GetUserIDValue(ctx)
-	_, err = g.auth.ValidateToken(ctx, refreshToken)
-	if err != nil {
-		switch err.Error() {
-		case "token expired error":
-			g.service.Logout(ctx, userId)
-			return nil, util.NewError(
-				codes.Unauthenticated,
-				pbErr.ErrorCode_AUTH_REFRESH_TOKEN_EXPIRED.String(),
-				"Refresh token expired",
-			)
-		default:
-			return nil, err
-		}
-	}
 	user, err := g.service.GetByID(ctx, userId)
 	if err != nil {
 		return nil, err

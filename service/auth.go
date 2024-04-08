@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
 	"github.com/Mitra-Apps/be-user-service/external/redis"
 	util "github.com/Mitra-Apps/be-utility-service/service"
@@ -133,38 +134,44 @@ func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (*J
 	// assert jwt.MapClaims type
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errInvalidToken.Error())
+		return nil, util.NewError(codes.Unauthenticated, pbErr.ErrorCode_AUTH_JWT_ERR_GET_CLAIMS.String(), errInvalidToken.Error())
 	}
 
 	currentTime := time.Now().UTC()
 	expTime, err := claims.GetExpirationTime()
 	if err != nil {
-		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
+		return nil, util.NewError(codes.Unauthenticated, pbErr.ErrorCode_AUTH_JWT_ERR_GET_CLAIMS.String(), errClaimingToken.Error())
 	}
 
 	sub, err := claims.GetSubject()
 	if err != nil {
-		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
+		return nil, util.NewError(codes.Unauthenticated, pbErr.ErrorCode_AUTH_JWT_ERR_GET_CLAIMS.String(), errClaimingToken.Error())
 	}
 
 	issuer, err := claims.GetIssuer()
 	if err != nil {
-		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
+		return nil, util.NewError(codes.Unauthenticated, pbErr.ErrorCode_AUTH_JWT_ERR_GET_CLAIMS.String(), errClaimingToken.Error())
+	}
+
+	iat, err := claims.GetIssuedAt()
+	if err != nil {
+		return nil, util.NewError(codes.Unauthenticated, pbErr.ErrorCode_AUTH_JWT_ERR_GET_CLAIMS.String(), errClaimingToken.Error())
 	}
 
 	if expTime.Before(currentTime) {
+		if issuer == RefreshToken {
+			ErrorCodeDetail = pbErr.ErrorCode_AUTH_ACCESS_TOKEN_EXPIRED.String()
+		} else {
+			ErrorCodeDetail = pbErr.ErrorCode_AUTH_REFRESH_TOKEN_EXPIRED.String()
+		}
 		return &JwtCustomClaim{
 			RegisteredClaims: jwt.RegisteredClaims{
 				Subject:   sub,
 				ExpiresAt: expTime,
 				Issuer:    issuer,
+				IssuedAt:  iat,
 			},
-		}, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errTokenExpired.Error())
-	}
-
-	iat, err := claims.GetIssuedAt()
-	if err != nil {
-		return nil, util.NewError(codes.Unauthenticated, codes.Unauthenticated.String(), errClaimingToken.Error())
+		}, util.NewError(codes.Unauthenticated, ErrorCodeDetail, errTokenExpired.Error())
 	}
 
 	var roles []string
