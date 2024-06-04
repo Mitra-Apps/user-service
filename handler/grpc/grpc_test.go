@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -35,6 +36,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"gorm.io/gorm"
 )
+
+var e2eTest = flag.Bool("integration", false, "run integration test")
 
 func init() {
 	if _, err := os.Stat("./../../.env"); !os.IsNotExist(err) {
@@ -622,92 +625,94 @@ func TestGrpcRoute_GetRole(t *testing.T) {
 }
 
 func TestGrpcRoute_GetRole_E2E(t *testing.T) {
-	db := postgre.Connection()
-	usrRepo := userPostgreRepo.NewUserRepoImpl(db)
-	roleRepo := userPostgreRepo.NewRoleRepoImpl(db)
-	usrSvc := service.New(usrRepo, roleRepo, nil, nil, nil)
-	permission := map[string]interface{}{
-		"store": "create store",
-	}
-	data, _ := json.Marshal(permission)
-	json.Unmarshal(data, &permission)
-	permissionData, _ := structpb.NewStruct(permission)
+	if *e2eTest {
+		db := postgre.Connection()
+		usrRepo := userPostgreRepo.NewUserRepoImpl(db)
+		roleRepo := userPostgreRepo.NewRoleRepoImpl(db)
+		usrSvc := service.New(usrRepo, roleRepo, nil, nil, nil)
+		permission := map[string]interface{}{
+			"store": "create store",
+		}
+		data, _ := json.Marshal(permission)
+		json.Unmarshal(data, &permission)
+		permissionData, _ := structpb.NewStruct(permission)
 
-	Roles := []*pb.Role{
-		{
-			Id:          "1",
-			RoleName:    "merchant",
-			Description: "role for merchant",
-			Permission:  permissionData,
-			IsActive:    true,
-		},
-		{
-			Id:          "2",
-			RoleName:    "customer",
-			Description: "role for customer",
-			IsActive:    true,
-		},
-		{
-			Id:          "3",
-			RoleName:    "admin",
-			Description: "role for merchant",
-			Permission:  permissionData,
-			IsActive:    true,
-		},
-	}
-
-	listStruct := map[string]interface{}{
-		"roles": Roles,
-	}
-
-	data, _ = json.Marshal(listStruct)
-	json.Unmarshal(data, &listStruct)
-	pbData, _ := structpb.NewStruct(listStruct)
-
-	type args struct {
-		ctx context.Context
-		req *emptypb.Empty
-	}
-	tests := []struct {
-		name    string
-		g       *GrpcRoute
-		args    args
-		want    *pb.SuccessResponse
-		wantErr bool
-	}{
-		{
-			name: "success",
-			g: &GrpcRoute{
-				service: usrSvc,
+		Roles := []*pb.Role{
+			{
+				Id:          "1",
+				RoleName:    "merchant",
+				Description: "role for merchant",
+				Permission:  permissionData,
+				IsActive:    true,
 			},
-			args: args{
-				ctx: context.Background(),
-				req: &emptypb.Empty{},
+			{
+				Id:          "2",
+				RoleName:    "customer",
+				Description: "role for customer",
+				IsActive:    true,
 			},
-			want: &pb.SuccessResponse{
-				Code:    0,
-				Message: "roles data",
-				Data:    pbData,
+			{
+				Id:          "3",
+				RoleName:    "admin",
+				Description: "role for merchant",
+				Permission:  permissionData,
+				IsActive:    true,
 			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.g.GetRole(tt.args.ctx, tt.args.req)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GrpcRoute.GetRole() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != nil {
-				if !reflect.DeepEqual(got.Code, tt.want.Code) {
-					t.Errorf("GrpcRoute.GetRole() = %v, want %v", got, tt.want)
+		}
+
+		listStruct := map[string]interface{}{
+			"roles": Roles,
+		}
+
+		data, _ = json.Marshal(listStruct)
+		json.Unmarshal(data, &listStruct)
+		pbData, _ := structpb.NewStruct(listStruct)
+
+		type args struct {
+			ctx context.Context
+			req *emptypb.Empty
+		}
+		tests := []struct {
+			name    string
+			g       *GrpcRoute
+			args    args
+			want    *pb.SuccessResponse
+			wantErr bool
+		}{
+			{
+				name: "success",
+				g: &GrpcRoute{
+					service: usrSvc,
+				},
+				args: args{
+					ctx: context.Background(),
+					req: &emptypb.Empty{},
+				},
+				want: &pb.SuccessResponse{
+					Code:    0,
+					Message: "roles data",
+					Data:    pbData,
+				},
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := tt.g.GetRole(tt.args.ctx, tt.args.req)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("GrpcRoute.GetRole() error = %v, wantErr %v", err, tt.wantErr)
+					return
 				}
-				if !reflect.DeepEqual(got.Message, tt.want.Message) {
-					t.Errorf("GrpcRoute.GetRole() = %v, want %v", got, tt.want)
+				if got != nil {
+					if !reflect.DeepEqual(got.Code, tt.want.Code) {
+						t.Errorf("GrpcRoute.GetRole() = %v, want %v", got, tt.want)
+					}
+					if !reflect.DeepEqual(got.Message, tt.want.Message) {
+						t.Errorf("GrpcRoute.GetRole() = %v, want %v", got, tt.want)
+					}
 				}
-			}
-		})
+			})
+		}
 	}
 }
 
