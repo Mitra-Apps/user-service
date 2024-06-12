@@ -83,8 +83,7 @@ func (p *userRepoImpl) GetByTokens(ctx context.Context, params *entity.GetByToke
 	var user *entity.User
 	err := p.db.
 		Where("id = ?", params.UserId).
-		Where("refresh_token = ?", params.Token).
-		Or("access_token = ?", params.Token).
+		Where("(refresh_token = ? OR access_token = ?)", params.Token, params.Token).
 		First(&user).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
