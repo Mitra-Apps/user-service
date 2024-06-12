@@ -49,9 +49,9 @@ func main() {
 	utilSvc := utilityservice.NewClient(ctx)
 	defer utilSvc.Close()
 
-	SetRedisEnv(ctx, utilSvc, redis)
+	setRedisEnv(ctx, utilSvc, redis)
 
-	grpcServer, route := SetgRPCRoute(ctx, utilSvc, redis, db)
+	grpcServer, route := setgRPCRoute(ctx, utilSvc, redis, db)
 	pb.RegisterUserServiceServer(grpcServer, route)
 
 	go func() {
@@ -64,7 +64,41 @@ func main() {
 	grpcServer.Serve(lis)
 }
 
-func GrpcNewServer(ctx context.Context, auth service.Authentication, opts []grpc.ServerOption) *grpc.Server {
+func setRedisEnv(ctx context.Context, utilSvc utilityservice.ServiceInterface, redis redis.RedisInterface) {
+	//setup access token exp time
+	accessTokenExpTimeVal, err := utilSvc.GetEnvVariable(ctx, &utility.GetEnvVariableReq{Variable: service.AccessTokenExpTime})
+	if err != nil {
+		accessTokenExpTimeVal = &utility.GetEnvVariableRes{
+			Value: "60",
+		}
+	}
+	redis.Set(ctx, service.AccessTokenExpTime, accessTokenExpTimeVal.Value, time.Hour*time.Duration(720))
+
+	// setup refresh token exp time
+	refreshTokenExpTimeVal, err := utilSvc.GetEnvVariable(ctx, &utility.GetEnvVariableReq{Variable: service.RefreshTokenExpTime})
+	if err != nil {
+		refreshTokenExpTimeVal = &utility.GetEnvVariableRes{
+			Value: "43200",
+		}
+	}
+	redis.Set(ctx, service.RefreshTokenExpTime, refreshTokenExpTimeVal.Value, time.Hour*time.Duration(720))
+}
+
+func setgRPCRoute(ctx context.Context, utilSvc utilityservice.ServiceInterface, redis redis.RedisInterface, db *gorm.DB) (*grpc.Server, pb.UserServiceServer) {
+
+	usrRepo := userPostgreRepo.NewUserRepoImpl(db)
+	roleRepo := userPostgreRepo.NewRoleRepoImpl(db)
+	bcrypt := external.New(&external.Bcrypt{})
+	auth := service.NewAuthClient(os.Getenv("JWT_SECRET"), redis, usrRepo)
+	svc := service.New(usrRepo, roleRepo, bcrypt, redis, auth)
+
+	grpcServer := grpcNewServer(ctx, auth, []grpc.ServerOption{})
+	route := grpcRoute.New(svc, auth, utilSvc, redis)
+
+	return grpcServer, route
+}
+
+func grpcNewServer(ctx context.Context, auth service.Authentication, opts []grpc.ServerOption) *grpc.Server {
 	logrusEntry := logrus.NewEntry(logrus.StandardLogger())
 	logrusOpts := []grpc_logrus.Option{
 		grpc_logrus.WithLevels(grpc_logrus.DefaultCodeToLevel),
@@ -124,38 +158,4 @@ func HttpNewServer(ctx context.Context, grpcPort, httpPort string) error {
 	}()
 
 	return srv.ListenAndServe()
-}
-
-func SetRedisEnv(ctx context.Context, utilSvc utilityservice.ServiceInterface, redis redis.RedisInterface) {
-	//setup access token exp time
-	accessTokenExpTimeVal, err := utilSvc.GetEnvVariable(ctx, &utility.GetEnvVariableReq{Variable: service.AccessTokenExpTime})
-	if err != nil {
-		accessTokenExpTimeVal = &utility.GetEnvVariableRes{
-			Value: "60",
-		}
-	}
-	redis.Set(ctx, service.AccessTokenExpTime, accessTokenExpTimeVal.Value, time.Hour*time.Duration(720))
-
-	// setup refresh token exp time
-	refreshTokenExpTimeVal, err := utilSvc.GetEnvVariable(ctx, &utility.GetEnvVariableReq{Variable: service.RefreshTokenExpTime})
-	if err != nil {
-		refreshTokenExpTimeVal = &utility.GetEnvVariableRes{
-			Value: "43200",
-		}
-	}
-	redis.Set(ctx, service.RefreshTokenExpTime, refreshTokenExpTimeVal.Value, time.Hour*time.Duration(720))
-}
-
-func SetgRPCRoute(ctx context.Context, utilSvc utilityservice.ServiceInterface, redis redis.RedisInterface, db *gorm.DB) (*grpc.Server, pb.UserServiceServer) {
-
-	usrRepo := userPostgreRepo.NewUserRepoImpl(db)
-	roleRepo := userPostgreRepo.NewRoleRepoImpl(db)
-	bcrypt := external.New(&external.Bcrypt{})
-	auth := service.NewAuthClient(os.Getenv("JWT_SECRET"), redis, usrRepo)
-	svc := service.New(usrRepo, roleRepo, bcrypt, redis, auth)
-
-	grpcServer := GrpcNewServer(ctx, auth, []grpc.ServerOption{})
-	route := grpcRoute.New(svc, auth, utilSvc, redis)
-
-	return grpcServer, route
 }

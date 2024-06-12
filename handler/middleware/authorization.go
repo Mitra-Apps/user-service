@@ -74,12 +74,12 @@ func JwtMiddlewareInterceptor(auth service.Authentication) grpc.UnaryServerInter
 		}
 
 		// Validate access token is belong to user and still valid
-		err = auth.ValidateBlacklistToken(ctx, &entity.GetByTokensRequest{
+		isValid, err := auth.IsTokenValid(ctx, &entity.GetByTokensRequest{
 			Token:  token,
 			UserId: userId,
 		})
 
-		if err != nil {
+		if err != nil || !isValid {
 			return nil, err
 		}
 

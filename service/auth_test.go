@@ -131,10 +131,11 @@ func Test_authClient_ValidateBlacklistToken(t *testing.T) {
 		params *entity.GetByTokensRequest
 	}
 	tests := []struct {
-		name    string
-		mocks   []*gomock.Call
-		args    args
-		wantErr bool
+		name     string
+		mocks    []*gomock.Call
+		args     args
+		wantErr  bool
+		wantResp bool
 	}{
 		{
 			name: "should be return error because data not found",
@@ -148,7 +149,8 @@ func Test_authClient_ValidateBlacklistToken(t *testing.T) {
 					Times(1).
 					Return(nil, nil),
 			},
-			wantErr: true,
+			wantErr:  true,
+			wantResp: false,
 		},
 		{
 			name: "should be return error because got error on repository",
@@ -162,7 +164,8 @@ func Test_authClient_ValidateBlacklistToken(t *testing.T) {
 					Times(1).
 					Return(nil, errors.New("error")),
 			},
-			wantErr: true,
+			wantErr:  true,
+			wantResp: false,
 		},
 		{
 			name: "should be return nil (success)",
@@ -176,14 +179,20 @@ func Test_authClient_ValidateBlacklistToken(t *testing.T) {
 					Times(1).
 					Return(&user, nil),
 			},
-			wantErr: false,
+			wantErr:  false,
+			wantResp: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := authSvc.ValidateBlacklistToken(tt.args.ctx, tt.args.params)
+			isValid, err := authSvc.IsTokenValid(tt.args.ctx, tt.args.params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("auth.ValidateBlacklistToken() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if isValid != tt.wantResp {
+				t.Errorf("auth.ValidateBlacklistToken() wantResp %v", tt.wantResp)
 				return
 			}
 		})

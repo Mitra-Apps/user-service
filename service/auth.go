@@ -40,7 +40,7 @@ type authClient struct {
 type Authentication interface {
 	GenerateToken(ctx context.Context, user *entity.User) (*entity.Token, error)
 	ValidateToken(ctx context.Context, requestToken string) (*JwtCustomClaim, error)
-	ValidateBlacklistToken(ctx context.Context, params *entity.GetByTokensRequest) error
+	IsTokenValid(ctx context.Context, params *entity.GetByTokensRequest) (isValid bool, err error)
 }
 
 // Authentication client constructor
@@ -204,15 +204,19 @@ func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (*J
 
 // To check token still on db or no
 // if no, it means user already logout and token is not allowed to access
-func (s *authClient) ValidateBlacklistToken(ctx context.Context, params *entity.GetByTokensRequest) error {
+func (s *authClient) IsTokenValid(ctx context.Context, params *entity.GetByTokensRequest) (isValid bool, err error) {
+
 	user, err := s.userRepository.GetByTokens(ctx, params)
 	if err != nil {
-		return err
+		return
 	}
 
 	if user == nil {
-		return errTokenExpired
+		err = errTokenExpired
+		return
 	}
 
-	return nil
+	isValid = true
+
+	return
 }

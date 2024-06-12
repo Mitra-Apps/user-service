@@ -56,18 +56,19 @@ func (mr *MockAuthenticationMockRecorder) GenerateToken(ctx, user any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateToken", reflect.TypeOf((*MockAuthentication)(nil).GenerateToken), ctx, user)
 }
 
-// ValidateBlacklistToken mocks base method.
-func (m *MockAuthentication) ValidateBlacklistToken(ctx context.Context, params *entity.GetByTokensRequest) error {
+// IsTokenValid mocks base method.
+func (m *MockAuthentication) IsTokenValid(ctx context.Context, params *entity.GetByTokensRequest) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateBlacklistToken", ctx, params)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "IsTokenValid", ctx, params)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// ValidateBlacklistToken indicates an expected call of ValidateBlacklistToken.
-func (mr *MockAuthenticationMockRecorder) ValidateBlacklistToken(ctx, params any) *gomock.Call {
+// IsTokenValid indicates an expected call of IsTokenValid.
+func (mr *MockAuthenticationMockRecorder) IsTokenValid(ctx, params any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateBlacklistToken", reflect.TypeOf((*MockAuthentication)(nil).ValidateBlacklistToken), ctx, params)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTokenValid", reflect.TypeOf((*MockAuthentication)(nil).IsTokenValid), ctx, params)
 }
 
 // ValidateToken mocks base method.
