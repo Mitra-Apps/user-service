@@ -2,6 +2,7 @@ package postgre
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
@@ -76,4 +77,19 @@ func (p *userRepoImpl) VerifyUserByEmail(ctx context.Context, email string) (boo
 		return false, res.Error
 	}
 	return true, nil
+}
+
+func (p *userRepoImpl) GetByTokens(ctx context.Context, params *entity.GetByTokensRequest) (*entity.User, error) {
+	var user *entity.User
+	err := p.db.
+		Where("id = ?", params.UserId).
+		Where("refresh_token = ?", params.Token).
+		Or("access_token = ?", params.Token).
+		First(&user).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	return user, nil
 }

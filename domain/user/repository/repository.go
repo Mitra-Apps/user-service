@@ -15,6 +15,7 @@ type User interface {
 	Create(ctx context.Context, user *entity.User, roleIds []string) error
 	Save(ctx context.Context, user *entity.User) error
 	VerifyUserByEmail(ctx context.Context, email string) (bool, error)
+	GetByTokens(ctx context.Context, params *entity.GetByTokensRequest) (*entity.User, error)
 }
 
 type Role interface {

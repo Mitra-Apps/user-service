@@ -10,6 +10,7 @@ import (
 
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
 	"github.com/Mitra-Apps/be-user-service/external/redis"
 	util "github.com/Mitra-Apps/be-utility-service/service"
 	"github.com/golang-jwt/jwt/v5"
@@ -30,21 +31,24 @@ type JwtCustomClaim struct {
 }
 
 type authClient struct {
-	secret string
-	redis  redis.RedisInterface
+	secret         string
+	redis          redis.RedisInterface
+	userRepository repository.User
 }
 
 //go:generate mockgen -source=auth.go -destination=mock/auth.go -package=mock
 type Authentication interface {
 	GenerateToken(ctx context.Context, user *entity.User) (*entity.Token, error)
 	ValidateToken(ctx context.Context, requestToken string) (*JwtCustomClaim, error)
+	ValidateBlacklistToken(ctx context.Context, params *entity.GetByTokensRequest) error
 }
 
 // Authentication client constructor
-func NewAuthClient(secret string, redis redis.RedisInterface) *authClient {
+func NewAuthClient(secret string, redis redis.RedisInterface, userRepository repository.User) *authClient {
 	return &authClient{
-		secret: secret,
-		redis:  redis,
+		secret:         secret,
+		redis:          redis,
+		userRepository: userRepository,
 	}
 }
 
@@ -196,4 +200,19 @@ func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (*J
 	}
 
 	return res, nil
+}
+
+// To check token still on db or no
+// if no, it means user already logout and token is not allowed to access
+func (s *authClient) ValidateBlacklistToken(ctx context.Context, params *entity.GetByTokensRequest) error {
+	user, err := s.userRepository.GetByTokens(ctx, params)
+	if err != nil {
+		return err
+	}
+
+	if user == nil {
+		return errTokenExpired
+	}
+
+	return nil
 }

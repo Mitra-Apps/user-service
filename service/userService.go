@@ -16,7 +16,6 @@ import (
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	pb "github.com/Mitra-Apps/be-user-service/domain/proto/user"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
-	"github.com/Mitra-Apps/be-user-service/handler/middleware"
 	util "github.com/Mitra-Apps/be-utility-service/service"
 	"github.com/google/uuid"
 )
@@ -156,7 +155,6 @@ func (s *Service) CreateRole(ctx context.Context, role *entity.Role) error {
 }
 
 func (s *Service) GetRole(ctx context.Context) ([]entity.Role, error) {
-	fmt.Println("get role service", middleware.GetUserIDValue(ctx))
 	roles, err := s.roleRepo.GetRole(ctx)
 	if err != nil {
 		return nil, err
