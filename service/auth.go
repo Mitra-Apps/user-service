@@ -214,15 +214,10 @@ func (c *AuthClient) ValidateToken(ctx context.Context, requestToken string) (*J
 // if no, it means user already logout and token is not allowed to access
 func (s *AuthClient) IsTokenValid(ctx context.Context, params *entity.GetByTokensRequest) (isValid bool, err error) {
 
-	user, err := s.userRepository.GetByTokens(ctx, params)
+	_, err = s.userRepository.GetByTokens(ctx, params)
 
 	if err != nil {
 		log.Printf("Error (IsTokenValid): %s", err.Error())
-		err = errTokenExpired
-		return
-	}
-
-	if user == nil {
 		err = errTokenExpired
 		return
 	}

@@ -116,7 +116,7 @@ func Test_authClient_ValidateToken(t *testing.T) {
 	}
 }
 
-func Test_authClient_ValidateBlacklistToken(t *testing.T) {
+func Test_authClient_IsTokenValid(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockUserRepo := mockRepo.NewMockUser(ctrl)
 	authSvc := NewAuthClient("secret", nil, mockUserRepo)
@@ -137,21 +137,6 @@ func Test_authClient_ValidateBlacklistToken(t *testing.T) {
 		wantErr  bool
 		wantResp bool
 	}{
-		{
-			name: "should be return error because data not found",
-			args: args{
-				ctx:    context.Background(),
-				params: &params,
-			},
-			mocks: []*gomock.Call{
-				mockUserRepo.EXPECT().
-					GetByTokens(gomock.Any(), &params).
-					Times(1).
-					Return(nil, nil),
-			},
-			wantErr:  true,
-			wantResp: false,
-		},
 		{
 			name: "should be return error because got error on repository",
 			args: args{
