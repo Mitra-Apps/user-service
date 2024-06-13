@@ -47,7 +47,7 @@ type Authentication interface {
 
 // Authentication client constructor
 func NewAuthClient(secret string, redis redis.RedisInterface, userRepository repository.User) *AuthClient {
-	
+
 	if userRepository == nil {
 		db := postgre.Connection()
 		userRepository = userPostgreRepo.NewUserRepoImpl(db)
@@ -215,7 +215,10 @@ func (c *AuthClient) ValidateToken(ctx context.Context, requestToken string) (*J
 func (s *AuthClient) IsTokenValid(ctx context.Context, params *entity.GetByTokensRequest) (isValid bool, err error) {
 
 	user, err := s.userRepository.GetByTokens(ctx, params)
+
 	if err != nil {
+		log.Printf("Error (IsTokenValid): %s", err.Error())
+		err = errTokenExpired
 		return
 	}
 
@@ -225,6 +228,5 @@ func (s *AuthClient) IsTokenValid(ctx context.Context, params *entity.GetByToken
 	}
 
 	isValid = true
-
 	return
 }
