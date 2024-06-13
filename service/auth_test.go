@@ -69,14 +69,14 @@ func Test_authClient_ValidateToken(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		c       *authClient
+		c       *AuthClient
 		args    args
 		want    *JwtCustomClaim
 		wantErr bool
 	}{
 		{
 			name: "success",
-			c: &authClient{
+			c: &AuthClient{
 				secret: "secret",
 				redis:  redis,
 			},
