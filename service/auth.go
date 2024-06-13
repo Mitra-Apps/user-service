@@ -8,8 +8,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Mitra-Apps/be-user-service/config/postgre"
 	pbErr "github.com/Mitra-Apps/be-user-service/domain/proto"
 	"github.com/Mitra-Apps/be-user-service/domain/user/entity"
+	"github.com/Mitra-Apps/be-user-service/domain/user/repository"
+	userPostgreRepo "github.com/Mitra-Apps/be-user-service/domain/user/repository/postgre"
 	"github.com/Mitra-Apps/be-user-service/external/redis"
 	util "github.com/Mitra-Apps/be-utility-service/service"
 	"github.com/golang-jwt/jwt/v5"
@@ -29,28 +32,37 @@ type JwtCustomClaim struct {
 	jwt.RegisteredClaims
 }
 
-type authClient struct {
-	secret string
-	redis  redis.RedisInterface
+type AuthClient struct {
+	secret         string
+	redis          redis.RedisInterface
+	userRepository repository.User
 }
 
 //go:generate mockgen -source=auth.go -destination=mock/auth.go -package=mock
 type Authentication interface {
 	GenerateToken(ctx context.Context, user *entity.User) (*entity.Token, error)
 	ValidateToken(ctx context.Context, requestToken string) (*JwtCustomClaim, error)
+	IsTokenValid(ctx context.Context, params *entity.GetByTokensRequest) (isValid bool, err error)
 }
 
 // Authentication client constructor
-func NewAuthClient(secret string, redis redis.RedisInterface) *authClient {
-	return &authClient{
-		secret: secret,
-		redis:  redis,
+func NewAuthClient(secret string, redis redis.RedisInterface, userRepository repository.User) *AuthClient {
+
+	if userRepository == nil {
+		db := postgre.Connection()
+		userRepository = userPostgreRepo.NewUserRepoImpl(db)
+	}
+
+	return &AuthClient{
+		secret:         secret,
+		redis:          redis,
+		userRepository: userRepository,
 	}
 }
 
 // CreateAccessToken will create access token that will be used for user authentication.
 // access token will be needed in API that needs user to be authorized
-func (c *authClient) GenerateToken(ctx context.Context, user *entity.User) (*entity.Token, error) {
+func (c *AuthClient) GenerateToken(ctx context.Context, user *entity.User) (*entity.Token, error) {
 	if user.Id == uuid.Nil {
 		return nil, errUserIDRequired
 	}
@@ -121,7 +133,7 @@ func (c *authClient) GenerateToken(ctx context.Context, user *entity.User) (*ent
 // ValidateTokens will validate whether the token is valid
 // and will return user id if the user is exist in our database
 // otherwise it will return error
-func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (*JwtCustomClaim, error) {
+func (c *AuthClient) ValidateToken(ctx context.Context, requestToken string) (*JwtCustomClaim, error) {
 	token, _ := jwt.Parse(requestToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			log.Println("error parse jwt")
@@ -196,4 +208,20 @@ func (c *authClient) ValidateToken(ctx context.Context, requestToken string) (*J
 	}
 
 	return res, nil
+}
+
+// To check token still on db or no
+// if no, it means user already logout and token is not allowed to access
+func (s *AuthClient) IsTokenValid(ctx context.Context, params *entity.GetByTokensRequest) (isValid bool, err error) {
+
+	_, err = s.userRepository.GetByTokens(ctx, params)
+
+	if err != nil {
+		log.Printf("Error (IsTokenValid): %s", err.Error())
+		err = errTokenExpired
+		return
+	}
+
+	isValid = true
+	return
 }

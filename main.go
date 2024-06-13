@@ -20,11 +20,11 @@ import (
 	"github.com/Mitra-Apps/be-user-service/service"
 	util "github.com/Mitra-Apps/be-utility-service/config/tools"
 	"github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
-	"github.com/google/uuid"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 	"go.elastic.co/apm/module/apmgrpc"
+	"gorm.io/gorm"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -34,60 +34,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 )
-
-// Middleware interceptor
-func middlewareInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	// Check if the method should be included from the middleware
-	log.Print(info.FullMethod)
-	addMiddleware := true
-	isLogout := false
-	// Add the method that will be included for middleware
-	switch info.FullMethod {
-	case "/proto.UserService/GetUsers":
-		// Middleware logic for specific route
-	case "/proto.UserService/GetOwnData":
-		// Middleware logic for specific route
-	case "/proto.UserService/Logout":
-		// Middleware logic for specific route
-		isLogout = true
-	case "/proto.UserService/RefreshToken":
-		// Middleware logic for specific route
-	default:
-		addMiddleware = false
-	}
-	if addMiddleware {
-		// Validate and parse the JWT token
-		token, err := middleware.GetToken(ctx)
-		if err != nil {
-			log.Println("error get token from middleware")
-			return nil, err
-		}
-
-		redis := redis.Connection()
-		auth := service.NewAuthClient(os.Getenv("JWT_SECRET"), redis)
-		claims, err := auth.ValidateToken(ctx, token)
-		if err != nil && !isLogout {
-			return nil, err
-		}
-
-		//claim our user id input in subject from token
-		id, err := claims.GetSubject()
-		if err != nil {
-			return nil, err
-		}
-		var userId uuid.UUID
-		userId, err = uuid.Parse(id)
-		if err != nil {
-			return nil, err
-		}
-
-		ctx = middleware.SetUserIDKey(ctx, userId)
-		// Call the actual handler to process the request
-		return handler(ctx, req)
-	}
-	// Call the actual handler to process the request
-	return handler(ctx, req)
-}
 
 func main() {
 	ctx := context.Background()
@@ -99,10 +45,26 @@ func main() {
 	}
 
 	db := postgre.Connection()
-
 	redis := redis.Connection()
 	utilSvc := utilityservice.NewClient(ctx)
 	defer utilSvc.Close()
+
+	setRedisEnv(ctx, utilSvc, redis)
+
+	grpcServer, route := setgRPCRoute(ctx, utilSvc, redis, db)
+	pb.RegisterUserServiceServer(grpcServer, route)
+
+	go func() {
+		<-ctx.Done()
+		grpcServer.GracefulStop()
+	}()
+
+	go HttpNewServer(ctx, os.Getenv("GRPC_PORT"), os.Getenv("HTTP_PORT"))
+
+	grpcServer.Serve(lis)
+}
+
+func setRedisEnv(ctx context.Context, utilSvc utilityservice.ServiceInterface, redis redis.RedisInterface) {
 	//setup access token exp time
 	accessTokenExpTimeVal, err := utilSvc.GetEnvVariable(ctx, &utility.GetEnvVariableReq{Variable: service.AccessTokenExpTime})
 	if err != nil {
@@ -120,32 +82,30 @@ func main() {
 		}
 	}
 	redis.Set(ctx, service.RefreshTokenExpTime, refreshTokenExpTimeVal.Value, time.Hour*time.Duration(720))
+}
+
+func setgRPCRoute(ctx context.Context, utilSvc utilityservice.ServiceInterface, redis redis.RedisInterface, db *gorm.DB) (*grpc.Server, pb.UserServiceServer) {
 
 	usrRepo := userPostgreRepo.NewUserRepoImpl(db)
 	roleRepo := userPostgreRepo.NewRoleRepoImpl(db)
 	bcrypt := external.New(&external.Bcrypt{})
-	auth := service.NewAuthClient(os.Getenv("JWT_SECRET"), redis)
+	auth := service.NewAuthClient(os.Getenv("JWT_SECRET"), redis, usrRepo)
 	svc := service.New(usrRepo, roleRepo, bcrypt, redis, auth)
-	grpcServer := GrpcNewServer(ctx, []grpc.ServerOption{})
+
+	grpcServer := grpcNewServer(ctx, auth, []grpc.ServerOption{})
 	route := grpcRoute.New(svc, auth, utilSvc, redis)
-	pb.RegisterUserServiceServer(grpcServer, route)
 
-	go func() {
-		<-ctx.Done()
-		grpcServer.GracefulStop()
-	}()
-
-	go HttpNewServer(ctx, os.Getenv("GRPC_PORT"), os.Getenv("HTTP_PORT"))
-
-	grpcServer.Serve(lis)
+	return grpcServer, route
 }
 
-func GrpcNewServer(ctx context.Context, opts []grpc.ServerOption) *grpc.Server {
+func grpcNewServer(ctx context.Context, auth service.Authentication, opts []grpc.ServerOption) *grpc.Server {
 	logrusEntry := logrus.NewEntry(logrus.StandardLogger())
 	logrusOpts := []grpc_logrus.Option{
 		grpc_logrus.WithLevels(grpc_logrus.DefaultCodeToLevel),
 	}
 	grpc_logrus.ReplaceGrpcLogger(logrusEntry)
+
+	jwtMiddleware := middleware.JwtMiddlewareInterceptor(auth)
 
 	opts = append(opts, grpc.StreamInterceptor(
 		grpc_middleware.ChainStreamServer(
@@ -159,7 +119,7 @@ func GrpcNewServer(ctx context.Context, opts []grpc.ServerOption) *grpc.Server {
 			grpc_logrus.UnaryServerInterceptor(logrusEntry, logrusOpts...),
 			grpc_recovery.UnaryServerInterceptor(),
 			apmgrpc.NewUnaryServerInterceptor(apmgrpc.WithRecovery()),
-			middlewareInterceptor,
+			jwtMiddleware,
 		)),
 	)
 

@@ -52,6 +52,11 @@ type LoginRequest struct {
 	Password string
 }
 
+type GetByTokensRequest struct {
+	Token  string
+	UserId uuid.UUID
+}
+
 type Token struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
