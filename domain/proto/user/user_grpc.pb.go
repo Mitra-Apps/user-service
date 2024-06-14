@@ -50,7 +50,7 @@ type UserServiceClient interface {
 	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
 	RefreshToken(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
-	ValidateUserToken(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
+	ValidateUserToken(ctx context.Context, in *ValidateUserTokenRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	SetEnvVariable(ctx context.Context, in *EnvRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 }
 
@@ -161,7 +161,7 @@ func (c *userServiceClient) RefreshToken(ctx context.Context, in *emptypb.Empty,
 	return out, nil
 }
 
-func (c *userServiceClient) ValidateUserToken(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error) {
+func (c *userServiceClient) ValidateUserToken(ctx context.Context, in *ValidateUserTokenRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
 	out := new(SuccessResponse)
 	err := c.cc.Invoke(ctx, UserService_ValidateUserToken_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -194,7 +194,7 @@ type UserServiceServer interface {
 	ChangePassword(context.Context, *ChangePasswordRequest) (*SuccessResponse, error)
 	Logout(context.Context, *emptypb.Empty) (*SuccessResponse, error)
 	RefreshToken(context.Context, *emptypb.Empty) (*SuccessResponse, error)
-	ValidateUserToken(context.Context, *emptypb.Empty) (*SuccessResponse, error)
+	ValidateUserToken(context.Context, *ValidateUserTokenRequest) (*SuccessResponse, error)
 	SetEnvVariable(context.Context, *EnvRequest) (*SuccessResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
@@ -236,7 +236,7 @@ func (UnimplementedUserServiceServer) Logout(context.Context, *emptypb.Empty) (*
 func (UnimplementedUserServiceServer) RefreshToken(context.Context, *emptypb.Empty) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
 }
-func (UnimplementedUserServiceServer) ValidateUserToken(context.Context, *emptypb.Empty) (*SuccessResponse, error) {
+func (UnimplementedUserServiceServer) ValidateUserToken(context.Context, *ValidateUserTokenRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateUserToken not implemented")
 }
 func (UnimplementedUserServiceServer) SetEnvVariable(context.Context, *EnvRequest) (*SuccessResponse, error) {
@@ -454,7 +454,7 @@ func _UserService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec
 }
 
 func _UserService_ValidateUserToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ValidateUserTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -466,7 +466,7 @@ func _UserService_ValidateUserToken_Handler(srv interface{}, ctx context.Context
 		FullMethod: UserService_ValidateUserToken_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).ValidateUserToken(ctx, req.(*emptypb.Empty))
+		return srv.(UserServiceServer).ValidateUserToken(ctx, req.(*ValidateUserTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -306,17 +306,16 @@ func (g *GrpcRoute) RefreshToken(ctx context.Context, req *emptypb.Empty) (*pb.S
 	}, nil
 }
 
-func (g *GrpcRoute) ValidateUserToken(ctx context.Context, req *emptypb.Empty) (*pb.SuccessResponse, error) {
-	token, _ := middleware.GetToken(ctx)
+func (g *GrpcRoute) ValidateUserToken(ctx context.Context, req *pb.ValidateUserTokenRequest) (*pb.SuccessResponse, error) {
 
-	claims, err := g.auth.ValidateToken(ctx, token)
+	claims, err := g.auth.ValidateToken(ctx, req.Token)
 	if err != nil {
 		return nil, err
 	}
 
 	uid, _ := uuid.Parse(claims.Subject)
 	params := entity.GetByTokensRequest{
-		Token:  token,
+		Token:  req.Token,
 		UserId: uid,
 	}
 

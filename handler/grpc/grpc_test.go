@@ -1207,6 +1207,10 @@ func TestGrpcRoute_ValidateUserToken(t *testing.T) {
 		Name: "test",
 	}
 
+	handlerArg := pb.ValidateUserTokenRequest{
+		Token: token,
+	}
+
 	params := entity.GetByTokensRequest{
 		Token:  token,
 		UserId: user.Id,
@@ -1226,7 +1230,7 @@ func TestGrpcRoute_ValidateUserToken(t *testing.T) {
 
 	type args struct {
 		ctx context.Context
-		req *emptypb.Empty
+		req *pb.ValidateUserTokenRequest
 	}
 	tests := []struct {
 		name    string
@@ -1243,6 +1247,7 @@ func TestGrpcRoute_ValidateUserToken(t *testing.T) {
 			},
 			args: args{
 				ctx: ctx,
+				req: &handlerArg,
 			},
 			want:    nil,
 			wantErr: true,
@@ -1257,6 +1262,7 @@ func TestGrpcRoute_ValidateUserToken(t *testing.T) {
 			},
 			args: args{
 				ctx: ctx,
+				req: &handlerArg,
 			},
 			want:    nil,
 			wantErr: true,
@@ -1272,6 +1278,7 @@ func TestGrpcRoute_ValidateUserToken(t *testing.T) {
 			},
 			args: args{
 				ctx: ctx,
+				req: &handlerArg,
 			},
 			want: &pb.SuccessResponse{
 				Code:    int32(codes.OK),

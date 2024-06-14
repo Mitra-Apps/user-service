@@ -97,7 +97,7 @@ type UserServiceClient interface {
 	ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error)
 	Logout(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
-	ValidateUserToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	ValidateUserToken(context.Context, *connect.Request[user.ValidateUserTokenRequest]) (*connect.Response[user.SuccessResponse], error)
 	SetEnvVariable(context.Context, *connect.Request[user.EnvRequest]) (*connect.Response[user.SuccessResponse], error)
 }
 
@@ -177,7 +177,7 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceRefreshTokenMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		validateUserToken: connect.NewClient[emptypb.Empty, user.SuccessResponse](
+		validateUserToken: connect.NewClient[user.ValidateUserTokenRequest, user.SuccessResponse](
 			httpClient,
 			baseURL+UserServiceValidateUserTokenProcedure,
 			connect.WithSchema(userServiceValidateUserTokenMethodDescriptor),
@@ -205,7 +205,7 @@ type userServiceClient struct {
 	changePassword    *connect.Client[user.ChangePasswordRequest, user.SuccessResponse]
 	logout            *connect.Client[emptypb.Empty, user.SuccessResponse]
 	refreshToken      *connect.Client[emptypb.Empty, user.SuccessResponse]
-	validateUserToken *connect.Client[emptypb.Empty, user.SuccessResponse]
+	validateUserToken *connect.Client[user.ValidateUserTokenRequest, user.SuccessResponse]
 	setEnvVariable    *connect.Client[user.EnvRequest, user.SuccessResponse]
 }
 
@@ -265,7 +265,7 @@ func (c *userServiceClient) RefreshToken(ctx context.Context, req *connect.Reque
 }
 
 // ValidateUserToken calls proto.UserService.ValidateUserToken.
-func (c *userServiceClient) ValidateUserToken(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
+func (c *userServiceClient) ValidateUserToken(ctx context.Context, req *connect.Request[user.ValidateUserTokenRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return c.validateUserToken.CallUnary(ctx, req)
 }
 
@@ -287,7 +287,7 @@ type UserServiceHandler interface {
 	ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error)
 	Logout(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
-	ValidateUserToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	ValidateUserToken(context.Context, *connect.Request[user.ValidateUserTokenRequest]) (*connect.Response[user.SuccessResponse], error)
 	SetEnvVariable(context.Context, *connect.Request[user.EnvRequest]) (*connect.Response[user.SuccessResponse], error)
 }
 
@@ -456,7 +456,7 @@ func (UnimplementedUserServiceHandler) RefreshToken(context.Context, *connect.Re
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.RefreshToken is not implemented"))
 }
 
-func (UnimplementedUserServiceHandler) ValidateUserToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
+func (UnimplementedUserServiceHandler) ValidateUserToken(context.Context, *connect.Request[user.ValidateUserTokenRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.ValidateUserToken is not implemented"))
 }
 

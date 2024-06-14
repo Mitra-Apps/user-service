@@ -249,6 +249,11 @@ paths:
             tags:
                 - UserService
             operationId: UserService_ValidateUserToken
+            parameters:
+                - name: token
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK

@@ -85,6 +85,10 @@ message LogoutRequest {
     string email = 1 [(validate.rules).string.email = true];
 }
 
+message ValidateUserTokenRequest {
+    string token = 1;
+}
+
 message ValidateUserTokenResponse {
     repeated string roles = 1;
     google.protobuf.Struct registered_claims = 2;
@@ -159,7 +163,7 @@ service UserService {
             get: "/api/v1/users/refresh-token"
         };
     }
-    rpc ValidateUserToken(google.protobuf.Empty) returns (SuccessResponse) {
+    rpc ValidateUserToken(ValidateUserTokenRequest) returns (SuccessResponse) {
          option (google.api.http) = {
             get: "/api/v1/users/validate-token"
         };
