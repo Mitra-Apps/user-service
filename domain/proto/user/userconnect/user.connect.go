@@ -58,6 +58,9 @@ const (
 	// UserServiceRefreshTokenProcedure is the fully-qualified name of the UserService's RefreshToken
 	// RPC.
 	UserServiceRefreshTokenProcedure = "/proto.UserService/RefreshToken"
+	// UserServiceValidateUserTokenProcedure is the fully-qualified name of the UserService's
+	// ValidateUserToken RPC.
+	UserServiceValidateUserTokenProcedure = "/proto.UserService/ValidateUserToken"
 	// UserServiceSetEnvVariableProcedure is the fully-qualified name of the UserService's
 	// SetEnvVariable RPC.
 	UserServiceSetEnvVariableProcedure = "/proto.UserService/SetEnvVariable"
@@ -65,19 +68,20 @@ const (
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	userServiceServiceDescriptor              = user.File_proto_user_user_proto.Services().ByName("UserService")
-	userServiceGetUsersMethodDescriptor       = userServiceServiceDescriptor.Methods().ByName("GetUsers")
-	userServiceLoginMethodDescriptor          = userServiceServiceDescriptor.Methods().ByName("Login")
-	userServiceRegisterMethodDescriptor       = userServiceServiceDescriptor.Methods().ByName("Register")
-	userServiceCreateRoleMethodDescriptor     = userServiceServiceDescriptor.Methods().ByName("CreateRole")
-	userServiceGetRoleMethodDescriptor        = userServiceServiceDescriptor.Methods().ByName("GetRole")
-	userServiceVerifyOtpMethodDescriptor      = userServiceServiceDescriptor.Methods().ByName("VerifyOtp")
-	userServiceResendOtpMethodDescriptor      = userServiceServiceDescriptor.Methods().ByName("ResendOtp")
-	userServiceGetOwnDataMethodDescriptor     = userServiceServiceDescriptor.Methods().ByName("GetOwnData")
-	userServiceChangePasswordMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("ChangePassword")
-	userServiceLogoutMethodDescriptor         = userServiceServiceDescriptor.Methods().ByName("Logout")
-	userServiceRefreshTokenMethodDescriptor   = userServiceServiceDescriptor.Methods().ByName("RefreshToken")
-	userServiceSetEnvVariableMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("SetEnvVariable")
+	userServiceServiceDescriptor                 = user.File_proto_user_user_proto.Services().ByName("UserService")
+	userServiceGetUsersMethodDescriptor          = userServiceServiceDescriptor.Methods().ByName("GetUsers")
+	userServiceLoginMethodDescriptor             = userServiceServiceDescriptor.Methods().ByName("Login")
+	userServiceRegisterMethodDescriptor          = userServiceServiceDescriptor.Methods().ByName("Register")
+	userServiceCreateRoleMethodDescriptor        = userServiceServiceDescriptor.Methods().ByName("CreateRole")
+	userServiceGetRoleMethodDescriptor           = userServiceServiceDescriptor.Methods().ByName("GetRole")
+	userServiceVerifyOtpMethodDescriptor         = userServiceServiceDescriptor.Methods().ByName("VerifyOtp")
+	userServiceResendOtpMethodDescriptor         = userServiceServiceDescriptor.Methods().ByName("ResendOtp")
+	userServiceGetOwnDataMethodDescriptor        = userServiceServiceDescriptor.Methods().ByName("GetOwnData")
+	userServiceChangePasswordMethodDescriptor    = userServiceServiceDescriptor.Methods().ByName("ChangePassword")
+	userServiceLogoutMethodDescriptor            = userServiceServiceDescriptor.Methods().ByName("Logout")
+	userServiceRefreshTokenMethodDescriptor      = userServiceServiceDescriptor.Methods().ByName("RefreshToken")
+	userServiceValidateUserTokenMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("ValidateUserToken")
+	userServiceSetEnvVariableMethodDescriptor    = userServiceServiceDescriptor.Methods().ByName("SetEnvVariable")
 )
 
 // UserServiceClient is a client for the proto.UserService service.
@@ -93,6 +97,7 @@ type UserServiceClient interface {
 	ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error)
 	Logout(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	ValidateUserToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	SetEnvVariable(context.Context, *connect.Request[user.EnvRequest]) (*connect.Response[user.SuccessResponse], error)
 }
 
@@ -172,6 +177,12 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceRefreshTokenMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		validateUserToken: connect.NewClient[emptypb.Empty, user.SuccessResponse](
+			httpClient,
+			baseURL+UserServiceValidateUserTokenProcedure,
+			connect.WithSchema(userServiceValidateUserTokenMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 		setEnvVariable: connect.NewClient[user.EnvRequest, user.SuccessResponse](
 			httpClient,
 			baseURL+UserServiceSetEnvVariableProcedure,
@@ -183,18 +194,19 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 
 // userServiceClient implements UserServiceClient.
 type userServiceClient struct {
-	getUsers       *connect.Client[user.GetUsersRequest, user.GetUsersResponse]
-	login          *connect.Client[user.UserLoginRequest, user.SuccessResponse]
-	register       *connect.Client[user.UserRegisterRequest, user.SuccessResponse]
-	createRole     *connect.Client[user.Role, user.SuccessResponse]
-	getRole        *connect.Client[emptypb.Empty, user.SuccessResponse]
-	verifyOtp      *connect.Client[user.VerifyOTPRequest, user.SuccessResponse]
-	resendOtp      *connect.Client[user.ResendOTPRequest, user.SuccessResponse]
-	getOwnData     *connect.Client[emptypb.Empty, user.SuccessResponse]
-	changePassword *connect.Client[user.ChangePasswordRequest, user.SuccessResponse]
-	logout         *connect.Client[emptypb.Empty, user.SuccessResponse]
-	refreshToken   *connect.Client[emptypb.Empty, user.SuccessResponse]
-	setEnvVariable *connect.Client[user.EnvRequest, user.SuccessResponse]
+	getUsers          *connect.Client[user.GetUsersRequest, user.GetUsersResponse]
+	login             *connect.Client[user.UserLoginRequest, user.SuccessResponse]
+	register          *connect.Client[user.UserRegisterRequest, user.SuccessResponse]
+	createRole        *connect.Client[user.Role, user.SuccessResponse]
+	getRole           *connect.Client[emptypb.Empty, user.SuccessResponse]
+	verifyOtp         *connect.Client[user.VerifyOTPRequest, user.SuccessResponse]
+	resendOtp         *connect.Client[user.ResendOTPRequest, user.SuccessResponse]
+	getOwnData        *connect.Client[emptypb.Empty, user.SuccessResponse]
+	changePassword    *connect.Client[user.ChangePasswordRequest, user.SuccessResponse]
+	logout            *connect.Client[emptypb.Empty, user.SuccessResponse]
+	refreshToken      *connect.Client[emptypb.Empty, user.SuccessResponse]
+	validateUserToken *connect.Client[emptypb.Empty, user.SuccessResponse]
+	setEnvVariable    *connect.Client[user.EnvRequest, user.SuccessResponse]
 }
 
 // GetUsers calls proto.UserService.GetUsers.
@@ -252,6 +264,11 @@ func (c *userServiceClient) RefreshToken(ctx context.Context, req *connect.Reque
 	return c.refreshToken.CallUnary(ctx, req)
 }
 
+// ValidateUserToken calls proto.UserService.ValidateUserToken.
+func (c *userServiceClient) ValidateUserToken(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
+	return c.validateUserToken.CallUnary(ctx, req)
+}
+
 // SetEnvVariable calls proto.UserService.SetEnvVariable.
 func (c *userServiceClient) SetEnvVariable(ctx context.Context, req *connect.Request[user.EnvRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return c.setEnvVariable.CallUnary(ctx, req)
@@ -270,6 +287,7 @@ type UserServiceHandler interface {
 	ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error)
 	Logout(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	ValidateUserToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	SetEnvVariable(context.Context, *connect.Request[user.EnvRequest]) (*connect.Response[user.SuccessResponse], error)
 }
 
@@ -345,6 +363,12 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(userServiceRefreshTokenMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	userServiceValidateUserTokenHandler := connect.NewUnaryHandler(
+		UserServiceValidateUserTokenProcedure,
+		svc.ValidateUserToken,
+		connect.WithSchema(userServiceValidateUserTokenMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	userServiceSetEnvVariableHandler := connect.NewUnaryHandler(
 		UserServiceSetEnvVariableProcedure,
 		svc.SetEnvVariable,
@@ -375,6 +399,8 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 			userServiceLogoutHandler.ServeHTTP(w, r)
 		case UserServiceRefreshTokenProcedure:
 			userServiceRefreshTokenHandler.ServeHTTP(w, r)
+		case UserServiceValidateUserTokenProcedure:
+			userServiceValidateUserTokenHandler.ServeHTTP(w, r)
 		case UserServiceSetEnvVariableProcedure:
 			userServiceSetEnvVariableHandler.ServeHTTP(w, r)
 		default:
@@ -428,6 +454,10 @@ func (UnimplementedUserServiceHandler) Logout(context.Context, *connect.Request[
 
 func (UnimplementedUserServiceHandler) RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.RefreshToken is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) ValidateUserToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.ValidateUserToken is not implemented"))
 }
 
 func (UnimplementedUserServiceHandler) SetEnvVariable(context.Context, *connect.Request[user.EnvRequest]) (*connect.Response[user.SuccessResponse], error) {

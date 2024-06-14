@@ -1193,6 +1193,109 @@ func TestGrpcRoute_RefreshToken(t *testing.T) {
 	}
 }
 
+func TestGrpcRoute_ValidateUserToken(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockAuth := mock.NewMockAuthentication(ctrl)
+	mockAuthRec := mockAuth.EXPECT()
+
+	token := "any_token"
+	ctx := contextWithBearerToken(context.Background(), token)
+
+	userID := uuid.New()
+	user := &entity.User{
+		Id:   userID,
+		Name: "test",
+	}
+
+	params := entity.GetByTokensRequest{
+		Token:  token,
+		UserId: user.Id,
+	}
+
+	claimsToken := &service.JwtCustomClaim{}
+	claimsToken.Subject = userID.String()
+
+	response := map[string]interface{}{
+		"is_token_valid": true,
+	}
+
+	data, _ := structpb.NewStruct(response)
+
+	type args struct {
+		ctx context.Context
+		req *emptypb.Empty
+	}
+	tests := []struct {
+		name    string
+		g       *GrpcRoute
+		args    args
+		want    *pb.SuccessResponse
+		wantErr bool
+		mocks   []*gomock.Call
+	}{
+		{
+			name: "error validate token",
+			g: &GrpcRoute{
+				auth: mockAuth,
+			},
+			args: args{
+				ctx: ctx,
+			},
+			want:    nil,
+			wantErr: true,
+			mocks: []*gomock.Call{
+				mockAuthRec.ValidateToken(ctx, token).Return(nil, errors.New("any error")),
+			},
+		},
+		{
+			name: "error get user by token",
+			g: &GrpcRoute{
+				auth: mockAuth,
+			},
+			args: args{
+				ctx: ctx,
+			},
+			want:    nil,
+			wantErr: true,
+			mocks: []*gomock.Call{
+				mockAuthRec.ValidateToken(ctx, token).Return(claimsToken, nil),
+				mockAuthRec.IsTokenValid(ctx, &params).Return(false, errors.New("any error")),
+			},
+		},
+		{
+			name: "success",
+			g: &GrpcRoute{
+				auth: mockAuth,
+			},
+			args: args{
+				ctx: ctx,
+			},
+			want: &pb.SuccessResponse{
+				Code:    int32(codes.OK),
+				Message: "success",
+				Data:    data,
+			},
+			wantErr: false,
+			mocks: []*gomock.Call{
+				mockAuthRec.ValidateToken(ctx, token).Return(claimsToken, nil),
+				mockAuthRec.IsTokenValid(ctx, &params).Return(true, nil),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.g.ValidateUserToken(tt.args.ctx, tt.args.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GrpcRoute.ValidateUserToken() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GrpcRoute.ValidateUserToken() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestGrpcRoute_SetEnvVariable(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	redis := mockRedis.NewMockRedisInterface(ctrl)

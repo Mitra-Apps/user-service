@@ -16,6 +16,7 @@ import (
 	"github.com/Mitra-Apps/be-user-service/service"
 	utilPb "github.com/Mitra-Apps/be-utility-service/domain/proto/utility"
 	util "github.com/Mitra-Apps/be-utility-service/service"
+	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -298,6 +299,40 @@ func (g *GrpcRoute) RefreshToken(ctx context.Context, req *emptypb.Empty) (*pb.S
 	if err != nil {
 		return nil, err
 	}
+	return &pb.SuccessResponse{
+		Code:    int32(codes.OK),
+		Message: "success",
+		Data:    data,
+	}, nil
+}
+
+func (g *GrpcRoute) ValidateUserToken(ctx context.Context, req *emptypb.Empty) (*pb.SuccessResponse, error) {
+	token, _ := middleware.GetToken(ctx)
+
+	claims, err := g.auth.ValidateToken(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+
+	uid, _ := uuid.Parse(claims.Subject)
+	params := entity.GetByTokensRequest{
+		Token:  token,
+		UserId: uid,
+	}
+
+	isValid, err := g.auth.IsTokenValid(ctx, &params)
+	if err != nil {
+		return nil, err
+	}
+
+	response := map[string]interface{}{
+		"is_token_valid": isValid,
+	}
+	data, err := structpb.NewStruct(response)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
 	return &pb.SuccessResponse{
 		Code:    int32(codes.OK),
 		Message: "success",

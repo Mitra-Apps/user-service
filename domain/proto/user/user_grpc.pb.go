@@ -20,18 +20,19 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	UserService_GetUsers_FullMethodName       = "/proto.UserService/GetUsers"
-	UserService_Login_FullMethodName          = "/proto.UserService/Login"
-	UserService_Register_FullMethodName       = "/proto.UserService/Register"
-	UserService_CreateRole_FullMethodName     = "/proto.UserService/CreateRole"
-	UserService_GetRole_FullMethodName        = "/proto.UserService/GetRole"
-	UserService_VerifyOtp_FullMethodName      = "/proto.UserService/VerifyOtp"
-	UserService_ResendOtp_FullMethodName      = "/proto.UserService/ResendOtp"
-	UserService_GetOwnData_FullMethodName     = "/proto.UserService/GetOwnData"
-	UserService_ChangePassword_FullMethodName = "/proto.UserService/ChangePassword"
-	UserService_Logout_FullMethodName         = "/proto.UserService/Logout"
-	UserService_RefreshToken_FullMethodName   = "/proto.UserService/RefreshToken"
-	UserService_SetEnvVariable_FullMethodName = "/proto.UserService/SetEnvVariable"
+	UserService_GetUsers_FullMethodName          = "/proto.UserService/GetUsers"
+	UserService_Login_FullMethodName             = "/proto.UserService/Login"
+	UserService_Register_FullMethodName          = "/proto.UserService/Register"
+	UserService_CreateRole_FullMethodName        = "/proto.UserService/CreateRole"
+	UserService_GetRole_FullMethodName           = "/proto.UserService/GetRole"
+	UserService_VerifyOtp_FullMethodName         = "/proto.UserService/VerifyOtp"
+	UserService_ResendOtp_FullMethodName         = "/proto.UserService/ResendOtp"
+	UserService_GetOwnData_FullMethodName        = "/proto.UserService/GetOwnData"
+	UserService_ChangePassword_FullMethodName    = "/proto.UserService/ChangePassword"
+	UserService_Logout_FullMethodName            = "/proto.UserService/Logout"
+	UserService_RefreshToken_FullMethodName      = "/proto.UserService/RefreshToken"
+	UserService_ValidateUserToken_FullMethodName = "/proto.UserService/ValidateUserToken"
+	UserService_SetEnvVariable_FullMethodName    = "/proto.UserService/SetEnvVariable"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -49,6 +50,7 @@ type UserServiceClient interface {
 	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
 	RefreshToken(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
+	ValidateUserToken(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error)
 	SetEnvVariable(ctx context.Context, in *EnvRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 }
 
@@ -159,6 +161,15 @@ func (c *userServiceClient) RefreshToken(ctx context.Context, in *emptypb.Empty,
 	return out, nil
 }
 
+func (c *userServiceClient) ValidateUserToken(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SuccessResponse, error) {
+	out := new(SuccessResponse)
+	err := c.cc.Invoke(ctx, UserService_ValidateUserToken_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *userServiceClient) SetEnvVariable(ctx context.Context, in *EnvRequest, opts ...grpc.CallOption) (*SuccessResponse, error) {
 	out := new(SuccessResponse)
 	err := c.cc.Invoke(ctx, UserService_SetEnvVariable_FullMethodName, in, out, opts...)
@@ -183,6 +194,7 @@ type UserServiceServer interface {
 	ChangePassword(context.Context, *ChangePasswordRequest) (*SuccessResponse, error)
 	Logout(context.Context, *emptypb.Empty) (*SuccessResponse, error)
 	RefreshToken(context.Context, *emptypb.Empty) (*SuccessResponse, error)
+	ValidateUserToken(context.Context, *emptypb.Empty) (*SuccessResponse, error)
 	SetEnvVariable(context.Context, *EnvRequest) (*SuccessResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
@@ -223,6 +235,9 @@ func (UnimplementedUserServiceServer) Logout(context.Context, *emptypb.Empty) (*
 }
 func (UnimplementedUserServiceServer) RefreshToken(context.Context, *emptypb.Empty) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
+}
+func (UnimplementedUserServiceServer) ValidateUserToken(context.Context, *emptypb.Empty) (*SuccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ValidateUserToken not implemented")
 }
 func (UnimplementedUserServiceServer) SetEnvVariable(context.Context, *EnvRequest) (*SuccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetEnvVariable not implemented")
@@ -438,6 +453,24 @@ func _UserService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_ValidateUserToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ValidateUserToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ValidateUserToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ValidateUserToken(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UserService_SetEnvVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EnvRequest)
 	if err := dec(in); err != nil {
@@ -506,6 +539,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RefreshToken",
 			Handler:    _UserService_RefreshToken_Handler,
+		},
+		{
+			MethodName: "ValidateUserToken",
+			Handler:    _UserService_ValidateUserToken_Handler,
 		},
 		{
 			MethodName: "SetEnvVariable",

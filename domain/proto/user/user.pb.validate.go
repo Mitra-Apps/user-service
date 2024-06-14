@@ -1811,43 +1811,44 @@ var _ interface {
 	ErrorName() string
 } = LogoutRequestValidationError{}
 
-// Validate checks the field values on TokenRequest with the rules defined in
+// Validate checks the field values on TokenResponse with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
-func (m *TokenRequest) Validate() error {
+func (m *TokenResponse) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on TokenRequest with the rules defined
+// ValidateAll checks the field values on TokenResponse with the rules defined
 // in the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in TokenRequestMultiError, or
+// result is a list of violation errors wrapped in TokenResponseMultiError, or
 // nil if none found.
-func (m *TokenRequest) ValidateAll() error {
+func (m *TokenResponse) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *TokenRequest) validate(all bool) error {
+func (m *TokenResponse) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
 
 	var errors []error
 
-	// no validation rules for RefreshToken
+	// no validation rules for IsTokenValid
 
 	if len(errors) > 0 {
-		return TokenRequestMultiError(errors)
+		return TokenResponseMultiError(errors)
 	}
 
 	return nil
 }
 
-// TokenRequestMultiError is an error wrapping multiple validation errors
-// returned by TokenRequest.ValidateAll() if the designated constraints aren't met.
-type TokenRequestMultiError []error
+// TokenResponseMultiError is an error wrapping multiple validation errors
+// returned by TokenResponse.ValidateAll() if the designated constraints
+// aren't met.
+type TokenResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m TokenRequestMultiError) Error() string {
+func (m TokenResponseMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -1856,11 +1857,11 @@ func (m TokenRequestMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m TokenRequestMultiError) AllErrors() []error { return m }
+func (m TokenResponseMultiError) AllErrors() []error { return m }
 
-// TokenRequestValidationError is the validation error returned by
-// TokenRequest.Validate if the designated constraints aren't met.
-type TokenRequestValidationError struct {
+// TokenResponseValidationError is the validation error returned by
+// TokenResponse.Validate if the designated constraints aren't met.
+type TokenResponseValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -1868,22 +1869,22 @@ type TokenRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e TokenRequestValidationError) Field() string { return e.field }
+func (e TokenResponseValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e TokenRequestValidationError) Reason() string { return e.reason }
+func (e TokenResponseValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e TokenRequestValidationError) Cause() error { return e.cause }
+func (e TokenResponseValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e TokenRequestValidationError) Key() bool { return e.key }
+func (e TokenResponseValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e TokenRequestValidationError) ErrorName() string { return "TokenRequestValidationError" }
+func (e TokenResponseValidationError) ErrorName() string { return "TokenResponseValidationError" }
 
 // Error satisfies the builtin error interface
-func (e TokenRequestValidationError) Error() string {
+func (e TokenResponseValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -1895,14 +1896,14 @@ func (e TokenRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sTokenRequest.%s: %s%s",
+		"invalid %sTokenResponse.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = TokenRequestValidationError{}
+var _ error = TokenResponseValidationError{}
 
 var _ interface {
 	Field() string
@@ -1910,7 +1911,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = TokenRequestValidationError{}
+} = TokenResponseValidationError{}
 
 // Validate checks the field values on EnvRequest with the rules defined in the
 // proto definition for this message. If any rules are violated, the first

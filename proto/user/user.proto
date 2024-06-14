@@ -85,8 +85,8 @@ message LogoutRequest {
     string email = 1 [(validate.rules).string.email = true];
 }
 
-message TokenRequest {
-    string refresh_token = 1;
+message TokenResponse {
+    string is_token_valid = 1;
 }
 
 message EnvRequest {
@@ -156,6 +156,11 @@ service UserService {
     rpc RefreshToken(google.protobuf.Empty) returns (SuccessResponse) {
          option (google.api.http) = {
             get: "/api/v1/users/refresh-token"
+        };
+    }
+    rpc ValidateUserToken(google.protobuf.Empty) returns (SuccessResponse) {
+         option (google.api.http) = {
+            get: "/api/v1/users/validate-token"
         };
     }
     rpc SetEnvVariable(EnvRequest) returns (SuccessResponse) {
