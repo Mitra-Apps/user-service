@@ -1216,9 +1216,12 @@ func TestGrpcRoute_ValidateUserToken(t *testing.T) {
 	claimsToken.Subject = userID.String()
 
 	response := map[string]interface{}{
-		"is_token_valid": true,
+		"roles":             claimsToken.Roles,
+		"registered_claims": claimsToken.RegisteredClaims,
 	}
 
+	marsh, _ := json.Marshal(response)
+	_ = json.Unmarshal(marsh, &response)
 	data, _ := structpb.NewStruct(response)
 
 	type args struct {

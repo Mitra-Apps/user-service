@@ -320,14 +320,25 @@ func (g *GrpcRoute) ValidateUserToken(ctx context.Context, req *emptypb.Empty) (
 		UserId: uid,
 	}
 
-	isValid, err := g.auth.IsTokenValid(ctx, &params)
+	_, err = g.auth.IsTokenValid(ctx, &params)
 	if err != nil {
 		return nil, err
 	}
 
 	response := map[string]interface{}{
-		"is_token_valid": isValid,
+		"roles": claims.Roles,
+		"registered_claims": claims.RegisteredClaims,
 	}
+
+	marsh, err := json.Marshal(response)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	if err := json.Unmarshal(marsh, &response); err != nil {
+		return nil, err
+	}
+
 	data, err := structpb.NewStruct(response)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())

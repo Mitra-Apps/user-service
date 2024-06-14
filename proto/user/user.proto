@@ -85,8 +85,9 @@ message LogoutRequest {
     string email = 1 [(validate.rules).string.email = true];
 }
 
-message TokenResponse {
-    string is_token_valid = 1;
+message ValidateUserTokenResponse {
+    repeated string roles = 1;
+    google.protobuf.Struct registered_claims = 2;
 }
 
 message EnvRequest {

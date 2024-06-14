@@ -1811,44 +1811,71 @@ var _ interface {
 	ErrorName() string
 } = LogoutRequestValidationError{}
 
-// Validate checks the field values on TokenResponse with the rules defined in
-// the proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *TokenResponse) Validate() error {
+// Validate checks the field values on ValidateUserTokenResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ValidateUserTokenResponse) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on TokenResponse with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in TokenResponseMultiError, or
-// nil if none found.
-func (m *TokenResponse) ValidateAll() error {
+// ValidateAll checks the field values on ValidateUserTokenResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ValidateUserTokenResponseMultiError, or nil if none found.
+func (m *ValidateUserTokenResponse) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *TokenResponse) validate(all bool) error {
+func (m *ValidateUserTokenResponse) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
 
 	var errors []error
 
-	// no validation rules for IsTokenValid
+	if all {
+		switch v := interface{}(m.GetRegisteredClaims()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ValidateUserTokenResponseValidationError{
+					field:  "RegisteredClaims",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ValidateUserTokenResponseValidationError{
+					field:  "RegisteredClaims",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetRegisteredClaims()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ValidateUserTokenResponseValidationError{
+				field:  "RegisteredClaims",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
 	if len(errors) > 0 {
-		return TokenResponseMultiError(errors)
+		return ValidateUserTokenResponseMultiError(errors)
 	}
 
 	return nil
 }
 
-// TokenResponseMultiError is an error wrapping multiple validation errors
-// returned by TokenResponse.ValidateAll() if the designated constraints
-// aren't met.
-type TokenResponseMultiError []error
+// ValidateUserTokenResponseMultiError is an error wrapping multiple validation
+// errors returned by ValidateUserTokenResponse.ValidateAll() if the
+// designated constraints aren't met.
+type ValidateUserTokenResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m TokenResponseMultiError) Error() string {
+func (m ValidateUserTokenResponseMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -1857,11 +1884,11 @@ func (m TokenResponseMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m TokenResponseMultiError) AllErrors() []error { return m }
+func (m ValidateUserTokenResponseMultiError) AllErrors() []error { return m }
 
-// TokenResponseValidationError is the validation error returned by
-// TokenResponse.Validate if the designated constraints aren't met.
-type TokenResponseValidationError struct {
+// ValidateUserTokenResponseValidationError is the validation error returned by
+// ValidateUserTokenResponse.Validate if the designated constraints aren't met.
+type ValidateUserTokenResponseValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -1869,22 +1896,24 @@ type TokenResponseValidationError struct {
 }
 
 // Field function returns field value.
-func (e TokenResponseValidationError) Field() string { return e.field }
+func (e ValidateUserTokenResponseValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e TokenResponseValidationError) Reason() string { return e.reason }
+func (e ValidateUserTokenResponseValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e TokenResponseValidationError) Cause() error { return e.cause }
+func (e ValidateUserTokenResponseValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e TokenResponseValidationError) Key() bool { return e.key }
+func (e ValidateUserTokenResponseValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e TokenResponseValidationError) ErrorName() string { return "TokenResponseValidationError" }
+func (e ValidateUserTokenResponseValidationError) ErrorName() string {
+	return "ValidateUserTokenResponseValidationError"
+}
 
 // Error satisfies the builtin error interface
-func (e TokenResponseValidationError) Error() string {
+func (e ValidateUserTokenResponseValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -1896,14 +1925,14 @@ func (e TokenResponseValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sTokenResponse.%s: %s%s",
+		"invalid %sValidateUserTokenResponse.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = TokenResponseValidationError{}
+var _ error = ValidateUserTokenResponseValidationError{}
 
 var _ interface {
 	Field() string
@@ -1911,7 +1940,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = TokenResponseValidationError{}
+} = ValidateUserTokenResponseValidationError{}
 
 // Validate checks the field values on EnvRequest with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
