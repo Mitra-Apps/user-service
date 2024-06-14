@@ -85,8 +85,13 @@ message LogoutRequest {
     string email = 1 [(validate.rules).string.email = true];
 }
 
-message TokenRequest {
-    string refresh_token = 1;
+message ValidateUserTokenRequest {
+    string token = 1;
+}
+
+message ValidateUserTokenResponse {
+    repeated string roles = 1;
+    google.protobuf.Struct registered_claims = 2;
 }
 
 message EnvRequest {
@@ -156,6 +161,11 @@ service UserService {
     rpc RefreshToken(google.protobuf.Empty) returns (SuccessResponse) {
          option (google.api.http) = {
             get: "/api/v1/users/refresh-token"
+        };
+    }
+    rpc ValidateUserToken(ValidateUserTokenRequest) returns (SuccessResponse) {
+         option (google.api.http) = {
+            get: "/api/v1/users/validate-token"
         };
     }
     rpc SetEnvVariable(EnvRequest) returns (SuccessResponse) {
