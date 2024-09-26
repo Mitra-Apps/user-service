@@ -33,6 +33,7 @@ func LocalDatabase() (*gorm.DB, error) {
 	if strings.Trim(port, " ") != "" {
 		portStr = fmt.Sprintf("port=%s ", port)
 	}
+
 	dsn := fmt.Sprintf("host=%s "+portStr+"user=%s dbname=%s sslmode=disable password=%s", host, username, dbName, password)
 	fmt.Printf("dsn: %s\n", dsn)
 
@@ -45,7 +46,7 @@ func LocalDatabase() (*gorm.DB, error) {
 		log.Fatalf("failed to connect database: %v", err)
 	}
 
-	// db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
+	db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
 
 	db.Migrator().DropTable("user_roles", &entity.Role{}, &entity.User{})
 	db.AutoMigrate(&entity.User{}, &entity.Role{})

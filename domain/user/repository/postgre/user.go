@@ -77,3 +77,13 @@ func (p *userRepoImpl) VerifyUserByEmail(ctx context.Context, email string) (boo
 	}
 	return true, nil
 }
+
+func (p *userRepoImpl) GetByTokens(ctx context.Context, params *entity.GetByTokensRequest) (user *entity.User, err error) {
+
+	err = p.db.
+		Where("id = ?", params.UserId).
+		Where("refresh_token = ? OR access_token = ?", params.Token, params.Token).
+		First(&user).Error
+
+	return
+}

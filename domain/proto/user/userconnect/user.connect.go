@@ -53,20 +53,35 @@ const (
 	// UserServiceChangePasswordProcedure is the fully-qualified name of the UserService's
 	// ChangePassword RPC.
 	UserServiceChangePasswordProcedure = "/proto.UserService/ChangePassword"
+	// UserServiceLogoutProcedure is the fully-qualified name of the UserService's Logout RPC.
+	UserServiceLogoutProcedure = "/proto.UserService/Logout"
+	// UserServiceRefreshTokenProcedure is the fully-qualified name of the UserService's RefreshToken
+	// RPC.
+	UserServiceRefreshTokenProcedure = "/proto.UserService/RefreshToken"
+	// UserServiceValidateUserTokenProcedure is the fully-qualified name of the UserService's
+	// ValidateUserToken RPC.
+	UserServiceValidateUserTokenProcedure = "/proto.UserService/ValidateUserToken"
+	// UserServiceSetEnvVariableProcedure is the fully-qualified name of the UserService's
+	// SetEnvVariable RPC.
+	UserServiceSetEnvVariableProcedure = "/proto.UserService/SetEnvVariable"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	userServiceServiceDescriptor              = user.File_proto_user_user_proto.Services().ByName("UserService")
-	userServiceGetUsersMethodDescriptor       = userServiceServiceDescriptor.Methods().ByName("GetUsers")
-	userServiceLoginMethodDescriptor          = userServiceServiceDescriptor.Methods().ByName("Login")
-	userServiceRegisterMethodDescriptor       = userServiceServiceDescriptor.Methods().ByName("Register")
-	userServiceCreateRoleMethodDescriptor     = userServiceServiceDescriptor.Methods().ByName("CreateRole")
-	userServiceGetRoleMethodDescriptor        = userServiceServiceDescriptor.Methods().ByName("GetRole")
-	userServiceVerifyOtpMethodDescriptor      = userServiceServiceDescriptor.Methods().ByName("VerifyOtp")
-	userServiceResendOtpMethodDescriptor      = userServiceServiceDescriptor.Methods().ByName("ResendOtp")
-	userServiceGetOwnDataMethodDescriptor     = userServiceServiceDescriptor.Methods().ByName("GetOwnData")
-	userServiceChangePasswordMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("ChangePassword")
+	userServiceServiceDescriptor                 = user.File_proto_user_user_proto.Services().ByName("UserService")
+	userServiceGetUsersMethodDescriptor          = userServiceServiceDescriptor.Methods().ByName("GetUsers")
+	userServiceLoginMethodDescriptor             = userServiceServiceDescriptor.Methods().ByName("Login")
+	userServiceRegisterMethodDescriptor          = userServiceServiceDescriptor.Methods().ByName("Register")
+	userServiceCreateRoleMethodDescriptor        = userServiceServiceDescriptor.Methods().ByName("CreateRole")
+	userServiceGetRoleMethodDescriptor           = userServiceServiceDescriptor.Methods().ByName("GetRole")
+	userServiceVerifyOtpMethodDescriptor         = userServiceServiceDescriptor.Methods().ByName("VerifyOtp")
+	userServiceResendOtpMethodDescriptor         = userServiceServiceDescriptor.Methods().ByName("ResendOtp")
+	userServiceGetOwnDataMethodDescriptor        = userServiceServiceDescriptor.Methods().ByName("GetOwnData")
+	userServiceChangePasswordMethodDescriptor    = userServiceServiceDescriptor.Methods().ByName("ChangePassword")
+	userServiceLogoutMethodDescriptor            = userServiceServiceDescriptor.Methods().ByName("Logout")
+	userServiceRefreshTokenMethodDescriptor      = userServiceServiceDescriptor.Methods().ByName("RefreshToken")
+	userServiceValidateUserTokenMethodDescriptor = userServiceServiceDescriptor.Methods().ByName("ValidateUserToken")
+	userServiceSetEnvVariableMethodDescriptor    = userServiceServiceDescriptor.Methods().ByName("SetEnvVariable")
 )
 
 // UserServiceClient is a client for the proto.UserService service.
@@ -80,6 +95,10 @@ type UserServiceClient interface {
 	ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error)
 	GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error)
+	Logout(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	ValidateUserToken(context.Context, *connect.Request[user.ValidateUserTokenRequest]) (*connect.Response[user.SuccessResponse], error)
+	SetEnvVariable(context.Context, *connect.Request[user.EnvRequest]) (*connect.Response[user.SuccessResponse], error)
 }
 
 // NewUserServiceClient constructs a client for the proto.UserService service. By default, it uses
@@ -146,20 +165,48 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceChangePasswordMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		logout: connect.NewClient[emptypb.Empty, user.SuccessResponse](
+			httpClient,
+			baseURL+UserServiceLogoutProcedure,
+			connect.WithSchema(userServiceLogoutMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		refreshToken: connect.NewClient[emptypb.Empty, user.SuccessResponse](
+			httpClient,
+			baseURL+UserServiceRefreshTokenProcedure,
+			connect.WithSchema(userServiceRefreshTokenMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		validateUserToken: connect.NewClient[user.ValidateUserTokenRequest, user.SuccessResponse](
+			httpClient,
+			baseURL+UserServiceValidateUserTokenProcedure,
+			connect.WithSchema(userServiceValidateUserTokenMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		setEnvVariable: connect.NewClient[user.EnvRequest, user.SuccessResponse](
+			httpClient,
+			baseURL+UserServiceSetEnvVariableProcedure,
+			connect.WithSchema(userServiceSetEnvVariableMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // userServiceClient implements UserServiceClient.
 type userServiceClient struct {
-	getUsers       *connect.Client[user.GetUsersRequest, user.GetUsersResponse]
-	login          *connect.Client[user.UserLoginRequest, user.SuccessResponse]
-	register       *connect.Client[user.UserRegisterRequest, user.SuccessResponse]
-	createRole     *connect.Client[user.Role, user.SuccessResponse]
-	getRole        *connect.Client[emptypb.Empty, user.SuccessResponse]
-	verifyOtp      *connect.Client[user.VerifyOTPRequest, user.SuccessResponse]
-	resendOtp      *connect.Client[user.ResendOTPRequest, user.SuccessResponse]
-	getOwnData     *connect.Client[emptypb.Empty, user.SuccessResponse]
-	changePassword *connect.Client[user.ChangePasswordRequest, user.SuccessResponse]
+	getUsers          *connect.Client[user.GetUsersRequest, user.GetUsersResponse]
+	login             *connect.Client[user.UserLoginRequest, user.SuccessResponse]
+	register          *connect.Client[user.UserRegisterRequest, user.SuccessResponse]
+	createRole        *connect.Client[user.Role, user.SuccessResponse]
+	getRole           *connect.Client[emptypb.Empty, user.SuccessResponse]
+	verifyOtp         *connect.Client[user.VerifyOTPRequest, user.SuccessResponse]
+	resendOtp         *connect.Client[user.ResendOTPRequest, user.SuccessResponse]
+	getOwnData        *connect.Client[emptypb.Empty, user.SuccessResponse]
+	changePassword    *connect.Client[user.ChangePasswordRequest, user.SuccessResponse]
+	logout            *connect.Client[emptypb.Empty, user.SuccessResponse]
+	refreshToken      *connect.Client[emptypb.Empty, user.SuccessResponse]
+	validateUserToken *connect.Client[user.ValidateUserTokenRequest, user.SuccessResponse]
+	setEnvVariable    *connect.Client[user.EnvRequest, user.SuccessResponse]
 }
 
 // GetUsers calls proto.UserService.GetUsers.
@@ -207,6 +254,26 @@ func (c *userServiceClient) ChangePassword(ctx context.Context, req *connect.Req
 	return c.changePassword.CallUnary(ctx, req)
 }
 
+// Logout calls proto.UserService.Logout.
+func (c *userServiceClient) Logout(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
+	return c.logout.CallUnary(ctx, req)
+}
+
+// RefreshToken calls proto.UserService.RefreshToken.
+func (c *userServiceClient) RefreshToken(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
+	return c.refreshToken.CallUnary(ctx, req)
+}
+
+// ValidateUserToken calls proto.UserService.ValidateUserToken.
+func (c *userServiceClient) ValidateUserToken(ctx context.Context, req *connect.Request[user.ValidateUserTokenRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return c.validateUserToken.CallUnary(ctx, req)
+}
+
+// SetEnvVariable calls proto.UserService.SetEnvVariable.
+func (c *userServiceClient) SetEnvVariable(ctx context.Context, req *connect.Request[user.EnvRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return c.setEnvVariable.CallUnary(ctx, req)
+}
+
 // UserServiceHandler is an implementation of the proto.UserService service.
 type UserServiceHandler interface {
 	GetUsers(context.Context, *connect.Request[user.GetUsersRequest]) (*connect.Response[user.GetUsersResponse], error)
@@ -218,6 +285,10 @@ type UserServiceHandler interface {
 	ResendOtp(context.Context, *connect.Request[user.ResendOTPRequest]) (*connect.Response[user.SuccessResponse], error)
 	GetOwnData(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
 	ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error)
+	Logout(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error)
+	ValidateUserToken(context.Context, *connect.Request[user.ValidateUserTokenRequest]) (*connect.Response[user.SuccessResponse], error)
+	SetEnvVariable(context.Context, *connect.Request[user.EnvRequest]) (*connect.Response[user.SuccessResponse], error)
 }
 
 // NewUserServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -280,6 +351,30 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(userServiceChangePasswordMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	userServiceLogoutHandler := connect.NewUnaryHandler(
+		UserServiceLogoutProcedure,
+		svc.Logout,
+		connect.WithSchema(userServiceLogoutMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceRefreshTokenHandler := connect.NewUnaryHandler(
+		UserServiceRefreshTokenProcedure,
+		svc.RefreshToken,
+		connect.WithSchema(userServiceRefreshTokenMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceValidateUserTokenHandler := connect.NewUnaryHandler(
+		UserServiceValidateUserTokenProcedure,
+		svc.ValidateUserToken,
+		connect.WithSchema(userServiceValidateUserTokenMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceSetEnvVariableHandler := connect.NewUnaryHandler(
+		UserServiceSetEnvVariableProcedure,
+		svc.SetEnvVariable,
+		connect.WithSchema(userServiceSetEnvVariableMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/proto.UserService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case UserServiceGetUsersProcedure:
@@ -300,6 +395,14 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 			userServiceGetOwnDataHandler.ServeHTTP(w, r)
 		case UserServiceChangePasswordProcedure:
 			userServiceChangePasswordHandler.ServeHTTP(w, r)
+		case UserServiceLogoutProcedure:
+			userServiceLogoutHandler.ServeHTTP(w, r)
+		case UserServiceRefreshTokenProcedure:
+			userServiceRefreshTokenHandler.ServeHTTP(w, r)
+		case UserServiceValidateUserTokenProcedure:
+			userServiceValidateUserTokenHandler.ServeHTTP(w, r)
+		case UserServiceSetEnvVariableProcedure:
+			userServiceSetEnvVariableHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -343,4 +446,20 @@ func (UnimplementedUserServiceHandler) GetOwnData(context.Context, *connect.Requ
 
 func (UnimplementedUserServiceHandler) ChangePassword(context.Context, *connect.Request[user.ChangePasswordRequest]) (*connect.Response[user.SuccessResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.ChangePassword is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) Logout(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.Logout is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[user.SuccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.RefreshToken is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) ValidateUserToken(context.Context, *connect.Request[user.ValidateUserTokenRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.ValidateUserToken is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) SetEnvVariable(context.Context, *connect.Request[user.EnvRequest]) (*connect.Response[user.SuccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.UserService.SetEnvVariable is not implemented"))
 }
